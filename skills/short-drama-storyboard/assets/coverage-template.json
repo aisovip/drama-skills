@@ -1,0 +1,26 @@
+{
+  "episode_id": "EP001",
+  "dispositions": [
+    {
+      "block_id": "BLK-EXAMPLE",
+      "status": "covered",
+      "reason": "Primary action and reaction remain continuous.",
+      "shot_refs": [
+        {
+          "owner": "short-drama-storyboard",
+          "artifact": "episodes/EP001/storyboard/shots.jsonl",
+          "hash": "<sha256>",
+          "record_id": "SHOT-EXAMPLE",
+          "authority": "candidate"
+        }
+      ]
+    }
+  ],
+  "screenplay_ref": {
+    "owner": "short-drama-write",
+    "artifact": "episodes/EP001/screenplay-index.jsonl",
+    "hash": "<sha256>",
+    "authority": "candidate"
+  },
+  "status": "candidate"
+}

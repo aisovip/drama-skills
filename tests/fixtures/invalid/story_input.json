@@ -1,0 +1,12 @@
+{
+  "schema_version": "fixture-v1",
+  "fixture_id": "INVALID-STORY-001",
+  "fixture_kind": "invalid_craft_input",
+  "provenance": "synthetic",
+  "layer": "story",
+  "input_artifact": {
+    "episode_intent": "实习医生要证明交班记录被改过。",
+    "episode_summary": "她进办公室寻找记录，同事不断提醒时间紧张。警报忽然响起，她打开门，看见一个陌生快递员举着另一份文件。画面切黑。",
+    "outgoing_hook": "快递员是谁，他手里的文件又是什么？"
+  }
+}

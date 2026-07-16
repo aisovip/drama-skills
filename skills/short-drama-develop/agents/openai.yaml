@@ -1,0 +1,4 @@
+interface:
+  display_name: "短剧开发"
+  short_description: "把短剧想法发展为多方案、故事引擎、系列弧线和逐集交接结构"
+  default_prompt: "使用 $short-drama-develop 把我的短剧想法发展成可选择的方向、故事引擎和分集地图。"

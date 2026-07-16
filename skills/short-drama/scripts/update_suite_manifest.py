@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""Refresh the release file inventory and child core-manifest pins."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+
+
+CHILD_REF_KEYS = {
+    "suite",
+    "suite_version",
+    "contract_version",
+    "core_skill",
+    "core_manifest",
+    "recipe_version",
+    "core_manifest_sha256",
+}
+
+
+def main() -> int:
+    core = Path(__file__).resolve().parents[1]
+    skills = core.parent
+    manifest_path = core / "suite-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    public_skills = manifest.get("public_skills")
+    core_skill = manifest.get("core_skill")
+    if (
+        not isinstance(public_skills, list)
+        or not all(isinstance(name, str) for name in public_skills)
+        or not isinstance(core_skill, str)
+        or core_skill not in public_skills
+    ):
+        raise ValueError("manifest public skill inventory is invalid")
+    child_refs = {
+        skills / name / "suite-ref.json"
+        for name in public_skills
+        if name != core_skill
+    }
+    for reference_path in child_refs:
+        reference = json.loads(reference_path.read_text(encoding="utf-8"))
+        if not isinstance(reference, dict) or set(reference) != CHILD_REF_KEYS:
+            raise ValueError(f"child suite-ref keys are invalid: {reference_path.parent.name}")
+        if reference.get("core_skill") != core_skill:
+            raise ValueError(f"child suite-ref core_skill is invalid: {reference_path.parent.name}")
+    unexpected_refs = [
+        path.relative_to(skills).as_posix()
+        for path in skills.rglob("suite-ref.json")
+        if path not in child_refs
+    ]
+    if unexpected_refs:
+        raise ValueError("unexpected suite-ref files: " + ", ".join(sorted(unexpected_refs)))
+    forbidden_suffixes = {".pyc", ".pyo", ".so", ".dylib", ".dll", ".exe"}
+    files = {
+        path.relative_to(skills).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(skills.rglob("*"))
+        if path.is_file()
+        and path != manifest_path
+        and path not in child_refs
+        and "__pycache__" not in path.parts
+        and path.suffix.lower() not in forbidden_suffixes
+    }
+    manifest["files"] = dict(sorted(files.items()))
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    manifest_hash = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    for child in skills.iterdir():
+        reference_path = child / "suite-ref.json"
+        if not reference_path.is_file():
+            continue
+        reference = json.loads(reference_path.read_text(encoding="utf-8"))
+        reference["core_manifest_sha256"] = manifest_hash
+        reference_path.write_text(
+            json.dumps(reference, ensure_ascii=False, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+    print(json.dumps({"files": len(files), "core_manifest_sha256": manifest_hash}))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

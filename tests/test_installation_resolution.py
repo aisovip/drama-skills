@@ -1,0 +1,255 @@
+import json
+import hashlib
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+
+SUITE = Path(__file__).resolve().parents[1]
+
+
+def copy_installed_suite(destination: Path) -> Path:
+    installed = destination / "CODEX HOME 空格" / "skills"
+    shutil.copytree(
+        SUITE / "skills",
+        installed,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    return installed
+
+
+class InstallationResolutionTests(unittest.TestCase):
+    def test_relocated_suite_verifies_from_arbitrary_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            verify = skills / "short-drama/scripts/verify_suite.py"
+            arbitrary_cwd = temp / "unrelated cwd 空格"
+            arbitrary_cwd.mkdir()
+            clean_home = temp / "clean codex home"
+            clean_home.mkdir()
+            env = os.environ.copy()
+            env["CODEX_HOME"] = str(clean_home)
+
+            completed = subprocess.run(
+                [sys.executable, str(verify)],
+                cwd=arbitrary_cwd,
+                env=env,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            result = json.loads(completed.stdout)
+            self.assertEqual(len(result["checked_skills"]), 8)
+
+    def test_child_refs_are_relative_and_resolve_to_the_single_sibling_core(self) -> None:
+        manifest = (SUITE / "skills/short-drama/suite-manifest.json").resolve()
+        manifest_document = json.loads(manifest.read_text(encoding="utf-8"))
+        manifest_hash = hashlib.sha256(manifest.read_bytes()).hexdigest()
+        children = [
+            child
+            for child in (SUITE / "skills").iterdir()
+            if child.is_dir() and child.name != "short-drama"
+        ]
+        self.assertEqual(len(children), 7)
+        for child in children:
+            with self.subTest(skill=child.name):
+                reference = json.loads((child / "suite-ref.json").read_text(encoding="utf-8"))
+                declared = Path(reference["core_manifest"])
+                self.assertFalse(declared.is_absolute())
+                self.assertEqual((child / declared).resolve(), manifest)
+                self.assertEqual(reference["recipe_version"], manifest_document["recipe_version"])
+                self.assertEqual(reference["core_manifest_sha256"], manifest_hash)
+                self.assertNotIn("cwd", json.dumps(reference).casefold())
+
+    def test_cli_initializes_and_discovers_space_path_from_unrelated_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            tool = skills / "short-drama/scripts/project_tool.py"
+            arbitrary_cwd = temp / "caller cwd 空格"
+            arbitrary_cwd.mkdir()
+            project = temp / "创作者 项目"
+            env = os.environ.copy()
+            env["CODEX_HOME"] = str(temp / "empty CODEX_HOME")
+
+            initialized = subprocess.run(
+                [
+                    sys.executable,
+                    str(tool),
+                    "init",
+                    str(project),
+                    "--title",
+                    "失物登记",
+                ],
+                cwd=arbitrary_cwd,
+                env=env,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+            init_result = json.loads(initialized.stdout)
+            self.assertEqual(init_result["project"]["title"], "失物登记")
+            self.assertTrue((project / "short-drama.json").is_file())
+            self.assertTrue((project / ".short-drama/state.json").is_file())
+            self.assertFalse((project / "episodes/EP001/screenplay.md").exists())
+
+            nested = project / "episodes" / "EP001" / "notes"
+            nested.mkdir(parents=True)
+            status = subprocess.run(
+                [sys.executable, str(tool), "status", "."],
+                cwd=nested,
+                env=env,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(status.returncode, 0, status.stderr)
+            self.assertEqual(json.loads(status.stdout)["project_root"], str(project.resolve()))
+
+    def test_mixed_child_version_fails_in_relocated_install(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            child_ref = skills / "short-drama-write/suite-ref.json"
+            reference = json.loads(child_ref.read_text(encoding="utf-8"))
+            reference["contract_version"] = "mixed-version"
+            child_ref.write_text(json.dumps(reference), encoding="utf-8")
+
+            completed = subprocess.run(
+                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                cwd=temp,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("mixed contract_version", completed.stderr)
+
+    def test_child_content_tamper_and_extra_file_fail_manifest_verification(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            child = skills / "short-drama-write/SKILL.md"
+            child.write_text(child.read_text(encoding="utf-8") + "\nchanged\n", encoding="utf-8")
+
+            tampered = subprocess.run(
+                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                cwd=temp,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(tampered.returncode, 2)
+            self.assertIn("content hash mismatch", tampered.stderr)
+
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            (skills / "short-drama-write/EXTRA.md").write_text("extra", encoding="utf-8")
+            extra = subprocess.run(
+                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                cwd=temp,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(extra.returncode, 2)
+            self.assertIn("unexpected suite files", extra.stderr)
+
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            nested = skills / "short-drama-write/references/suite-ref.json"
+            nested.write_text('{"unmanifested":"payload"}\n', encoding="utf-8")
+            extra_pin = subprocess.run(
+                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                cwd=temp,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(extra_pin.returncode, 2)
+            self.assertIn("unexpected suite files", extra_pin.stderr)
+
+    def test_child_pin_rejects_extra_fields_and_wrong_core_skill(self) -> None:
+        for key, value, expected in (
+            ("unmanifested_payload", "payload", "keys are invalid"),
+            ("core_skill", "short-drama-write", "mixed core_skill"),
+        ):
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as directory:
+                temp = Path(directory)
+                skills = copy_installed_suite(temp)
+                child_ref = skills / "short-drama-write/suite-ref.json"
+                reference = json.loads(child_ref.read_text(encoding="utf-8"))
+                reference[key] = value
+                child_ref.write_text(json.dumps(reference), encoding="utf-8")
+
+                completed = subprocess.run(
+                    [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                    cwd=temp,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(completed.returncode, 2)
+                self.assertIn(expected, completed.stderr)
+
+    def test_manifest_updater_rejects_noncanonical_suite_refs(self) -> None:
+        for case in ("nested", "extra_field"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                temp = Path(directory)
+                skills = copy_installed_suite(temp)
+                if case == "nested":
+                    nested = skills / "short-drama-write/references/suite-ref.json"
+                    nested.write_text('{"unmanifested":"payload"}\n', encoding="utf-8")
+                    expected = "unexpected suite-ref files"
+                else:
+                    child_ref = skills / "short-drama-write/suite-ref.json"
+                    reference = json.loads(child_ref.read_text(encoding="utf-8"))
+                    reference["unmanifested_payload"] = "payload"
+                    child_ref.write_text(json.dumps(reference), encoding="utf-8")
+                    expected = "suite-ref keys are invalid"
+
+                completed = subprocess.run(
+                    [
+                        sys.executable,
+                        str(skills / "short-drama/scripts/update_suite_manifest.py"),
+                    ],
+                    cwd=temp,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertNotEqual(completed.returncode, 0)
+                self.assertIn(expected, completed.stderr)
+
+    def test_core_manifest_tamper_fails_without_version_change(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            manifest = skills / "short-drama/suite-manifest.json"
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["trust_boundary"]["media_generation"] = True
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            completed = subprocess.run(
+                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                cwd=temp,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("core manifest hash mismatch", completed.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

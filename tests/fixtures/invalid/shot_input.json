@@ -1,0 +1,12 @@
+{
+  "schema_version": "fixture-v1",
+  "fixture_id": "INVALID-SHOT-001",
+  "fixture_kind": "invalid_craft_input",
+  "provenance": "synthetic",
+  "layer": "shot",
+  "input_artifact": {
+    "shot_id": "SHOT-EP001-008",
+    "boundary": "角色坐在窗边，右手压住信封，目光朝门口。",
+    "keyframe_prompt": "她先抬头看门口，然后站起跑向窗边，最后把信封塞进外套；摄影机同时绕到她身后，天色从傍晚变为深夜。"
+  }
+}

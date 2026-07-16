@@ -1,0 +1,84 @@
+{
+  "episode_id": "EP001",
+  "contract_authority": {
+    "mode": "write_standalone",
+    "source_ref": null
+  },
+  "owned_contract": {
+    "incoming_state": {
+      "knowledge": [
+        "__FILL_OR_REMOVE__"
+      ],
+      "power": [
+        "__FILL_OR_REMOVE__"
+      ],
+      "relationship": [
+        "__FILL_OR_REMOVE__"
+      ],
+      "physical": [
+        "__FILL_OR_REMOVE__"
+      ],
+      "active_action": [
+        "__FILL_OR_REMOVE__"
+      ]
+    },
+    "active_pressure": "__FILL__",
+    "objective": {
+      "character": "__FILL__",
+      "desired_change": "__FILL__",
+      "why_now": "__FILL__"
+    },
+    "opposition": {
+      "actor_or_constraint": "__FILL__",
+      "goal": "__FILL__",
+      "leverage": "__FILL__"
+    },
+    "causal_escalation": [
+      {
+        "because_of": "__FILL__",
+        "choice": "__FILL__",
+        "countermove": "__FILL__",
+        "state_change": "__FILL__",
+        "next_pressure": "__FILL__"
+      }
+    ],
+    "turn": {
+      "trigger": "__FILL__",
+      "old_plan_that_stops_working": "__FILL__",
+      "new_direction": "__FILL__"
+    },
+    "promised_payoff": "__FILL__",
+    "outgoing_pressure": {
+      "decision_danger_or_question_already_in_motion": "__FILL__",
+      "caused_by_this_episode": "__FILL__"
+    },
+    "handoff_state": {
+      "knowledge": [
+        "__FILL_OR_REMOVE__"
+      ],
+      "power": [
+        "__FILL_OR_REMOVE__"
+      ],
+      "relationship": [
+        "__FILL_OR_REMOVE__"
+      ],
+      "physical": [
+        "__FILL_OR_REMOVE__"
+      ],
+      "active_action": [
+        "__FILL_OR_REMOVE__"
+      ]
+    },
+    "setup_refs": [],
+    "payoff_refs": []
+  },
+  "execution_plan": {
+    "viewpoint_and_audience_alignment": "__FILL__",
+    "opening_action_carrier": "__FILL__",
+    "scene_jobs": [],
+    "production_requirements": []
+  },
+  "source_refs": [],
+  "open_questions": [],
+  "creator_status": "draft"
+}
