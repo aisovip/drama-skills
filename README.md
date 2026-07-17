@@ -1,33 +1,84 @@
+**中文** | [English](README_EN.md)
+
 # Drama Skills
 
-中文 | [English](README_EN.md)
+AI 短剧创作 skill 套件，覆盖从故事开发、分集剧本、资产设定、分镜、图片/视频提示词
+到独立审查的完整文本生产链路。适配 Claude Code、Codex 及其他支持 Agent Skills
+的运行时。
 
-基于文件系统的短剧创作 Agent Skill 套件，兼容 Claude Code、Codex 等支持
-Agent Skills 的运行时。它把短剧生产中的可迁移 know-how 沉淀为工作流、参考资料、
-模板、示例和审查量表，覆盖从故事开发到文本交付的完整链路。
+本仓库只生成和管理文本：剧本、资产决策、图片提示词、分镜/关键帧提示词、视频
+提示词和审查证据。**不生成图片、视频或音频，不调用任何媒体生成服务**——它是
+喂给生成管线的"上游大脑"，不是管线本身。
 
-本仓库只生成和管理文本、Markdown、JSON 与 JSONL：剧本、资产决策、图片提示词、
-分镜/关键帧提示词、视频提示词和审查证据。它不生成图片、视频或音频，也不调用媒体
-生成服务。
+## 核心思路
+
+工艺提炼自大规模真实短剧量产语料（上万集分集剧本、十万级分镜、数十万条视频
+生成任务的对照分析），三句话贯穿全链路：
+
+> 1. **剧本是拍摄指令，不是文学**——每行必须回答"摄影机拍什么"；心理走 OS、
+>    设定走字幕/VO、情绪走表演括注。
+> 2. **资产写不变量，分镜写变量**——角色长相/服装在纯白底定妆图里锁死；光影、
+>    构图、情绪逐镜设计。
+> 3. **连续性是显式工程**——上一镜的结束状态逐字写进下一镜的开始状态，从不
+>    默认模型自己记得。
+
+在此之上，套件用**四级规则分级**（结构不变量 / 审查不变量 / 工艺默认 / 品味
+选项）区分"必须机器校验的""需要证据审查的"和"创作者说了算的"，拒绝把字数、
+比例、数量配方设为一刀切的质量门槛。
+
+## 生产链路
+
+```mermaid
+flowchart LR
+    classDef phase fill:#e8f4fd,color:#1a1a2e,stroke:#4a9be8,stroke-width:1px
+    classDef final fill:#fce4ec,color:#333,stroke:#e57373,stroke-width:1px
+
+    dev["故事开发<br/>$short-drama-develop"]:::phase
+    write["分集剧本<br/>$short-drama-write"]:::phase
+    assets["资产决策<br/>$short-drama-assets"]:::phase
+    img["图片提示词<br/>$short-drama-image-prompts"]:::phase
+    sb["分镜/关键帧<br/>$short-drama-storyboard"]:::phase
+    vid["视频提示词<br/>$short-drama-video-prompts"]:::phase
+    rev["独立审查<br/>$short-drama-review"]:::final
+    pkg["文本交付包"]:::final
+
+    dev -.可选.-> write --> assets
+    assets --> img
+    assets --> sb --> vid
+    img --> rev
+    vid --> rev --> pkg
+```
+
+`$short-drama` 是入口路由：初始化、继续、恢复和交付项目，把具体工作转给对应
+skill。现成剧本可直接进入规范化或资产拆解，不必补造开发文件。生成候选、创作者
+接受、独立审查和交付是四种不同权限，不能用一个"已接受"状态代替。
 
 ## Skills
 
 | Skill | 职责 |
 |---|---|
 | `short-drama` | 初始化、路由、状态、异常恢复、接受/审查生命周期与交付 |
-| `short-drama-develop` | 故事承诺、故事引擎、系列弧与分集地图 |
-| `short-drama-write` | 单集契约、因果节拍、可拍剧本与稳定索引 |
+| `short-drama-develop` | 故事承诺、故事引擎、分集地图、导演阐述、题材与钩子手册 |
+| `short-drama-write` | 单集契约、因果节拍、可拍剧本；生产方言（△/▲、OS/VO、系统流语法） |
 | `short-drama-assets` | 人物/造型、地点/视图、道具/状态与连续性决策 |
-| `short-drama-image-prompts` | 资产图片提示词与文字处理策略 |
-| `short-drama-storyboard` | Coverage、镜头、冻结关键帧及空间边界 |
-| `short-drama-video-prompts` | 表演、动作、运镜、声音和起止状态视频提示词 |
-| `short-drama-review` | 结构校验、证据化审查、修订请求与独立 verdict |
+| `short-drama-image-prompts` | 角色三视图、场景方位图、物品白底图与定点修改指令 |
+| `short-drama-storyboard` | 拍→镜翻译、五连接词时序链、运镜决策表、冻结关键帧 |
+| `short-drama-video-prompts` | 状态接续四元组、角色状态追踪、负面约束体系、情绪弧线 |
+| `short-drama-review` | 结构校验、证据化审查、生产质量门与独立 verdict |
 
 ## 安装
 
-八个目录必须保持 sibling 布局。复制或链接到宿主的 Skills 目录：
+**方式一** 直接告诉 Claude Code / Codex 等支持导入 GitHub 仓库的 Agent：
+
+```
+安装这个 skill 套件 https://github.com/worldwonderer/drama-skills
+```
+
+**方式二** 手动链接（八个目录必须保持 sibling 布局）：
 
 ```bash
+git clone https://github.com/worldwonderer/drama-skills.git && cd drama-skills
+
 # Claude Code
 mkdir -p "$HOME/.claude/skills"
 for skill in skills/*; do
@@ -41,56 +92,42 @@ for skill in skills/*; do
 done
 ```
 
-已存在同名 Skill 时，先移除旧链接或选择其他安装位置，不要混装不同版本。安装后从
-`$short-drama` 开始；具体任务也可以直接调用对应 Skill。
+已存在同名 skill 时先移除旧链接，不要混装版本。安装后从 `$short-drama` 开始；
+具体任务也可以直接调用对应 skill。
 
-## 工作流
+## 快速开始
 
-```text
-故事开发（可选） -> 单集剧本 -> 资产决策
-                              |-> 资产图片提示词
-                              |-> coverage -> 镜头 -> 关键帧 -> 视频提示词
-                                                        |
-                                              独立审查 -> 文本交付包
+```
+# 1. 新建项目
+用 $short-drama 初始化一个都市打脸题材的短剧项目，竖屏 9:16
+
+# 2. 写第一集（自动走黄金三拍、对峙公式、集尾钩子等工艺自检）
+用 $short-drama-write 写第 1 集：外卖员在高档餐厅被经理羞辱，亮出集团董事身份
+
+# 3. 拆资产、出分镜、出视频提示词
+用 $short-drama-assets 从第 1 集拆人物/场景/道具
+用 $short-drama-storyboard 给第 1 集做分镜
+用 $short-drama-video-prompts 把分镜翻译成 15s 分镜组提示词
+
+# 4. 独立审查
+用 $short-drama-review 审查第 1 集的剧本与提示词
 ```
 
-图片提示词与 storyboard 在资产接受后可以并行。现成剧本可以直接进入剧本规范化或资产
-拆解，不需要补造故事开发文件。生成候选、创作者接受、独立审查和交付是不同权限，不能
-用一个 `accepted` 状态代替。
+完整成品示例见 [demo/](demo/)：一集剧本 → 资产设定 → 分镜 → 视频提示词的
+全链路产出。
 
-核心确定性命令：
-
-```bash
-python3 skills/short-drama/scripts/project_tool.py init <project> --title <title>
-python3 skills/short-drama/scripts/project_tool.py status <project>
-python3 skills/short-drama/scripts/project_tool.py recover <project>
-python3 skills/short-drama/scripts/project_tool.py publish <project> --owner <skill> --artifact-id <id> --output <target>=<source>
-python3 skills/short-drama/scripts/project_tool.py accept <project> --artifact-id <id> --decision accepted --target <path>=<sha256> --evidence-artifact creator-decisions.jsonl --evidence-hash <sha256> --evidence-record-id <decision-id>
-python3 skills/short-drama/scripts/project_tool.py review <project> --artifact-id <id> --verdict approve --target <path>=<sha256> --verdict-owner short-drama-review --verdict-artifact <verdict.json> --verdict-hash <sha256>
-python3 skills/short-drama/scripts/project_tool.py package <project> --episode EP001 --include <approved-path>
-```
-
-`publish` 使用可恢复的写前日志和快照。中断后先运行 `recover`；遇到外部编辑冲突时会
-保留原字节并阻断，不会静默覆盖。接受会冻结 candidate 的 exact input hashes；上游发布新
-candidate 时，同一 WAL 事务会把直接和传递下游标为 stale。`review` 与 `package` 还会递归
-复验这些 inputs，所以上游被外部编辑或依赖 owner 不唯一时也不能交付旧投影。多文件
-artifact 重发时，从 target set 移除的旧路径也会使依赖它的下游 stale；旧文件原字节保留，
-但新接受后不再拥有 accepted authority，不能直接交付。JSON/JSONL candidate 中每个 canonical
-ArtifactRef 必须对应同次 output 的 candidate hash，或出现在 exact `--input` map 中；遗漏或
-hash 不一致会在写 WAL 前拒绝。Markdown 的非结构化依赖仍由 owner 显式列为 `--input`。
-
-## 验证
+## 验证与开发
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests -v
 ruff check --no-cache .
-cache_dir="$(mktemp -d)"
-PYTHONPYCACHEPREFIX="$cache_dir" python3 -m compileall -q skills tests
-rm -rf "$cache_dir"
 python3 skills/short-drama/scripts/verify_suite.py
 ```
 
-每个 Skill 还应通过 `skill-creator` 提供的 `quick_validate.py`（如宿主提供）。套件清单由
-`skills/short-drama/scripts/update_suite_manifest.py` 在发布前统一重建。只有七个 public child
-Skill 根目录的 `suite-ref.json` 作为经过严格字段校验的循环外 manifest pin；其他同名文件和
-pin 的额外字段都会使验证失败。
+改动 `skills/` 下任何文件后重建套件清单：
+`python3 skills/short-drama/scripts/update_suite_manifest.py`。
+贡献约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## License
+
+MIT — 见 [LICENSE](LICENSE)。

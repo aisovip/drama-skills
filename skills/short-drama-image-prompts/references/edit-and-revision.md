@@ -48,7 +48,7 @@ Continuity impact：预期对应哪个 accepted State/binding，有效到哪里�
 
 ### Continuity impact
 
-引用 PState/Look/View 或提出 owner revision；记录受影响的 prompt/shot/keyframe，而非在 edit 中成为新的连续性权威。若没有影响，也明确 `none` 及理由。
+引用 道具状态/Look/View 或提出 owner revision；记录受影响的 prompt/shot/keyframe，而非在 edit 中成为新的连续性权威。若没有影响，也明确 `none` 及理由。
 
 - **`structural_invariant`**：target/hash/region、changes、preserve 和 impact 必须存在且没有显式冲突。
 - **`reviewed_invariant`**：修改范围是否足够清楚、preserve 是否保护真正身份/地理，需要 reviewer 引用证据判断。
@@ -108,7 +108,7 @@ Continuity impact：预期对应哪个 accepted State/binding，有效到哪里�
 
 - 直接改 accepted JSONL 或只改 Markdown；
 - diff 只写“优化措辞”，没有字段和语义影响；
-- 把身份、Location 地理、PState 在 prompt 层擅自改掉；
+- 把身份、Location 地理、道具状态 在 prompt 层擅自改掉；
 - edit 只有 Change 没有 Preserve；
 - unmapped 手改被自动丢弃；拒绝后文件仍改变。
 

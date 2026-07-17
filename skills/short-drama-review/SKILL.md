@@ -22,7 +22,9 @@ description: 独立校验与审查文件系统短剧项目中的故事、剧本�
 - `delivery_privacy`
 
 只读对应 rubric。Full review 先读
-[review-method.md](references/review-method.md)，再读三个 rubric；不预载所有 craft manual。
+[review-method.md](references/review-method.md)，再读三个 rubric；生产端高频缺陷
+与各环节判据见 [production-quality-gates.md](references/production-quality-gates.md)。
+不预载所有 craft manual。
 证据来自项目 artifact 和 accepted constraints，而非 owner 的自我解释。
 只有 finding 涉及“模板感/重复机制/AI味”时读
 [anti-template-repair.md](references/anti-template-repair.md)，用其诊断、修订示范与误报反例。

@@ -24,11 +24,12 @@ description: 为已确认的短剧角色、造型、场景、视图、道具和�
 |---|---|
 | 新建任意资产提示词 | [通用配方与视觉锚点](references/common-recipe.md) |
 | 人物设定图 | 加读 [人物与造型](references/character-and-look.md) |
-| Look、View 或 PState 变体 | 加读 [造型与状态变体](references/look-and-state-variant.md) |
+| Look、View 或 道具状态 变体 | 加读 [造型与状态变体](references/look-and-state-variant.md) |
 | 场景空镜或 View | 加读 [场景与地理](references/location-plate.md) |
-| 道具或 PState | 加读 [道具、尺度与文字](references/prop-plate.md) |
+| 道具或 道具状态 | 加读 [道具、尺度与文字](references/prop-plate.md) |
 | 局部修改或自然语言改 prompt | 加读 [编辑与修订](references/edit-and-revision.md) |
 | 自检、复核、失败诊断 | [审查量表与合成案例](references/review-and-fixtures.md) |
+| 生产端三视图/场景方位/物品版式配方 | [生产资产图配方](references/production-sheet-recipes.md) |
 
 写规格时使用 [结构化规格模板](templates/image-prompt-spec.jsonl.md)，交付文本使用 [Markdown 模板](templates/image-prompts.md)。只加载当前类型所需资料。
 
@@ -90,7 +91,7 @@ description: 为已确认的短剧角色、造型、场景、视图、道具和�
 3. 等待接受或拒绝；拒绝时原规格与 Markdown 不变；
 4. 接受后先提交规格，再从规格重渲染 Markdown。
 
-若 Markdown 被手改：`restore` 先预览恢复；`adopt` 只把可无损映射的改动变成规格提案。无法映射的文句阻断 adopt，绝不让缓存反向静默夺权。详见 [编辑与修订](references/edit-and-revision.md)。
+若 Markdown 被手改：`restore` 先预览恢复；`adopt` 只把可无损映射的改动变成规格提案。无法映射的文句阻断 adopt，绝不让缓存反向悄悄取得权威。详见 [编辑与修订](references/edit-and-revision.md)。
 
 ## 完成标准
 

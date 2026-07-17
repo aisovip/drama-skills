@@ -33,7 +33,7 @@ description: 将中文短剧想法、梗概、改编材料或已有系列笔记�
 
 方向未定时，提出少量**机制不同**的候选：改变主角策略、对抗来源、代价或持续冲突方式，而不只是换标题、职业和措辞。方向明确时直接深化，不为凑选项制造伪差异。
 
-每个候选都说明：戏剧承诺、主角追求、对抗机制、反复回报、可升级的状态、长线终止条件、主要制作负担。让创作者选择或组合，并记录取舍理由；未选方案不是正史。
+每个候选都说明：戏剧承诺、主角追求、对抗机制、反复回报、可升级的状态、长线终止条件、主要制作负担。让创作者选择或组合，并记录取舍理由；未选方案不进入既定事实。
 
 需要完整方法时读取 [story-craft.md](references/story-craft.md)。
 
@@ -96,4 +96,6 @@ description: 将中文短剧想法、梗概、改编材料或已有系列笔记�
   [reveal-reversal-payoff.md](references/reveal-reversal-payoff.md)
 - **选题材方向、设计冷开场或规划集尾钩子类型时的生产经验分布**：
   [genre-and-hook-playbook.md](references/genre-and-hook-playbook.md)
+- **起草项目级视觉方向与生产规则（导演阐述）**：
+  [director-brief-craft.md](references/director-brief-craft.md)
 - **跨技能事实所有权或修订影响不清楚时**：[contract-and-ownership.md](../short-drama/references/contract-and-ownership.md)
