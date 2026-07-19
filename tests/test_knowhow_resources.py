@@ -45,12 +45,12 @@ LAYER_RESOURCES = {
     },
     "asset": {
         "skill": "short-drama-assets",
-        "template_dir": "templates",
+        "template_dir": "assets",
         "rubric": "rubric-assets-prompts.md",
     },
     "image_prompt": {
         "skill": "short-drama-image-prompts",
-        "template_dir": "templates",
+        "template_dir": "assets",
         "rubric": "rubric-assets-prompts.md",
     },
     "shot": {
@@ -60,12 +60,12 @@ LAYER_RESOURCES = {
     },
     "video_prompt": {
         "skill": "short-drama-video-prompts",
-        "template_dir": "templates",
+        "template_dir": "assets",
         "rubric": "rubric-visual-motion.md",
     },
     "continuity": {
         "skill": "short-drama-assets",
-        "template_dir": "templates",
+        "template_dir": "assets",
         "template_name": "continuity.example.jsonl",
         "rubric": "rubric-assets-prompts.md",
     },
@@ -215,7 +215,7 @@ class GovernanceSemanticsTests(unittest.TestCase):
     def test_proposed_asset_decisions_never_publish_accepted_bindings(self) -> None:
         import json
 
-        fixture = SKILLS / "short-drama-assets/templates/decisions.example.jsonl"
+        fixture = SKILLS / "short-drama-assets/assets/decisions.example.jsonl"
         for line_number, line in enumerate(fixture.read_text(encoding="utf-8").splitlines(), 1):
             document = json.loads(line)
             status = document.get("creator_acceptance", {}).get("status")

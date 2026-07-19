@@ -30,9 +30,9 @@ description: 为已接受的短剧镜头和关键帧编写或修改可复制的�
 | 自检、独立复核、正反案例 | [审查量表与合成案例](references/review-and-fixtures.md) |
 | 生产端 prompt 语法、台词绑定、负面清单 | [生产提示词语法惯例](references/production-prompt-grammar.md) |
 
-规格使用 [motion spec 模板](templates/motion-spec.jsonl.md)；末镜或下一集记录尚未建立时参考
-[terminal motion locator 示例](templates/motion-terminal.example.jsonl)；可复制交付使用
-[Markdown 模板](templates/video-prompts.md)。只加载本次问题需要的资料。
+规格使用 [motion spec 模板](assets/motion-spec.jsonl.md)；末镜或下一集记录尚未建立时参考
+[terminal motion locator 示例](assets/motion-terminal.example.jsonl)；可复制交付使用
+[Markdown 模板](assets/video-prompts.md)。只加载本次问题需要的资料。
 
 ## 工作流
 

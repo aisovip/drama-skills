@@ -221,8 +221,8 @@ class SuiteAnatomyTests(unittest.TestCase):
                 check(document, path)
 
         fenced_templates = [
-            SUITE / "skills/short-drama-image-prompts/templates/image-prompt-spec.jsonl.md",
-            SUITE / "skills/short-drama-video-prompts/templates/motion-spec.jsonl.md",
+            SUITE / "skills/short-drama-image-prompts/assets/image-prompt-spec.jsonl.md",
+            SUITE / "skills/short-drama-video-prompts/assets/motion-spec.jsonl.md",
         ]
         for path in fenced_templates:
             match = re.search(r"```json\n(\{.*?\})\n```", path.read_text(encoding="utf-8"), re.S)
@@ -230,7 +230,7 @@ class SuiteAnatomyTests(unittest.TestCase):
             check(json.loads(match.group(1)), path)
 
     def test_asset_template_reference_graph_has_no_self_ref_or_hash_cycle(self) -> None:
-        templates = SUITE / "skills/short-drama-assets/templates"
+        templates = SUITE / "skills/short-drama-assets/assets"
         edges: set[tuple[str, str]] = set()
         for path in templates.glob("*.jsonl"):
             for line in path.read_text(encoding="utf-8").splitlines():
@@ -287,8 +287,8 @@ class SuiteAnatomyTests(unittest.TestCase):
             path = SUITE / relative
             templates.append((path, json.loads(path.read_text(encoding="utf-8"))))
         for relative in (
-            "skills/short-drama-image-prompts/templates/image-prompt-spec.jsonl.md",
-            "skills/short-drama-video-prompts/templates/motion-spec.jsonl.md",
+            "skills/short-drama-image-prompts/assets/image-prompt-spec.jsonl.md",
+            "skills/short-drama-video-prompts/assets/motion-spec.jsonl.md",
         ):
             path = SUITE / relative
             match = re.search(r"```json\n(\{.*?\})\n```", path.read_text(encoding="utf-8"), re.S)
@@ -350,7 +350,7 @@ class SuiteAnatomyTests(unittest.TestCase):
             .strip()
         )
         view = json.loads(
-            (SUITE / "skills/short-drama-assets/templates/location-view.example.jsonl")
+            (SUITE / "skills/short-drama-assets/assets/location-view.example.jsonl")
             .read_text(encoding="utf-8")
             .splitlines()[1]
         )
@@ -361,14 +361,14 @@ class SuiteAnatomyTests(unittest.TestCase):
 
         image_template = (
             SUITE
-            / "skills/short-drama-image-prompts/templates/image-prompt-spec.jsonl.md"
+            / "skills/short-drama-image-prompts/assets/image-prompt-spec.jsonl.md"
         ).read_text(encoding="utf-8")
         match = re.search(r"```json\n(\{.*?\})\n```", image_template, re.S)
         self.assertIsNotNone(match)
         image_spec = json.loads(match.group(1))
         policy_ref = image_spec["text_handling"]["source_policy_ref"]
         prop = json.loads(
-            (SUITE / "skills/short-drama-assets/templates/prop-state.example.jsonl")
+            (SUITE / "skills/short-drama-assets/assets/prop-state.example.jsonl")
             .read_text(encoding="utf-8")
             .splitlines()[0]
         )

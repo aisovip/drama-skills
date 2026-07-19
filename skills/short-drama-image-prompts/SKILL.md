@@ -31,7 +31,7 @@ description: 为已确认的短剧角色、造型、场景、视图、道具和�
 | 自检、复核、失败诊断 | [审查量表与合成案例](references/review-and-fixtures.md) |
 | 生产端三视图/场景方位/物品版式配方 | [生产资产图配方](references/production-sheet-recipes.md) |
 
-写规格时使用 [结构化规格模板](templates/image-prompt-spec.jsonl.md)，交付文本使用 [Markdown 模板](templates/image-prompts.md)。只加载当前类型所需资料。
+写规格时使用 [结构化规格模板](assets/image-prompt-spec.jsonl.md)，交付文本使用 [Markdown 模板](assets/image-prompts.md)。只加载当前类型所需资料。
 
 ## 工作流
 

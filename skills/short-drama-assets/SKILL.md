@@ -55,7 +55,7 @@ description: "从短剧剧本拆解并统筹角色/造型、场景/视图、道�
   occurrence 的 exact snapshot。
 
 方法与反例见 `references/occurrence-extraction.md`，记录形状见
-`templates/occurrences.example.jsonl`。
+`assets/occurrences.example.jsonl`。
 
 ### 3. 再做身份判断
 
@@ -69,18 +69,18 @@ description: "从短剧剧本拆解并统筹角色/造型、场景/视图、道�
 先问“同一个东西什么没变”，再问“这次什么变了、为何变、何时有效”。服装、伤势、
 湿污、灯光、道具开合通常不是新身份；相机角度和瞬时姿势通常连新变体都不是。
 不要为了少建记录而合并真正不同的资产。详见
-`references/identity-vs-variant.md` 与 `templates/decisions.example.jsonl`。
+`references/identity-vs-variant.md` 与 `assets/decisions.example.jsonl`。
 
 ### 4. 写最小可识别 bible
 
 按类别沉淀，身份锚点与临时状态绝不混写：
 
 - Character / Look：`references/character-and-look.md`；例见
-  `templates/character-look.example.jsonl`
+  `assets/character-look.example.jsonl`
 - Location / View：`references/location-and-view.md`；例见
-  `templates/location-view.example.jsonl`
+  `assets/location-view.example.jsonl`
 - Prop / State：`references/prop-and-state.md`；例见
-  `templates/prop-state.example.jsonl`
+  `assets/prop-state.example.jsonl`
 
 每个新变体记录 base、变化、原因与有效范围。只写能帮助再次认出、复用、提示词
 编写或连续性检查的事实；不堆砌“高级、精致、电影感”等泛化修饰。
@@ -93,7 +93,7 @@ description: "从短剧剧本拆解并统筹角色/造型、场景/视图、道�
 field pointer 及必要投影；修订仍路由到 develop/write owner。
 镜头内部姿势、视线、左右手和站位由 storyboard 边界拥有；资产记录只引用，不抢写。
 
-详见 `references/continuity-delta.md` 与 `templates/continuity.example.jsonl`。
+详见 `references/continuity-delta.md` 与 `assets/continuity.example.jsonl`。
 
 ### 6. 给创作者看“决定”，而非只给清单
 
