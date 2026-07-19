@@ -7,34 +7,29 @@ story development, episode scripts, asset sheets, storyboards, image/video
 prompts, and independent review. Works with Claude Code, Codex, and any other
 runtime that supports Agent Skills.
 
-This repository only produces and manages text: screenplays, asset decisions,
-image prompts, storyboard/keyframe prompts, video prompts, and review evidence.
-**It generates no images, video, or audio and calls no media-generation
-services** — it is the upstream brain that feeds a generation pipeline, not the
-pipeline itself.
+This repository only produces text: screenplays, asset decisions, image prompts,
+storyboard/keyframe prompts, video prompts, and review records. It sits at the
+very top of the generation pipeline; it **generates no images, video, or audio
+and calls no media-generation services**.
 
 ## Core ideas
 
-The craft comes from qualitative reading of complete short-drama production
-chains: tracing how a story decision becomes screenplay, asset, storyboard,
-keyframe, and motion-prompt work, and why a revision creates downstream rework.
-The suite does not treat corpus size, frequency, or market statistics as a
-creative answer. Three principles run through the chain:
+Three principles run through the whole chain:
 
-> 1. **A script is a shooting instruction, not literature** — every line must
->    answer "what does the camera shoot"; psychology goes to OS, worldbuilding
->    to captions/VO, emotion to performance cues.
-> 2. **Assets fix the invariants, storyboards design the variables** — a
+> 1. **A script is a shooting instruction.** Every line must answer "what does
+>    the camera shoot": psychology goes to OS, worldbuilding to captions/VO,
+>    emotion to performance cues.
+> 2. **Assets fix the invariants, storyboards design the variables.** A
 >    character's face and wardrobe are locked in a pure-white-background model
 >    sheet; light, composition, and emotion are designed shot by shot.
-> 3. **Continuity is explicit engineering** — the previous shot's end state is
->    written verbatim into the next shot's start state; never assume the model
->    remembers.
+> 3. **Continuity is explicit engineering.** The previous shot's end state is
+>    written verbatim into the next shot's start state; don't count on the model
+>    to remember.
 
-On top of that, a **four-tier rule system** (structural invariant / reviewed
-invariant / craft default / taste option) separates what machines must verify,
-what reviewers must evidence, and what remains the creator's call — refusing
-one-size-fits-all word counts and formula gates.
+Above those three sits a **four-tier rule system** (structural invariant /
+reviewed invariant / craft default / taste option) that splits requirements into
+what machines must verify, what reviewers must back with evidence, and what stays
+the creator's call.
 
 ## Production chain
 
@@ -62,8 +57,6 @@ flowchart LR
 `$short-drama` is the entry router: it initializes, resumes, recovers, and
 delivers projects, dispatching the actual work to the matching skill. An
 existing screenplay can enter normalization or asset extraction directly.
-Candidate generation, creator acceptance, independent review, and delivery are
-four distinct authorities; one "accepted" flag cannot impersonate them all.
 
 ## Skills
 
@@ -146,11 +139,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
-## Method References
-
-The screenwriting layer also consulted the public
-[Shanyin Screenwriting Master](https://github.com/Shanyin-ai/shanyin-screenwriting-master)
-for character drive, entry-window, scene-action, and serial-memory concepts. This
-suite re-derives those ideas through its own ownership and production contracts;
-it does not copy upstream example stories or prose templates.
