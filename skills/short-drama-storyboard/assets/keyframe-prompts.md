@@ -1,21 +1,23 @@
 # `keyframe-prompts.md` 可复制输出模板
 
-这是 accepted `keyframes.jsonl` 的缓存视图，不是 shot boundary 或资产 authority。
-每次渲染都保存输入 hashes、配方版本和 rendered hash；缓存被手改时走 restore/adopt/merge。
+这是由已接受的 `keyframes.jsonl` 生成的文本，不是镜头边界或资产事实来源。
+每次导出都保存输入 `hash`、配方版本和当前文本 `hash`；文本被手改时，先预览恢复、
+采用或合并的结果。
 
 ```markdown
 # EP<编号> · 冻结关键帧提示词
 
-> 来源：`keyframes.jsonl` accepted snapshot `<hash>`
-> 配方：`keyframe-generic@<version>` · rendered `<hash>`
+> 来源：`keyframes.jsonl` 已接受快照 `<hash>`
+> 配方：`keyframe-generic@<version>` · 当前文本 `<hash>`
 > 范围：单一静止瞬间；不生成图片，不写时间动作
 
 ## `SHOT-<id>` · `KEY-<id>`
 
 - **镜头目的**：<观众此刻必须看见什么>
+- **观众可见性**：逐项列出 `<来源 · 展示或暂缓 · 声画载体 · 揭示条件 · 保护方法>`
 - **边界来源**：`SHOT-<id>/start_boundary` @ `<hash>`
-- **资产绑定**：`<exact Character/Look · Location/View · Prop/State>`
-- **文字处理**：`<accepted source policy -> frame treatment>`
+- **资产绑定**：`<准确人物与造型 · 地点与观察视角 · 道具与状态>`
+- **文字处理**：`<已接受的来源文字政策 -> 本帧呈现方法>`
 
 ### 可复制通用提示词
 
@@ -26,5 +28,5 @@
 ---
 ```
 
-若一句话必须靠“先/再/随后/最终”才能成立，把它移交 motion；若要改变 start boundary，
-先向 storyboard owner 提 revision，不在缓存提示词中偷偷改。
+若一句话必须靠“先、再、随后、最终”才能成立，就交给运动提示词环节；若要改变镜头
+开始边界，先向分镜负责人提出修订请求，不要在派生文本中偷偷改。

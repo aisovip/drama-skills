@@ -10,6 +10,8 @@ from pathlib import Path
 
 
 SUITE = Path(__file__).resolve().parents[1]
+VERIFY_TOOL = SUITE / "tools/verify_suite.py"
+UPDATE_TOOL = SUITE / "tools/update_suite_manifest.py"
 
 
 def copy_installed_suite(destination: Path) -> Path:
@@ -27,7 +29,7 @@ class InstallationResolutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             temp = Path(directory)
             skills = copy_installed_suite(temp)
-            verify = skills / "short-drama/scripts/verify_suite.py"
+            verify = VERIFY_TOOL
             arbitrary_cwd = temp / "unrelated cwd 空格"
             arbitrary_cwd.mkdir()
             clean_home = temp / "clean codex home"
@@ -36,7 +38,7 @@ class InstallationResolutionTests(unittest.TestCase):
             env["CODEX_HOME"] = str(clean_home)
 
             completed = subprocess.run(
-                [sys.executable, str(verify)],
+                [sys.executable, str(verify), str(skills / "short-drama")],
                 cwd=arbitrary_cwd,
                 env=env,
                 check=False,
@@ -124,7 +126,7 @@ class InstallationResolutionTests(unittest.TestCase):
             child_ref.write_text(json.dumps(reference), encoding="utf-8")
 
             completed = subprocess.run(
-                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                [sys.executable, str(VERIFY_TOOL), str(skills / "short-drama")],
                 cwd=temp,
                 check=False,
                 capture_output=True,
@@ -141,7 +143,7 @@ class InstallationResolutionTests(unittest.TestCase):
             child.write_text(child.read_text(encoding="utf-8") + "\nchanged\n", encoding="utf-8")
 
             tampered = subprocess.run(
-                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                [sys.executable, str(VERIFY_TOOL), str(skills / "short-drama")],
                 cwd=temp,
                 check=False,
                 capture_output=True,
@@ -155,7 +157,7 @@ class InstallationResolutionTests(unittest.TestCase):
             skills = copy_installed_suite(temp)
             (skills / "short-drama-write/EXTRA.md").write_text("extra", encoding="utf-8")
             extra = subprocess.run(
-                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                [sys.executable, str(VERIFY_TOOL), str(skills / "short-drama")],
                 cwd=temp,
                 check=False,
                 capture_output=True,
@@ -170,7 +172,7 @@ class InstallationResolutionTests(unittest.TestCase):
             nested = skills / "short-drama-write/references/suite-ref.json"
             nested.write_text('{"unmanifested":"payload"}\n', encoding="utf-8")
             extra_pin = subprocess.run(
-                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                [sys.executable, str(VERIFY_TOOL), str(skills / "short-drama")],
                 cwd=temp,
                 check=False,
                 capture_output=True,
@@ -193,7 +195,7 @@ class InstallationResolutionTests(unittest.TestCase):
                 child_ref.write_text(json.dumps(reference), encoding="utf-8")
 
                 completed = subprocess.run(
-                    [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                    [sys.executable, str(VERIFY_TOOL), str(skills / "short-drama")],
                     cwd=temp,
                     check=False,
                     capture_output=True,
@@ -221,7 +223,8 @@ class InstallationResolutionTests(unittest.TestCase):
                 completed = subprocess.run(
                     [
                         sys.executable,
-                        str(skills / "short-drama/scripts/update_suite_manifest.py"),
+                        str(UPDATE_TOOL),
+                        str(skills / "short-drama"),
                     ],
                     cwd=temp,
                     check=False,
@@ -241,7 +244,7 @@ class InstallationResolutionTests(unittest.TestCase):
             manifest.write_text(json.dumps(document), encoding="utf-8")
 
             completed = subprocess.run(
-                [sys.executable, str(skills / "short-drama/scripts/verify_suite.py")],
+                [sys.executable, str(VERIFY_TOOL), str(skills / "short-drama")],
                 cwd=temp,
                 check=False,
                 capture_output=True,

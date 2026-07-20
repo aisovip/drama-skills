@@ -1,6 +1,8 @@
 {
   "review_id": "REVIEW-EXAMPLE",
-  "scope": ["story_script"],
+  "scope": [
+    "story_script"
+  ],
   "reviewed_artifacts": [
     {
       "owner": "short-drama-write",
@@ -17,12 +19,15 @@
     "owner": "short-drama-review",
     "kind": "independent_agent",
     "independent": true,
-    "excluded_owner_skills": ["short-drama-write"]
+    "excluded_owner_skills": [
+      "short-drama-write"
+    ]
   },
   "structural_validation": "pass",
   "verdict": "APPROVE",
   "blocking_findings": [],
   "open_blocker_count": 0,
   "notes": [],
-  "required_reviewer_independence": true
+  "required_reviewer_independence": true,
+  "supersession_decisions": []
 }

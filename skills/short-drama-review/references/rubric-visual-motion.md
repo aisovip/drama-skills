@@ -1,5 +1,15 @@
 # Storyboard, Keyframe, And Motion Rubric
 
+## 目录
+
+- [Coverage](#coverage-and-meaning)
+- [Shot](#shot-purpose-and-geography)
+- [Keyframe](#frozen-keyframe)
+- [Motion](#motion)
+- [Continuity](#cross-shot-continuity)
+- [Findings](#common-findings)
+- [Observed defects](#production-observed-defect-checklist-rev-08)
+
 ## Coverage and meaning
 
 - Does every production-relevant block have a disposition?
@@ -16,6 +26,10 @@
 - Are Location/View, axis, screen direction, eyelines, entrances, positions,
   hands, and props coherent?
 - Are exact asset variants bound?
+- Does `audience_visibility` expose every fact this shot must carry while protecting
+  facts the source withholds until a later action or cut?
+- Do crop, occlusion, focus, back view, and offscreen space serve that information
+  permission rather than accidentally reveal or conceal it?
 
 ## Frozen keyframe
 
@@ -37,12 +51,20 @@
   write into the next shot?
 - When a reference frame carries appearance/composition, does motion prose avoid
   dumping the full visual bible?
-- Before generation, does every text-bearing reference agree with the accepted
-  text policy? For no-text work, was it necessary to crop, clean, mask, or replace
-  the reference instead of assuming a negative prompt would erase its pixels?
+- Does every claim about text-bearing reference pixels cite a creator/reference-owner
+  description or an authorized input-reference observation? Without that evidence,
+  is admission still `unverified` instead of pretending a negative prompt solved it?
 - For any selective transform, are the accepted trigger, exact target scope,
   end geometry/state, and preserve set explicit? Do non-target people, props,
   text surfaces, and spatial anchors keep their required position, count, and state?
+- Does each media reference state its exact purpose, what may be copied, and what
+  must not be copied, rather than treating all visible pixels as authority?
+- For a pickup or alternate, does `coverage_scope` bind each exact source obligation,
+  map it to a current motion field or explicit disposition, and identify the exact
+  master/supplement record IDs? A motion may request supersession, but only a
+  downstream verdict may bind fixed alternate/master hashes and decide it. Use
+  the [supersession decision example](../assets/supersession-decision.example.json)
+  when that decision is needed.
 
 Explicit timing sums over duration are structural errors. Untimed overload is a
 reviewed feasibility question: cite which action/performance/story beat would be
@@ -69,6 +91,8 @@ ellipsis, dream, or deliberate disorientation.
 - end pose/prop state disagrees with next start;
 - every emotional beat uses the same close-up/push template;
 - provider batching is mistaken for editorial shot structure.
+- a narrowed pickup silently replaces the master and drops dialogue, reaction,
+  reveal, end-boundary, or accepted-directive obligations.
 
 ## Production-observed defect checklist (REV-08)
 

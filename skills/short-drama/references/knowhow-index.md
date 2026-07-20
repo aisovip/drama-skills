@@ -4,6 +4,17 @@ This index assigns stable IDs to the transferable production knowledge shipped b
 the suite. Stage references explain the method, examples, exceptions, and review
 questions. The index is navigation, not a formula sheet.
 
+## Contents
+
+- [Story (`STY`)](#story-sty)
+- [Script (`SCR`)](#script-scr)
+- [Assets (`AST`)](#assets-ast)
+- [Asset image prompts (`IMG`)](#asset-image-prompts-img)
+- [Shots and keyframes (`SHT`)](#shots-and-keyframes-sht)
+- [Video prompts (`VID`)](#video-prompts-vid)
+- [Continuity (`CON`)](#continuity-con)
+- [Review (`REV`)](#review-rev)
+
 ## Story (`STY`)
 
 | ID | Class | Knowledge |
@@ -59,7 +70,8 @@ questions. The index is navigation, not a formula sheet.
 | IMG-05 | reviewed_invariant | Prop plates preserve scale, shape, material, wear, function, and text policy. |
 | IMG-06 | structural_invariant | Edit prompts declare exact target, changes, preserve set, and expected continuity impact. |
 | IMG-07 | structural_invariant | Readable text cannot coexist with a global no-text constraint. |
-| IMG-08 | reviewed_invariant | Admit a reference image only after its visible text, glyphs, signage, UI, watermark, and subtitle residue agree with the shot text policy; a negative no-text prompt cannot erase text already carried by a reference. |
+| IMG-08 | reviewed_invariant | A claim about reference pixels requires a creator/reference-owner description or authorized input-reference observation bound to the inspected bytes; otherwise admission stays unresolved, and a negative prompt cannot stand in for evidence. |
+| IMG-09 | reviewed_invariant | Each reference states its purpose, what may be copied, and what must not be copied; a composition-, scale-, or effect-only reference cannot redefine identity, content, text, or story state. |
 
 ## Shots and keyframes (`SHT`)
 
@@ -76,6 +88,7 @@ questions. The index is navigation, not a formula sheet.
 | SHT-09 | reviewed_invariant | Exact Location/View orientation and visible anchors match the camera side used by the shot. |
 | SHT-10 | reviewed_invariant | Rendered keyframe prose contains only start-boundary facts, not state first created by the shot motion/end. |
 | SHT-11 | craft_default | When information changes another person's power, relationship, knowledge, or choice, preserve that reception visibly; shot count, framing, and duration follow the consequence and project profile. |
+| SHT-12 | reviewed_invariant | Each audience-visibility fact binds its exact source, carrier, permission, trigger, and protection method; framing neither reveals that fact early nor hides the carrier this shot must communicate. |
 
 ## Video prompts (`VID`)
 
@@ -92,6 +105,7 @@ questions. The index is navigation, not a formula sheet.
 | VID-09 | structural_invariant | Next-start is an existing canonical ref or an explicit provisional locator, never an invented record/hash. |
 | VID-10 | craft_default | Keep one production profile per volume and resolve its text/audio/negative constraints without overriding source coverage or exact-readable obligations. |
 | VID-11 | reviewed_invariant | A selective transform names its trigger, exact target scope, end geometry/state, and preserve set so non-target people, props, text surfaces, and spatial anchors do not change with it. |
+| VID-12 | reviewed_invariant | A pickup/alternate names stable master/supplement motion IDs and maps each source requirement to a field or disposition; motion may request replacement, but only a downstream independent verdict can bind fixed hashes and approve it. |
 
 ## Continuity (`CON`)
 

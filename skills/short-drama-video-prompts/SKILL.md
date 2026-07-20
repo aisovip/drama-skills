@@ -1,97 +1,116 @@
 ---
 name: short-drama-video-prompts
-description: 为已接受的短剧镜头和关键帧编写或修改可复制的通用视频提示词与 motion spec。用户提到视频 prompt、图生视频动作、人物表演过程、运镜、对白口型、环境运动、镜头时长、起止状态或把分镜转成视频提示词时直接使用；只描述单个已编镜头内的运动、表演、摄影与声音，不生成视频、不调用模型或供应商 API，也不改写分镜边界。
+description: 为已接受的短剧镜头和关键帧编写或修改可复制的通用视频提示词与运动规格。用户提到视频提示词、图生视频动作、人物表演过程、运镜、对白口型、环境运动、镜头时长、起止状态或把分镜转成视频提示词时直接使用；只描述单个已编镜头内的运动、表演、摄影与声音，不生成视频，不调用模型或供应商接口，也不改写分镜边界。
 ---
 
 # 短剧视频提示词
 
-把 storyboard 已经决定的一个镜头，翻译成时间中可执行的动作、表演、摄影和声音。Motion 实现边界，不拥有边界。
+把分镜已经决定的一个镜头，写成按时间执行的动作、表演、摄影和声音。运动说明只实现起止边界，不能改写边界。
 
 ## 进入条件与权属
 
-- 可从已接受 shots/keyframes 直接进入，无需重新开发故事；先定位项目和唯一匹配的 sibling core。
-- 读取 core 的 `references/contract-and-ownership.md` 与 `references/knowhow-index.md` 中 `VID-*`、`SHT-*`、`CON-*`。
-- 输入至少包含 accepted shot、start keyframe/boundary、duration、continuity out 与 dialogue/audio refs；未接受或 stale 时退回 `$short-drama-storyboard`。
-- 若 creator 明确要求全链 preview，可对 provisional 但非 unresolved 的 shot/keyframe
-  写 candidate motion；保留 `authority:candidate`，禁止声称 accepted、approved 或
-  delivery-ready。
-- shot 的 start/end、duration、dialogue、asset bindings、next-shot state 全部只读。Motion 只拥有 ordered motion、performance path、camera/audio realization 与派生 end report。
-- 视觉/声音口型等 taste 读取 `short-drama.json#/creator_authority/{visual_direction,production_profile}`；
-  direct-entry 项目为 `unset` 时保留选择，不把某一默认 profile 写成已接受事实。
-- 输出永远 generic-first。不得生成视频/音频、上传参考帧、创建远程执行任务、调用模型/API、轮询状态或宣称成片质量。
+- 可从已接受的镜头或关键帧直接进入，无需重新开发故事；先定位项目和版本一致的主技能。
+- 所有权、下游文件何时变为 `stale` 或项目状态不清时，才读取主技能的
+  [所有权契约](../short-drama/references/contract-and-ownership.md)；需要定位规则 ID
+  或解释审查问题时，才读取 [规则索引](../short-drama/references/knowhow-index.md)
+  中相关 `VID-*`、`SHT-*`、`CON-*` 条目。
+- 输入至少包含状态为 `accepted` 的镜头、起始关键帧/边界、时长、连续性终点与对白/声音引用；未接受或 `stale` 时退回 `$short-drama-storyboard`。
+- 若创作者明确要求全链预览，可对状态为 `provisional`、但没有 `unresolved` 问题的镜头/关键帧
+  写候选运动说明；保留 `authority:candidate`，禁止声称已经 `accepted`、`approved` 或
+  `delivery-ready`。
+- 镜头的起点、终点、时长、对白、资产绑定和下一镜状态全部只读。运动规格只负责有序动作、表演过程、摄影与声音实现，以及派生的结束报告。
+- 视觉、声音和口型等审美选择读取 `short-drama.json#/creator_authority/{visual_direction,production_profile}`；
+  直接从本环节开始的项目若为 `unset`，就保留选择，不把默认配置写成已接受事实。
+- 先写不绑定供应商的通用文本。不得生成视频或音频、上传参考帧、创建远程执行任务、调用模型接口、轮询状态或宣称成片质量。
 
 ## 按任务加载资料
 
 | 任务 | 必读资料 |
 |---|---|
-| 任意镜头 motion/prompt | [起点—变化—终点配方](references/motion-recipe.md) |
+| 任意镜头运动说明/提示词 | [起点—变化—终点配方](references/motion-recipe.md) |
 | 动作、表演、节奏或超载 | [表演弧与动作预算](references/performance-action-timing.md) |
 | 运镜、环境、对白、声音、边界冲突 | [摄影声音与连续性](references/camera-audio-continuity.md) |
 | 自检、独立复核、正反案例 | [审查量表与合成案例](references/review-and-fixtures.md) |
-| 生产端 prompt 语法、台词绑定、负面清单 | [生产提示词语法惯例](references/production-prompt-grammar.md) |
+| 生产端提示词写法、台词绑定、负面清单 | [生产提示词语法惯例](references/production-prompt-grammar.md) |
+| 多张参考图的用途、补拍或替代版范围 | [参考图、揭示时机与补拍](../short-drama/references/reference-media-and-pickups.md) |
 
-规格使用 [motion spec 模板](assets/motion-spec.jsonl.md)；末镜或下一集记录尚未建立时参考
-[terminal motion locator 示例](assets/motion-terminal.example.jsonl)；可复制交付使用
+规格使用 [运动规格模板](assets/motion-spec.jsonl.md)；末镜或下一集记录尚未建立时参考
+[末镜定位示例](assets/motion-terminal.example.jsonl)；可复制交付使用
 [Markdown 模板](assets/video-prompts.md)。只加载本次问题需要的资料。
 
 ## 工作流
 
 ### 1. 先写“不能动的边框”
 
-建立只读 boundary card：
+建立只读的起止边界清单：
 
-- shot/keyframe exact artifact/hash/field refs；
-- duration 与 start pose、balance、gaze、hands、held props、空间关系；
-- storyboard-owned end pose/state 与 continuity out；
-- exact dialogue/VO/SFX/audio refs；
-- shot purpose、信息/情绪变化和 next-shot handoff（只用于核对）。
+- 镜头/关键帧准确的 `artifact/hash/field` 引用；
+- 时长，以及起点姿态、重心、目光、双手、持物和空间关系；
+- 分镜负责的结束姿态/状态与连续性终点；
+- 准确的对白、画外音、音效和声音引用；
+- 镜头目的、信息/情绪变化和下一镜交接（只用于核对）。
 
-任何来源冲突先停止。如果创作者要求延长时长、换结尾站位、删对白或改变下一镜开场，写 owner-specific revision request；不要在 motion 中覆盖。
+任何来源冲突先停止。如果创作者要求延长时长、换结尾站位、删对白或改变下一镜开场，
+就向负责该内容的技能提出修改请求；不要在运动规格中覆盖。
 
 ### 2. 决定这个镜头真正发生什么变化
 
-用一句话写 motion purpose：“观众在这几秒内看到/感到什么变化？”然后选择少量有因果顺序的事件：主体行动 → 可见反应/注意转移 → end realization。只加活动会稀释表演。
+用一句话写镜头内的运动目的：“观众在这几秒内看到或感到什么变化？”然后选择少量有因果顺序的事件：主体行动 → 可见反应或注意转移 → 到达终点。只加活动会冲淡表演。
 
-- `reviewed_invariant`：动作负载必须让演员有时间完成镜头的故事变化；general feasibility 由 reviewer 看证据，不用动词数或固定秒/动作公式硬挡。
-- `craft_default`：短镜头优先一个 primary action，加一个必要 reaction；复杂过程请求 storyboard 拆镜或延长。
+- `reviewed_invariant`：动作量必须让演员有时间完成镜头的故事变化；是否能完成由审查者结合当前资料判断，不用动词数或固定秒/动作公式硬挡。
+- `craft_default`：短镜头优先一个主要动作，加一个必要反应；复杂过程请求分镜拆镜或延长。
 - `taste_option`：克制、爆发、停顿、喜剧节奏等取决于角色和导演意图。
 
-### 3. 按七部分编写 motion
+### 3. 按七部分编写运动说明
 
-1. **Start anchor**：只重述开动所需的姿态、重心、目光、手、持物、空间关系。
-2. **Ordered subject action**：谁先做什么、方向/路径、物理接触与先后；不要用一串“同时”。
-3. **Performance arc**：触发 → 内在处理的外显迹象 → 决定/行动 → 到达 end state。
-4. **Camera behavior**：一次有动机的 move，写起点、速度/节奏和终点；或明确 lock-off。
-5. **Environment/audio**：只写有剧情和连续性依据的环境运动、对白/VO、环境声、SFX/音乐意图。
-6. **Timing**：用阶段/顺序为主；需要精确时间时，其显式段落总和不得超过 duration。
-7. **End report**：报告实际描述将如何落到 storyboard-owned continuity out；它是 comparison projection，不是新权威。
+1. **起点 `start_anchor`**：只重述开动所需的姿态、重心、目光、手、持物和空间关系。
+2. **有序动作 `ordered_subject_motion`**：谁先做什么、方向/路径、物理接触与先后；不要用一串“同时”。
+3. **表演过程 `performance_arc`**：触发 → 内在处理的外在迹象 → 决定/行动 → 到达结束状态。
+4. **摄影机 `camera`**：一次有动机的移动，写起点、速度/节奏和终点；或明确固定机位。
+5. **环境与声音 `environment_motion/audio`**：只写有剧情和连续性依据的环境运动、对白、画外音、环境声、音效和音乐意图。
+6. **时间 `timing_plan`**：用阶段/顺序为主；需要精确时间时，明确段落总和不得超过镜头时长。
+7. **结束报告 `end_report`**：说明当前描述怎样到达分镜负责的连续性终点；它只用于比较，不是新的权威来源。
 
-### 4. 使用参考帧经济性
+### 4. 不重复参考帧已经说明的内容
 
-如果绑定 frame 已承载人物外貌、服装、场景构图和光线，正文聚焦“从此刻开始怎么变”。只重复动作执行易漂移的局部事实，如“右手仍握住铜夹”。不要倾倒完整人物/场景 bible，也不要用“与参考一致”替代必要的 start anchor。
+如果绑定的参考帧已经说明人物外貌、服装、场景构图和光线，正文就聚焦“从此刻开始怎么变”。只重复动作执行中容易出错的局部事实，如“右手仍握住铜夹”。不要复制完整人物/场景设定，也不要用“与参考一致”替代必要的起点信息。
+
+每条参考绑定还要声明 `role / may_control / must_not_control`。身份参考不自动决定
+构图，构图或尺度参考不自动带入图中人物、服装、文字、道具和故事状态；先做像素/文字
+检查，再使用允许参考的内容。只有创作者/参考图权利人的可核对说明，或运行环境获授权
+后形成的输入参考图检查记录，才能给出结论；说明记录写 `creator_described`，视觉检查写
+`visually_inspected`，两者都没有时保持 `unverified`。这不是媒体生成
+或成片验收。
 
 ### 5. 检查冲突与单镜头边界
 
-- `structural_invariant`：明确 segment timing 不超 duration；同一时间区间不能既 locked 又 pan/dolly/handheld，除非写清 transition；refs 必须解析；end report 必须匹配 source end。
+- `structural_invariant`：明确时间段不超过镜头时长；同一时间区间不能既固定机位又摇、移、手持，除非写清切换；引用必须可解析；`end_report` 必须匹配来源终点。
 - `reviewed_invariant`：动作物理可行、表演弧可见、摄影有动机、没有语义发明。
 - `craft_default`：环境和摄影只支持注意、压力、揭示、结盟或转场，不用来装饰每一镜。
-- `taste_option`：lock/move、焦段语汇、口型精度、音乐密度由生产 profile 决定。
+- `taste_option`：固定或移动机位、焦段语汇、口型精度和音乐密度由项目配置决定。
 
-一个 authored shot 保持一个 editorial boundary。不要在一条 prompt 里偷藏多次切镜；批量打包也不改变源 shot 的独立可审查性。
+一个已经设计好的镜头只保持一个剪辑边界。不要在一条提示词里偷藏多次切镜；批量打包也不改变源镜头可以单独审查的要求。
+
+若当前版本是局部补拍或替代实现，在 `coverage_scope` 标明 `master | pickup |
+alternate`，用同一文件内稳定的运动记录 ID 说明母版和补充关系；每项原文要求都要对应到
+当前运动字段或说明去向。补拍默认只补充、不替代母版；运动规格只能提出替代请求，
+独立审查者在下游审查结论中绑定固定 `hash` 后决定，不能回写运动规格形成循环引用。
 
 ### 6. 预览、接受与发布
 
-先向创作者展示 boundary 摘要、动作/表演顺序、camera/audio 选择、时长警告和 copyable prompt。接受后写：
+先向创作者展示起止边界摘要、动作/表演顺序、摄影/声音选择、时长警告和可复制提示词。接受后写：
 
-- `episodes/<EP>/storyboard/motion-specs.jsonl`：motion 权威字段 + 只读 source refs；
-- `episodes/<EP>/storyboard/video-prompts.md`：accepted spec + recipe hash 的缓存视图。
+- `episodes/<EP>/storyboard/motion-specs.jsonl`：运动规格字段和只读来源引用；
+- `episodes/<EP>/storyboard/video-prompts.md`：由已接受规格和配方 `hash` 生成的文本版本。
 
-自然语言改 prompt 时先给 spec diff 与重渲染预览；若改动触碰 shot/write owner，保持当前文件不变并路由 revision request。跨文件发布遵循 core 事务恢复流程。
+自然语言改提示词时，先展示规格字段怎样变化和重新生成的文本预览；若改动触碰分镜或
+剧本负责的内容，保持当前文件不变，并把修改请求交给对应技能。跨文件发布遵循主技能的
+提交与恢复流程。
 
 ## 完成标准
 
-- prompt 从精确 start anchor 出发，以明确顺序实现 accepted end，不改变 duration/dialogue/下一镜；
-- 表演有触发、处理与可见变化，动作量可行，摄影与环境/声音服务 shot purpose；
-- 参考帧已知外观不被重复淹没，generic prompt 可独立复制；
-- 本地结构检查后交 `$short-drama-review` 做证据化 feasibility/语义复核；
-- 没有媒体文件、API/provider/task 字段、远端 ID 或“视频已生成”声明。
+- 提示词从准确的 `start_anchor` 出发，以明确顺序实现已确认终点，不改变时长、对白或下一镜；
+- 表演有触发、处理与可见变化，动作量可行，摄影与环境/声音服务镜头目的；
+- 参考帧已知外观不被重复描述淹没，通用提示词可独立复制；
+- 本地结构检查后交 `$short-drama-review` 结合来源资料审查是否可执行、是否改写原意；
+- 没有媒体文件、供应商接口或远程任务字段、远端 ID 或“视频已生成”声明。

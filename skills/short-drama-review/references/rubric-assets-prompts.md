@@ -41,6 +41,11 @@ All prompt types need purpose, exact binding, identifying facts, current variant
 composition, background, lighting, text policy, constraints, and exclusions. Then
 apply type-specific criteria:
 
+- Does each media reference declare one purpose, the facts it may copy,
+  the facts it must not import, and a pixel/text admission decision?
+- If a reference is composition-, scale-, or effect-only, did the prompt avoid
+  borrowing its identity, wardrobe, content, text, count, or story state?
+
 - **Character sheet:** one identity and coherent Look; useful reference views;
   neutral enough background/light to recognize anchors; no story action chain.
 - **Location plate:** navigable geography, orientation, fixed anchors, material,
@@ -61,6 +66,7 @@ apply type-specific criteria:
 - edit request says “make better” without target/change/preserve;
 - rendered Markdown differs from accepted structured spec;
 - private URL, source ID, provider task field, or operator complaint leaks in.
+- “use the whole reference” does not say what may or may not be copied.
 
 Prompt prose elegance is secondary to recognition, reuse, continuity, and clear
 control of the current operation.

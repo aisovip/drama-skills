@@ -1,35 +1,39 @@
 # `video-prompts.md` 可复制输出模板
 
-这是 accepted motion specs 的缓存视图，不是 storyboard authority。复制引用块即可；元信息帮助核对边界。
+这是由已接受运动规格生成的文本，不是分镜权威来源。复制引用块即可；元信息帮助核对边界。
 
 ```markdown
 # EP<编号> · 视频提示词
 
-> 来源：`motion-specs.jsonl` accepted snapshot `<hash>`
-> 配方：`motion-generic@<version>` · rendered `<hash>`
+> 来源：`motion-specs.jsonl` 已接受快照 `<hash>`
+> 配方：`motion-generic@<version>` · 当前文本 `<hash>`
 > 范围：仅提示词，不生成视频/音频，不调用媒体服务
 
 ## `SHOT-<id>` · <镜头目的短句>
 
-- **Motion**：`MOTION-<id>`
-- **Start frame**：`KEY-<id>` @ `<hash>`
+- **运动规格**：`MOTION-<id>`
+- **覆盖范围**：`master | pickup | alternate`；母版/补充 `<master_motion_id / supplements_motion_ids>`；逐项内容 `<source_ref → motion_field/disposition>`；替代请求 `<replacement_intent>`
+- **起始帧**：`KEY-<id>` @ `<hash>`
+- **参考图用途**：`<reference>` 只决定 `<role / may_control>`；不得导入 `<must_not_control>`；检查状态 `<observation ref | unverified + risks>`；无附加参考则写“无”
 - **时长（只读）**：`<seconds>s`
 - **边界核对**：`end match | mismatch | unrealized`
 - **声音引用**：`<dialogue/VO/OS/SFX ids>`
-- **注意**：<feasibility warning / owner revision request；无则写“无”>
+- **注意**：<无法执行的风险 / 交给负责技能的修改请求；无则写“无”>
 
 ### 可复制通用提示词
 
-> 从<最小 start anchor>开始。<按因果和物理顺序写主体动作>；<触发—处理—选择—landing 的可见表演变化>。摄影机<有动机的 lock/move、节奏和终点>。<必要环境运动>。对白/声音：<exact text/ref、delivery、声源与层级>。在<accepted duration>内<节奏安排>，最终<逐项实现 accepted end，不写下一镜>。
+> 从<最少但够用的起点信息>开始。<按因果和物理顺序写主体动作>；<触发—处理—选择—落点的可见表演变化>。摄影机<有动机地固定或移动，并写清节奏和终点>。<必要环境运动>。对白/声音：<逐字文本/引用、表演方式、声源与层级>。在<已确认时长>内<安排节奏>，最终<逐项实现已确认终点，不写下一镜>。
 
-### 只读 end report
+### 只读结束报告
 
-- **位置/姿态**：<reported → source: match?>
-- **目光/双手/持物**：<reported → source: match?>
-- **可见状态**：<reported → source: match?>
-- **下一镜**：仅比较 `<next shot start ref>`，未改写
+- **位置/姿态**：<当前描述 → 来源：是否匹配？>
+- **目光/双手/持物**：<当前描述 → 来源：是否匹配？>
+- **可见状态**：<当前描述 → 来源：是否匹配？>
+- **下一镜**：仅比较 `<下一镜起点引用>`，未改写
 
 ---
 ```
 
-每个 authored shot 独立一节，即使将来由外部工具批量打包也不合并源边界。若自然语言修改涉及 duration/end/dialogue/next shot，展示 owner revision request 而不是改本文件掩盖。
+每个已经设计好的镜头独立一节，即使将来由外部工具批量打包，也不合并原镜头边界。
+若自然语言修改涉及时长、终点、对白或下一镜，展示交给负责技能的修改请求，而不是
+修改本文件来掩盖来源变化。

@@ -12,7 +12,7 @@ from pathlib import Path
 
 SUITE = Path(__file__).resolve().parents[1]
 CORE = SUITE / "skills/short-drama"
-VERIFY = CORE / "scripts/verify_suite.py"
+VERIFY = SUITE / "tools/verify_suite.py"
 SPEC = importlib.util.spec_from_file_location("short_drama_verify_suite", VERIFY)
 assert SPEC and SPEC.loader
 verify_suite = importlib.util.module_from_spec(SPEC)

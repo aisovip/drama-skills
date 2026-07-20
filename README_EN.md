@@ -16,15 +16,15 @@ and calls no media-generation services**.
 
 Three principles run through the whole chain:
 
-> 1. **A script is a shooting instruction.** Every line must answer "what does
->    the camera shoot": psychology goes to OS, worldbuilding to captions/VO,
->    emotion to performance cues.
-> 2. **Assets fix the invariants, storyboards design the variables.** A
->    character's face and wardrobe are locked in a pure-white-background model
->    sheet; light, composition, and emotion are designed shot by shot.
-> 3. **Continuity is explicit engineering.** The previous shot's end state is
->    written verbatim into the next shot's start state; don't count on the model
->    to remember.
+> 1. **A script delivers performable, producible facts.** Prefer action,
+>    evidence, blocking, and dialogue strategy; use VO/OS, screen text, or
+>    performance notes only when the creator deliberately chooses them.
+> 2. **Assets own identity and state; storyboards own the current presentation.**
+>    Reference-sheet layout, background, and view count follow the project's
+>    reuse job rather than one universal white-background formula.
+> 3. **Continuity is explicit engineering.** Compare authoritative shot
+>    boundaries exactly, then repeat only the local anchors execution needs—not
+>    the whole state ledger verbatim and not an assumed model memory.
 
 Above those three sits a **four-tier rule system** (structural invariant /
 reviewed invariant / craft default / taste option) that splits requirements into
@@ -115,7 +115,7 @@ hotel turns out to be the group chairman
 # 3. Assets, storyboard, video prompts
 Use $short-drama-assets to extract characters/scenes/props from EP1
 Use $short-drama-storyboard to storyboard EP1
-Use $short-drama-video-prompts to translate the storyboard into 15s shot-group prompts
+Use $short-drama-video-prompts to translate each authored shot into a video prompt
 
 # 4. Independent review
 Use $short-drama-review to review EP1's script and prompts
@@ -129,11 +129,12 @@ sheets → storyboard → video prompts.
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests -v
 ruff check --no-cache .
-python3 skills/short-drama/scripts/verify_suite.py
+python3 tools/verify_suite.py skills/short-drama
 ```
 
-After changing anything under `skills/`, rebuild the suite manifest:
-`python3 skills/short-drama/scripts/update_suite_manifest.py`.
+Repository maintenance tools are not installed with the Skills. After changing
+anything under `skills/`, rebuild the suite manifest from the repository root:
+`python3 tools/update_suite_manifest.py skills/short-drama`.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
 
 ## License

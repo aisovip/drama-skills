@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 
@@ -19,8 +20,12 @@ CHILD_REF_KEYS = {
 }
 
 
-def main() -> int:
-    core = Path(__file__).resolve().parents[1]
+def main(argv: list[str] | None = None) -> int:
+    core = (
+        Path(argv[0]).resolve()
+        if argv
+        else Path(__file__).resolve().parents[1] / "skills" / "short-drama"
+    )
     skills = core.parent
     manifest_path = core / "suite-manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -82,4 +87,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))

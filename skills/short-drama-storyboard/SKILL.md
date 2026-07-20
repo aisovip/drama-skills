@@ -1,131 +1,136 @@
 ---
 name: short-drama-storyboard
-description: 把已接受的中文短剧剧本和资产转成来源 coverage、有戏剧动机的镜头、连续性边界与冻结关键帧提示词。用户提出“拆分镜/设计镜头/做镜头表”“写首帧/关键帧提示词”“检查轴线、站位、视线、持物连续性”，或需要在不生成媒体的前提下把剧本意义翻译成视觉 coverage 时使用。
+description: 把已接受的中文短剧剧本和资产转成原文落实表、有戏剧动机的镜头、连续性边界与冻结关键帧提示词。用户提出“拆分镜/设计镜头/做镜头表”“写首帧/关键帧提示词”“检查轴线、站位、视线、持物连续性”，或需要在不生成媒体的前提下把剧本内容转成可拍的画面时使用。
 ---
 
 # 短剧分镜与冻结关键帧
 
-先守住故事意义，再建立 coverage、空间和镜头，最后写冻结关键帧。不在这里写随时间变化的
-motion prompt，也不改写剧本或资产真相。默认以创作者语言交付；中文项目使用中文镜头目的、
-边界说明和可复制提示词，ID/字段名保持契约形式。
+先守住故事内容，再安排原文落实、空间和镜头，最后写冻结关键帧。不在这里写随时间
+变化的运动提示词，也不改写剧本或资产事实。中文项目使用中文镜头目的、边界说明和
+可复制提示词；ID 和字段名保持原样。
 
-## 渐进加载
+## 按需读取资料
 
 始终读取：
 
-- accepted `screenplay.md` 与 `screenplay-index.jsonl`；
-- accepted assets/variants 与相关连续性；
-- `short-drama.json#/creator_authority/visual_direction` 的 accepted visual direction；
-  `unset` 时向创作者呈现选择，不从对话记忆补造。
+- 状态为 `accepted` 的 `screenplay.md` 与 `screenplay-index.jsonl`；
+- 状态为 `accepted` 的资产、版本与相关连续性；
+- `short-drama.json#/creator_authority/visual_direction` 中状态为 `accepted` 的视觉方向；
+  若状态为 `unset`，就向创作者给出选择，不从对话记忆补造。
 
-设计 coverage、blocking、camera、cut 时读
+设计原文落实、场面调度、摄影机和剪切时读
 [shot-craft.md](references/shot-craft.md)；只有写冻结帧时读
-[keyframe-craft.md](references/keyframe-craft.md)。需要生产端时长基准、景别/运镜
+[keyframe-craft.md](references/keyframe-craft.md)。需要制作端的时长依据、景别与运镜
 词表或时间片写法时读 [production-shot-grammar.md](references/production-shot-grammar.md)。
-所有权或 stale 不清楚时才读 core contract。
+涉及背影、裁切、遮挡、画外或延迟揭示时读
+[参考媒体权限与补拍契约](../short-drama/references/reference-media-and-pickups.md)。
+只有所有权或过期传播不清楚时，才读核心所有权契约。
 
-- 竖屏多人、单房对白、证据揭示、群体轴线或门内/外 View：
+- 竖屏多人、单房对白、证据揭示、群体轴线或门内外视角：
   [blocking-playbooks.md](references/blocking-playbooks.md)
-- 需要查看 screenplay → coverage → shot → keyframe 的完整合成正例：
+- 需要查看“剧本 → 原文落实 → 镜头 → 关键帧”的完整正例：
   [screenplay-to-keyframe-example.md](references/screenplay-to-keyframe-example.md)
 
 ## 工作流
 
-### 1. 先做 coverage
+### 1. 先确认每段原文由谁落实
 
-从 [coverage-template.json](assets/coverage-template.json) 开始，accepted 后发布为
-`episodes/<EP>/storyboard/coverage.json`。每个 production-relevant screenplay block
-必须有一个 disposition：
+从 [coverage-template.json](assets/coverage-template.json) 开始，接受后发布为
+`episodes/<EP>/storyboard/coverage.json`。每个与制作有关的剧本段落都必须标明一种处理：
 
-- `covered`：被一个或多个 shot 承担；
-- `intentional_repeat`：带戏剧/剪辑理由的重复；
-- `omitted_with_reason`；
-- `nonvisual_context`。
+- `covered`：由一个或多个镜头落实；
+- `intentional_repeat`：因表演或剪辑需要而有意重复，并写明理由；
+- `omitted_with_reason`：有理由地省略；
+- `nonvisual_context`：仅供理解、无需直接呈现的内容。
 
-对白、动作、画面文字、VO/OS 或关键 SFX 还在无声遗漏时，不要先设计漂亮镜头。
-Coverage 发布时，`shot_refs` 必须逐条指向精确的 shots artifact、已发布 hash 与
-`record_id`；裸 `shot_id` 只可用于同一 shots 文件内部关系，不能证明 coverage 所审的
-是哪一版镜头。
+对白、动作、画面文字、画外音或关键音效还没有着落时，不要先追求漂亮镜头。
+发布原文落实表时，`shot_refs` 必须逐条指向准确的镜头文件、已发布的 `hash` 和
+`record_id`。裸 `shot_id` 只可表示同一镜头文件内的关系，不能证明审的是哪一版。
 
 ### 2. 先写镜头目的
 
-使用 [shot-template.jsonl](assets/shot-template.jsonl)，accepted 后发布为
-`episodes/<EP>/storyboard/shots.jsonl`。每个 shot 用一句话回答：
+使用 [shot-template.jsonl](assets/shot-template.jsonl)，接受后发布为
+`episodes/<EP>/storyboard/shots.jsonl`。每个镜头先用一句话回答：
 
-- 观众此刻必须注意/感到什么；
-- 信息、情绪、alignment 或权力发生什么变化；
-- 为什么要新切一镜，而不是留在前一镜。
+- 观众此刻必须注意什么、感到什么；
+- 信息、情绪、观众立场或权力关系发生什么变化；
+- 为什么要在这里切镜，而不是留在前一镜。
 
-之后才选择景别和摄影机行为。镜头不是加了镜头形容词的动作段落。
+同时按事实填写 `audience_visibility`：准确来源、现在展示还是暂缓展示、可见或可听的
+载体，以及各自的 `reveal_trigger`（何时揭示）和 `protection_method`（怎样防止提前泄露）。
+遮挡不是默认的画面风格：它既不能提前泄露剧本保留的信息，也不能藏掉本镜必须交代的
+证据或反应。
+
+之后才选择景别和摄影机行为。镜头不是给动作段落加几个摄影形容词。
 
 ### 3. 绑定空间和资产
 
-绑定精确 Location/View、Character/Look、Prop/State 与 source blocks，并建立：
+绑定准确的场景及视角、人物及造型、道具及状态和剧本来源段落，并建立：
 
-- 位置、朝向、视线、screen direction 与 axis；
-- 进出路线和 fixed location anchors；
-- 双手/持物、伤势/服装、文字状态、光向；
-- 权威 start/end boundary。
+- 位置、朝向、视线、屏幕运动方向与轴线；
+- 进出路线和不随镜头改变的场景锚点；
+- 双手与持物、伤势与服装、文字状态、光线方向；
+- 有权威性的镜头开始边界和结束边界。
 
-可见字样的呈现必须通过 `text_treatment_refs` 指向 assets owner 已接受的文字政策；
-预览只能指向带 `authority: candidate` 的候选政策。Shot/Keyframe 可决定构图如何让
-文字可见，但不得把 `exact_readable` 偷换成装饰字、凭空写新文案，或用自由字符串
-代替 policy ref。
+可见字样必须通过 `text_treatment_refs` 指向资产负责人已接受的文字政策。预览只能
+指向带 `authority: candidate` 的候选政策。镜头和关键帧可以决定构图怎样让文字可见，
+但不得把 `exact_readable` 偷换成装饰字、凭空写新文案，或用自由文本代替政策引用。
 
-需要的资产/状态缺失或含混时，向 assets/write 发 revision；不猜 binding。
-在 creator 要求的 end-to-end preview 中，只能对唯一、非 unresolved proposal
-建 provisional coverage/shot/keyframe；候选 ArtifactRef 加 `authority:candidate`，不得
-写 accepted binding 或获得最终 approval。
+需要的资产或状态缺失、含混时，向资产或编剧环节提出修订，不要猜绑定关系。
+若创作者要求从头到尾预览，只能针对唯一且不是 `unresolved` 的提案建立临时的原文落实、
+镜头和关键帧。候选 `ArtifactRef` 要标明 `authority: candidate`，不得写成已接受的绑定，
+也不得获得最终批准。
 
-### 4. 设计可实现的编辑镜头
+### 4. 设计能够制作的镜头
 
-短镜头以一个 primary action 加上读懂后果所需的 reaction 为默认，不是 shot-count 公式。
-当单镜无法守住地理、表演、对白或信息变化时拆；新 cut 不增加注意或戏剧价值时合。
+短镜头通常围绕一个主要动作，再保留让观众读懂后果所需的反应；这不是镜头数量公式。
+一个镜头守不住空间关系、表演、对白或信息变化时就拆开；新切镜没有增加注意重点或
+戏剧价值时就合并。
 
-Duration 是编辑意图。只有显式计时算术可机械阻断；一般可行性必须带本镜证据审查。
+时长表示剪辑意图。只有明确的计时算术可以机械检查；一般的可拍性必须结合本镜内容判断。
 
 ### 5. 默认每镜一个冻结关键帧
 
-使用 [keyframe-template.jsonl](assets/keyframe-template.jsonl) 写结构化 source，发布为
+使用 [keyframe-template.jsonl](assets/keyframe-template.jsonl) 写结构化来源，发布为
 `episodes/<EP>/storyboard/keyframes.jsonl`；再用
-[keyframe-prompts.md](assets/keyframe-prompts.md) 渲染可复制缓存。结构化 keyframe
-拥有 frame-only 选择；Markdown 不成为第二真相。
+[keyframe-prompts.md](assets/keyframe-prompts.md) 渲染可复制的派生文本。结构化关键帧
+保存只属于单帧的选择；Markdown 不是第二份事实来源。
 
-把 accepted shot start boundary 与 exact asset variants 投影成一个同时可存在的瞬间：
-焦点、构图、camera/lens、空间锚点、姿态、目光、双手/持物、表情、光线、排除项。
+把已接受镜头的开始边界和准确资产版本，落到一个可以同时存在的瞬间：焦点、构图、
+摄影机与镜头焦段、空间锚点、姿态、目光、双手与持物、表情、光线、排除项。
 
-关键帧不得包含“先/再/最后”、表演弧、运镜过程或变化中的环境；时间变化交给
-`$short-drama-video-prompts`。
+关键帧不得包含“先、再、最后”、表演变化过程、运镜过程或正在变化的环境；时间变化
+交给 `$short-drama-video-prompts`。
 
 ### 6. 校验并呈现
 
-先运行 coverage/reference/continuity 结构检查，再按 craft references 自检。按顺序呈现：
+先做原文落实、参考图权限和连续性的结构检查，再按制作资料自检。按顺序呈现：
 
-1. coverage 缺口与 unresolved；
-2. 按场分组的 shot table；
-3. 可复制 keyframe prompts；
-4. 相对 screenplay 的语义差异；
+1. 尚未落实的原文与 `unresolved` 项；
+2. 按场分组的镜头表；
+3. 可复制的关键帧提示词；
+4. 相对剧本原意发生的差异；
 5. 需要创作者接受的选择。
 
-Storyboard 不能自批；终审交给 `$short-drama-review`。
+本技能不能自行终审；终审交给 `$short-drama-review`。
 
 ## 修订
 
-若 motion 需要改 start/end boundary，owner 仍是本 Skill。对照 screenplay meaning
-审查提议，修改 shot，展示 stale closure，并刷新 keyframe/motion/review。Motion 文件
-不得静默成为第二套 boundary truth。
+若运动提示词环节要求修改镜头开始或结束边界，负责人仍是本技能。对照剧本原意审查
+提议，修改镜头，展示哪些旧产物已经关闭或刷新，并更新关键帧、运动提示词和终审。
+运动提示词文件不得悄悄变成第二份边界事实。
 
 ## 边界
 
 - 不生成图片或视频。
-- shot 绑定资产，不把完整外观 prose 复制到每镜。
-- 外部执行单位不等于 authored shot identity。
-- shot count、每 cut 秒数、lens 分布都不是通用定律。
-- 新增/删除 story fact 必须先走 write-owned revision。
+- 镜头绑定资产，不把完整外观描述复制到每一镜。
+- 外部制作单位不等于创作镜头本身的编号。
+- 镜头数量、每次切镜秒数、焦段分布都不是通用定律。
+- 新增或删除故事事实，必须先由编剧环节修订。
 
 ## 所有产物
 
 - `episodes/<EP>/storyboard/coverage.json`
 - `episodes/<EP>/storyboard/shots.jsonl`
 - `episodes/<EP>/storyboard/keyframes.jsonl`
-- `episodes/<EP>/storyboard/keyframe-prompts.md`（仅派生缓存）
+- `episodes/<EP>/storyboard/keyframe-prompts.md`（仅派生文本）

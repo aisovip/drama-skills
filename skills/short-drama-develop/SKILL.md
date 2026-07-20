@@ -102,7 +102,7 @@ description: 将中文短剧想法、梗概、改编材料或已有系列笔记�
   [adaptation-craft.md](references/adaptation-craft.md)
 - **需要区分揭示、反转、回报和钩子，或按题材选压力机制**：
   [reveal-reversal-payoff.md](references/reveal-reversal-payoff.md)
-- **选题材方向、设计冷开场或规划集尾钩子类型时的生产经验分布**：
+- **按题材选择冲突推进方式、设计开场或规划集尾钩子时的定性案例方法**：
   [genre-and-hook-playbook.md](references/genre-and-hook-playbook.md)
 - **起草项目级视觉方向与生产规则（导演阐述）**：
   [director-brief-craft.md](references/director-brief-craft.md)

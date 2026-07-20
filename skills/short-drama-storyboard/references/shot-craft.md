@@ -1,176 +1,169 @@
-# Shot Craft
+# 镜头设计方法
 
-## Rule classification
+## 规则分级
 
-- `structural_invariant`: machine-checkable structure such as resolved coverage
-  and known bindings; a validator may block malformed artifacts.
-- `reviewed_invariant`: meaning that must hold but needs evidence-based human or
-  model review, such as preserving a source beat.
-- `craft_default`: a strong starting practice that may be departed from for a
-  stated dramatic reason.
-- `taste_option`: an accepted creator or visual-direction choice, never an
-  automatic defect by itself.
+- `structural_invariant`：可以直接检查的结构要求，例如每段原文都有处理结果、引用可以解析；格式错误可以阻断。
+- `reviewed_invariant`：必须守住、但要结合证据判断的内容要求，例如镜头没有改写剧本动作。
+- `craft_default`：通常有效的起步方法；有明确的戏剧理由时可以调整。
+- `taste_option`：创作者或视觉方向已经接受的风格选择，不能仅因不同于示例就判错。
 
-## Contents
+## 目录
 
-1. Coverage before beauty
-2. Dramatic purpose
-3. Blocking and geography
-4. Framing and camera motivation
-5. Duration and cutting
-6. Failure patterns
-7. Review questions
+1. [先落实原文，再追求画面](#先落实原文再追求画面)
+2. [镜头目的](#镜头目的)
+3. [场面调度与地理](#场面调度与地理)
+4. [景别与摄影机动机](#景别与摄影机动机)
+5. [时长与切镜](#时长与切镜)
+6. [常见问题](#常见问题)
+7. [审查问题](#审查问题)
 
-## Coverage before beauty
+## 先落实原文，再追求画面
 
-`SHT-01` requires every production-relevant screenplay block to receive an
-explicit cover, omit, or intentional-repeat disposition.
+`SHT-01` 要求每个与制作有关的剧本段都有明确处理：由镜头落实、有理由地省略，或因
+新的观众体验而有意重复。
 
-Map screenplay blocks before inventing shots. Coverage is an accountability map,
-not a one-block-one-shot formula. Several blocks may share a shot when continuous
-performance and geography preserve their meaning. One block may need several
-shots when a reveal, reaction, evidence detail, or spatial change is essential.
+先把剧本段与镜头对应起来，再设计镜头。原文落实表是责任清单，不是“一段一镜”公式。
+连续表演和空间关系能守住原意时，几段原文可以合在一镜；揭示、反应、证据细节或空间
+变化很重要时，一段原文也可以由几镜承担。
 
-The accepted coverage artifact records canonical `shot_refs`, not bare shot IDs:
-owner, exact shots artifact, its published hash, and `record_id` identify the
-version actually reviewed. Same-artifact relationships may use `*_ids`; crossing
-an artifact boundary always uses `*_refs` so stale coverage can be detected.
+已接受的原文落实表要保存完整的 `shot_refs`，不能只写裸镜头 ID。引用要包含负责人、
+准确镜头文件、已发布的 `hash` 和 `record_id`，这样才能知道审查的是哪一版。同一文件
+内部的关系可以用 `*_ids`；跨文件关系必须用 `*_refs`，以便来源改变后发现过期引用。
 
-Repeated coverage is intentional only when the second view creates a new audience
-experience—reaction, contradiction, withheld evidence, recontextualization—not
-because the first mapping was forgotten.
+重复拍同一段内容，只有在第二次带来新的观众体验时才成立，例如新增反应、矛盾、
+此前保留的证据或对前镜的新理解；不能因为第一次对应关系被忘了就重复。
 
-### Action realization ledger
+### 动作落实表
 
-**`SHT-08 · reviewed_invariant`**：每个 authoritative source action 只有一个
-realization shot；repeat coverage 必须增加 reaction/detail/recontextualization。
+**`SHT-08 · reviewed_invariant`：** 每个有权威来源的动作只有一个主要落实镜头；其他
+镜头若再次涉及该动作，必须增加反应、细节或对原信息的新理解。
 
-Coverage count 只证明 block “有人引用”，不证明动作没被提前、重复或遗漏。
-对转手、开门、受伤、揭面、拿出证物等 authoritative action，另记：
+原文落实数量只能证明“某段原文被引用”，不能证明动作没有提前、重复或遗漏。对转手、
+开门、受伤、揭面、拿出证物等动作，另记：
 
-| Source action | realization shot | start fact | end fact | 其他 coverage 的作用 |
+| 来源动作 | 主要落实镜头 | 动作前事实 | 动作后事实 | 其他镜头的作用 |
 |---|---|---|---|---|
-| 右手从衣内取令 | SHOT-02 | 令牌在衣内 | 右手持令 | SHOT-03 只审验纹样/反应 |
+| 右手从衣内取令牌 | SHOT-02 | 令牌在衣内 | 右手持令牌 | SHOT-03 只展示纹样和接收者反应 |
 
-- 只有 realization shot 可以从 before 改成 after；
-- 前一镜的 end 不得无 source/action 就提前变成 after；
-- 后一镜从 after 开始时，motion 不得再演一次完整动作；
-- repeat coverage 写清是 detail、reaction 还是 recontextualization，而不是第二次 realization。
+- 只有主要落实镜头可以把状态从动作前改成动作后。
+- 前一镜的结束状态不得在没有来源动作时提前变成动作后状态。
+- 后一镜已经从动作后状态开始时，运动规格不得再完整表演一次该动作。
+- 其他镜头要写清自己负责细节、反应还是重新解释，不能成为第二个主要落实镜头。
 
-## Dramatic purpose
+## 镜头目的
 
-`SHT-02` requires the shot to preserve its source meaning and name what changes
-for the audience or character; attractive coverage without that purpose fails
-semantic review.
+`SHT-02` 要求镜头守住来源原意，并说明观众或人物在本镜结束时发生了什么变化。
+只有漂亮画面、没有戏剧职责的镜头，不能通过内容审查。
 
-Use this sequence:
+按以下顺序设计：
 
-1. Identify the source move: action, line, discovery, refusal, transfer, reveal.
-2. Name what changes for the audience or a character.
-3. Choose whose experience organizes the shot.
-4. Decide what must be visible at the start and end.
-5. Only then choose framing, camera, and cut.
+1. 找出来源中的关键动作：行动、台词、发现、拒绝、转手或揭示。
+2. 说明观众或人物因此发生什么变化。
+3. 决定本镜主要从谁的体验组织画面。
+4. 确定开始和结束时必须看见什么。
+5. 最后才选择景别、摄影机行为和切镜点。
 
-Useful purposes include orienting geography, aligning with a character, exposing
-evidence, withholding information, transferring power, registering a reaction,
-or making consequence unavoidable. “中景展示人物说话” is not enough.
+镜头可以负责建立空间、让观众站到某个人物一边、展示证据、暂缓信息、转移权力、
+表现反应，或让后果无法回避。“中景展示人物说话”不算足够的镜头目的。
 
-## Blocking and geography
+### 观众可见性 (`SHT-12`)
 
-Treat location description as navigable space:
+构图同时决定观众此刻能知道什么。每个事实单独建立一条 `audience_visibility`：绑定准确
+的 `source_ref`，选择 `show_now` 或 `withhold_now`，写明可见或可听的载体，并分别写出
+揭示条件、保护方法和理由。同一镜中的不同事实可以在不同时间放出。
 
-- entrances/exits and fixed anchors;
-- foreground/midground/background zones;
-- who can see or reach what;
-- facing and eyeline relationships;
-- working side of the axis and screen direction;
-- hand/prop ownership and transfer path.
+背影、只露腿部的入场、门缝、前景遮挡或延迟对焦，都可以用于保护剧本保留的揭示。
+如果它们提前暴露身份或证据，就是失败。反过来，本镜若负责展示证据或听者的关键反应，
+就不能为了画面好看而遮住其载体。神秘感不是默认加分项；审查者同时核对剧本允许展示
+什么，以及本镜必须交代什么。
 
-Blocking expresses tactics. Moving closer can pressure or seek alliance; turning
-away can withhold; occupying an exit can control; touching evidence can reveal
-knowledge. Avoid arbitrary walking inserted only to create motion.
+## 场面调度与地理
 
-An axis flip is not inherently wrong. It becomes a problem when unmotivated and
-confusing. Declare a neutral bridge, visible cross, deliberate disorientation, or
-new spatial setup when crossing.
+把场景写成可以行动的空间：
 
-Readable or deliberately unreadable surface text remains an asset-owned policy.
-Shots and keyframes carry canonical `text_treatment_refs` to that exact policy
-field. They may choose visibility, scale, angle, and focus, but cannot silently
-invent wording or change `exact_readable`, `graphic_only`, `no_readable_text`, or
-pending status. Candidate previews reference candidate authority and remain
-delivery-blocked.
+- 入口、出口和固定锚点。
+- 前景、中景、后景区域。
+- 谁能看见或接近什么。
+- 人物面向与视线关系。
+- 轴线工作侧和屏幕运动方向。
+- 双手、道具归属和转手路径。
 
-## Framing and camera motivation
+场面调度表现人物策略。靠近可以施压或寻求结盟；转身可以拒绝；占住出口可以控制；
+碰触证据可以暴露知情。不要只为增加运动而让人物无理由走动。
 
-`SHT-04` governs the choice: change framing or camera behavior because attention,
-pressure, alignment, reveal, or rhythm changes—not to decorate every beat.
+跨轴本身不是错误；没有动机又让空间难以理解才是问题。跨轴时可以使用中性过渡镜头、
+人物在同一镜内穿轴、有意制造主观错乱，或重新建立空间。
 
-- Wide: geography, isolation, group power, simultaneous consequence.
-- Medium: interaction, gesture, two-person tactics, readable blocking.
-- Close: decision, evidence, concealed reaction, irreversible realization.
-- Detail: a story-bearing object/action whose meaning is established.
+画面文字必须服从资产负责人确定的文字政策。镜头和关键帧通过 `text_treatment_refs`
+指向准确政策字段，可以决定文字是否可见、大小、角度和对焦，但不能静默编造文案，
+也不能改写 `exact_readable`、`graphic_only`、`no_readable_text` 或待定状态。候选预览只能
+引用候选政策，并且不能直接交付。
 
-Change size/angle because attention or relationship changes. Do not escalate from
-wide to extreme close merely because the scene gets louder.
+## 景别与摄影机动机
 
-Camera behavior is one coherent choice within an interval:
+`SHT-04` 要求景别或摄影机行为因注意、压力、观众立场、揭示或节奏变化而改变，
+不能为了装饰每一拍而变化。
 
-- locked for observation, tension, ritual, entrapment;
-- pan/tilt to reveal or transfer attention;
-- push/pull to alter intimacy, pressure, or realization;
-- track/follow when movement itself is tactical;
-- handheld for embodied instability when the visual direction accepts it.
+- **全景**：建立空间、孤立感、群体权力或同时发生的后果。
+- **中景**：表现互动、手势、双人策略和清楚的调度。
+- **近景**：表现决定、证据、被藏住的反应或无法撤回的认识。
+- **细节镜头**：展示已经建立意义的关键物件或动作。
 
-Do not specify locked and moving simultaneously without an explicit transition.
+只有注意或关系发生变化时才改变景别和角度。场面声音变大，不等于镜头必须从全景一路
+推到大特写。
 
-## Duration and cutting
+一个时间段内选择一套连贯的摄影机行为：
 
-### Short-shot action budget (`SHT-03`)
+- 固定机位用于观察、紧张、仪式或受困。
+- 摇镜或俯仰用于揭示信息或转移注意。
+- 前移或后移用于改变亲近、压力或人物认识。
+- 跟拍用于人物移动本身带有策略意义的场面。
+- 手持用于创作者已经接受的身体不稳或现场感。
 
-As a `craft_default`, start with one primary action plus the reaction needed to
-make its consequence readable. Combine or expand only when continuous
-performance, geography, duration, and the shot's purpose remain legible; this is
-not a fixed beat-count validator.
+没有明确切换时，不要在同一时间段同时要求固定和移动。
 
-Duration must leave room for readable action, performance, dialogue, and reaction.
-Use explicit dialogue length and timed actions as evidence. Treat broad action
-load as a review question, not a universal words-per-second blocker.
+## 时长与切镜
 
-Cut on a change: new information, gaze, decision, spatial relation, threat,
-evidence, or rhythm. Avoid cuts that only restate the same action from another
-angle. Preserve enough reaction time for the audience to register consequence.
+### 短镜头的动作量 (`SHT-03`)
 
-## Visual-direction option (`SHT-07`)
+作为 `craft_default`，可以先从一个主要动作开始，再保留让观众读懂后果所需的反应。
+只有连续表演、空间、时长和镜头目的都仍然清楚时才合并更多内容。这是起步方法，
+不是固定动作数量检查。
 
-Lens vocabulary, tempo, and locked, handheld, or formal staging remain
-`taste_option` choices inherited from the accepted visual direction. Review
-whether the choice serves this shot; do not enforce one house style.
+时长要给动作、表演、对白和反应留出可读空间。明确的对白长度和计时动作可以作为证据；
+一般动作量是否过多，应由审查者结合本镜判断，不能用通用的每秒字数阻断。
 
-## Linked boundary (`CON-01`)
+在变化处切镜：新信息、新目光、新决定、新空间关系、新威胁、新证据或节奏变化。
+不要只为换角度而重复同一个动作。给反应留下足够时间，让观众读懂后果。
 
-The shot's accepted end boundary must match the next shot's accepted start, or
-the owning artifact must declare a revision/transition. Never hide a mismatch in
-camera prose.
+## 视觉方向选择 (`SHT-07`)
 
-## Failure patterns
+焦段语言、节奏、固定机位、手持或形式化调度属于 `taste_option`，读取创作者已接受的
+视觉方向。审查它是否服务本镜，不强制所有项目使用同一套风格。
 
-- shot list paraphrases screenplay but never states viewing purpose;
-- anonymous “人物” replaces exact accepted assets;
-- one shot crosses location or time without montage/ellipsis;
-- dialogue is present but the reaction/payoff is dropped;
-- character/prop teleports across the cut;
-- every emotional line becomes an extreme close-up;
-- camera movement conflicts or serves no attention change;
-- boilerplate lighting replaces actual spatial anchors;
-- provider batching is mistaken for editorial shot identity.
+## 相连边界 (`CON-01`)
 
-## Review questions
+本镜已接受的结束边界必须与下一镜已接受的开始边界一致；若不一致，负责产物必须声明
+修订或过渡。不得用摄影机描述掩盖边界冲突。
 
-- What source blocks does this shot cover, omit, or repeat?
-- What changes by the end of the shot?
-- Why this frame size and camera behavior?
-- Can every subject plausibly occupy and move through this geography?
-- Are exact Looks, Views, Prop States, hands, and text policy bound?
-- Does the end boundary give the next shot a clear start?
-- Would removing or combining this shot lose story meaning?
+## 常见问题
+
+- 镜头表只是改写剧本句子，没有说明观众怎样观看或获得什么变化。
+- 用匿名“人物”代替准确的已接受资产。
+- 一镜跨越地点或时间，却没有蒙太奇或省略依据。
+- 保留了对白，却删掉承担后果的反应。
+- 人物或道具在切镜后无原因换位。
+- 每句情绪台词都变成大特写。
+- 摄影机指令冲突，或运动没有注意变化的理由。
+- 套话式布光替代真实空间锚点。
+- 把外部批量制作单位误当成剪辑镜头本身。
+
+## 审查问题
+
+- 本镜落实、省略或重复了哪些剧本段？
+- 本镜结束时改变了什么？
+- 为什么选择这个景别和摄影机行为？
+- 每个人物能否在当前空间中合理站立、看见和移动？
+- 是否绑定了准确的造型、观察视角、道具状态、双手状态和文字政策？
+- 结束边界是否为下一镜提供清楚的开始状态？
+- 删除或合并本镜，会不会丢失故事意义？

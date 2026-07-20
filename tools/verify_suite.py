@@ -53,7 +53,7 @@ def verify_suite(core: Path) -> dict[str, Any]:
     actual_files: set[str] = set()
     for path in skills_root.rglob("*"):
         # Local bytecode caches are development noise, never release content;
-        # update_suite_manifest.py excludes them from the inventory the same way.
+        # The repository manifest updater excludes them from the inventory the same way.
         if not path.is_file() or path == manifest_path or "__pycache__" in path.parts:
             continue
         relative = path.relative_to(skills_root).as_posix()
@@ -106,7 +106,11 @@ def verify_suite(core: Path) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    core = Path(argv[0]) if argv else Path(__file__).resolve().parents[1]
+    core = (
+        Path(argv[0])
+        if argv
+        else Path(__file__).resolve().parents[1] / "skills" / "short-drama"
+    )
     try:
         print(json.dumps(verify_suite(core), ensure_ascii=False, sort_keys=True))
         return 0

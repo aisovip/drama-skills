@@ -91,6 +91,13 @@ def parse_index() -> dict[str, str]:
     return rules
 
 
+def parse_fenced_json(path: Path) -> dict:
+    match = re.search(r"```json\n(\{.*?\})\n```", path.read_text(encoding="utf-8"), re.S)
+    if match is None:
+        raise AssertionError(f"missing fenced JSON object: {path}")
+    return json.loads(match.group(1))
+
+
 class KnowHowResourceTests(unittest.TestCase):
     def test_index_has_unique_rules_in_all_eight_layers(self) -> None:
         rules = parse_index()
@@ -162,7 +169,161 @@ class KnowHowResourceTests(unittest.TestCase):
 
     def test_new_rules_have_reviewed_classification(self) -> None:
         self.assertEqual(parse_index().get("IMG-08"), "reviewed_invariant")
+        self.assertEqual(parse_index().get("IMG-09"), "reviewed_invariant")
+        self.assertEqual(parse_index().get("SHT-12"), "reviewed_invariant")
         self.assertEqual(parse_index().get("VID-11"), "reviewed_invariant")
+        self.assertEqual(parse_index().get("VID-12"), "reviewed_invariant")
+
+    def test_reference_roles_visibility_and_pickup_scope_are_explicit(self) -> None:
+        image_spec = parse_fenced_json(
+            SKILLS / "short-drama-image-prompts/assets/image-prompt-spec.jsonl.md"
+        )
+        image_binding = image_spec["reference_bindings"][0]
+        self.assertTrue(
+            {
+                "artifact_ref",
+                "role",
+                "may_control",
+                "must_not_control",
+                "admission_status",
+                "reference_observation_ref",
+                "unresolved_risks",
+            }
+            <= image_binding.keys()
+        )
+        self.assertNotIn("|", image_binding["role"])
+        self.assertNotIn("+", image_binding["role"])
+        self.assertEqual(
+            image_binding["admission_status"],
+            "unverified | creator_described | visually_inspected",
+        )
+        shot = json.loads(
+            (SKILLS / "short-drama-storyboard/assets/shot-template.jsonl")
+            .read_text(encoding="utf-8")
+            .strip()
+        )
+        visibility = shot["audience_visibility"]
+        self.assertIsInstance(visibility, list)
+        self.assertTrue(visibility)
+        self.assertTrue(
+            {
+                "source_ref",
+                "fact",
+                "permission",
+                "carrier",
+                "reveal_trigger",
+                "protection_method",
+                "rationale",
+            }
+            <= visibility[0].keys()
+        )
+        self.assertTrue(
+            {"owner", "artifact", "hash", "record_id"}
+            <= visibility[0]["source_ref"].keys()
+        )
+        motion = parse_fenced_json(
+            SKILLS / "short-drama-video-prompts/assets/motion-spec.jsonl.md"
+        )
+        motion_binding = motion["reference_bindings"][0]
+        self.assertTrue(
+            {
+                "artifact_ref",
+                "role",
+                "may_control",
+                "must_not_control",
+                "admission_status",
+                "reference_observation_ref",
+                "unresolved_risks",
+            }
+            <= motion_binding.keys()
+        )
+        self.assertNotIn("|", motion_binding["role"])
+        self.assertNotIn("+", motion_binding["role"])
+        self.assertEqual(
+            motion_binding["admission_status"],
+            "unverified | creator_described | visually_inspected",
+        )
+        coverage_scope = motion["coverage_scope"]
+        self.assertTrue(
+            {
+                "mode",
+                "master_motion_id",
+                "supplements_motion_ids",
+                "source_obligations",
+                "replacement_intent",
+            }
+            <= coverage_scope.keys()
+        )
+        self.assertTrue(coverage_scope["source_obligations"])
+        obligations = coverage_scope["source_obligations"]
+        self.assertEqual(
+            {obligation["kind"] for obligation in obligations},
+            {"action", "reaction", "dialogue", "reveal", "directive", "end_boundary"},
+        )
+        for obligation in obligations:
+            self.assertTrue(
+                {"owner", "artifact", "hash", "record_id"}
+                <= obligation["source_ref"].keys()
+            )
+        self.assertTrue(
+            {"kind", "source_ref", "disposition", "motion_field"}
+            <= obligations[0].keys()
+        )
+        self.assertNotIn("supersession_review_ref", json.dumps(motion))
+        verdict = json.loads(
+            (SKILLS / "short-drama-review/assets/verdict-template.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIn("supersession_decisions", verdict)
+        supersession = json.loads(
+            (SKILLS / "short-drama-review/assets/supersession-decision.example.json")
+            .read_text(encoding="utf-8")
+        )
+        self.assertTrue(
+            {"alternate_ref", "master_ref", "checked_obligations", "decision"}
+            <= supersession.keys()
+        )
+        self.assertNotEqual(
+            supersession["alternate_ref"]["hash"], supersession["master_ref"]["hash"]
+        )
+
+        observation = json.loads(
+            (SKILLS / "short-drama/assets/reference-observation.example.jsonl")
+            .read_text(encoding="utf-8")
+            .strip()
+        )
+        self.assertTrue(
+            {
+                "reference_artifact_ref",
+                "admission_status",
+                "observed_media_sha256",
+                "method",
+                "observer",
+                "observed_regions",
+                "text_policy_conclusion",
+                "unresolved_risks",
+            }
+            <= observation.keys()
+        )
+        self.assertEqual(
+            observation["admission_status"],
+            "creator_described | visually_inspected",
+        )
+
+    def test_long_references_have_early_navigation(self) -> None:
+        for reference in SKILLS.glob("*/references/*.md"):
+            lines = reference.read_text(encoding="utf-8").splitlines()
+            if len(lines) <= 100:
+                continue
+            with self.subTest(reference=reference.relative_to(SUITE)):
+                self.assertTrue(
+                    any(
+                        line.strip() in {"## 目录", "## Contents", "## Table of contents"}
+                        for line in lines[:35]
+                    ),
+                    "references over 100 lines need an early table of contents",
+                )
 
 
 class GovernanceSemanticsTests(unittest.TestCase):

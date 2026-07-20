@@ -1,22 +1,25 @@
 ---
 name: short-drama-image-prompts
-description: 为已确认的短剧角色、造型、场景、视图、道具和状态编写或修改可复制的通用资产图片提示词。用户提到角色设定图、人物参考图、场景空镜、场景板、道具图、造型或状态变体、局部编辑提示词、资产图片 prompt，或要求用自然语言修改现有图片提示词时直接使用；只产出结构化规格与 Markdown 文本，不生成图片、不调用模型或供应商 API。
+description: 为已确认的短剧角色、造型、场景、视角、道具和状态编写或修改可复制的通用资产图片提示词。用户提到角色设定图、人物参考图、场景空镜、场景板、道具图、造型或状态变体、局部编辑提示词，或要求用自然语言修改现有图片提示词时直接使用；只产出结构化规格与 Markdown 文本，不生成图片，也不调用模型或供应商接口。
 ---
 
 # 短剧资产图片提示词
 
-把已接受的资产事实编译为“能认出、能复用、能区分状态”的参考图提示词。这里的产品是提示词，不是图片。
+把已接受的资产事实写成“能认出、能复用、能区分状态”的参考图提示词。这里的产物是提示词，不是图片。
 
 ## 进入条件与边界
 
-- 可从现成项目直接进入，不要求先做故事开发；先定位 `short-drama.json` 和唯一匹配版本的 sibling core。
-- 读取 core 的 `references/contract-and-ownership.md` 与 `references/knowhow-index.md` 中 `IMG-*`、`AST-*`、`CON-*`。
+- 可从现成项目直接进入，不要求先做故事开发；先定位 `short-drama.json` 和版本一致的主技能。
+- 所有权、下游文件何时变为 `stale` 或项目状态不清时，才读取主技能的
+  [所有权契约](../short-drama/references/contract-and-ownership.md)；需要定位规则 ID
+  或解释审查问题时，才读取 [规则索引](../short-drama/references/knowhow-index.md)
+  中相关 `IMG-*`、`AST-*`、`CON-*` 条目。
 - 输入必须是已接受的 `CHAR/LOOK`、`LOC/VIEW` 或 `PROP/PSTATE` 精确 ID 与快照引用。未决指代、冲突变体或未知状态退回 `$short-drama-assets`，不代猜。
-- 若 creator 明确要求全链预览，可对唯一、非 unresolved 的 asset proposal 写
-  `candidate` prompt；source refs 加 `authority:candidate`，文档标明 provisional/
-  not delivery-ready，不得声称 accepted。
-- 本 skill 只拥有构图、提示词专用约束及 edit 的 change/preserve；身份、地理、资产状态仍由 assets 拥有。
-- 始终保留 provider-neutral 的通用提示词。不得创建图片、媒体任务、API 请求、模型参数、轮询记录或画质结论。
+- 若创作者明确要求全链预览，可对唯一且没有 `unresolved` 问题的资产提案写
+  `candidate` 提示词；来源引用加 `authority:candidate`，文档标明 `provisional` 和
+  `not delivery-ready`，不得声称已经 `accepted`。
+- 本技能只负责构图、提示词专用约束，以及局部修改中的修改项 `changes` 和保留项 `preserve`；身份、地理和资产状态仍由资产技能负责。
+- 始终保留不绑定供应商的通用提示词。不得创建图片、媒体任务、接口请求、模型参数、轮询记录或画质结论。
 
 ## 按任务加载资料
 
@@ -24,12 +27,13 @@ description: 为已确认的短剧角色、造型、场景、视图、道具和�
 |---|---|
 | 新建任意资产提示词 | [通用配方与视觉锚点](references/common-recipe.md) |
 | 人物设定图 | 加读 [人物与造型](references/character-and-look.md) |
-| Look、View 或 道具状态 变体 | 加读 [造型与状态变体](references/look-and-state-variant.md) |
-| 场景空镜或 View | 加读 [场景与地理](references/location-plate.md) |
+| 造型、视角或道具状态的版本 | 加读 [造型与状态变体](references/look-and-state-variant.md) |
+| 场景空镜或不同观察方向 | 加读 [场景与地理](references/location-plate.md) |
 | 道具或 道具状态 | 加读 [道具、尺度与文字](references/prop-plate.md) |
-| 局部修改或自然语言改 prompt | 加读 [编辑与修订](references/edit-and-revision.md) |
+| 局部修改或自然语言改提示词 | 加读 [编辑与修订](references/edit-and-revision.md) |
 | 自检、复核、失败诊断 | [审查量表与合成案例](references/review-and-fixtures.md) |
 | 生产端三视图/场景方位/物品版式配方 | [生产资产图配方](references/production-sheet-recipes.md) |
+| 参考图只决定身份、构图或尺度等指定内容 | [参考图、揭示时机与补拍](../short-drama/references/reference-media-and-pickups.md) |
 
 写规格时使用 [结构化规格模板](assets/image-prompt-spec.jsonl.md)，交付文本使用 [Markdown 模板](assets/image-prompts.md)。只加载当前类型所需资料。
 
@@ -39,34 +43,38 @@ description: 为已确认的短剧角色、造型、场景、视图、道具和�
 
 先回答：这张参考图以后要帮助谁保持什么一致？选择一种主类型：
 
-- `character_sheet`：识别同一人物的一套已接受 Look；
-- `location_plate`：固定一个 Location 的 View、方向和地理；
-- `prop_plate`：固定道具的尺度、形制、功能和当前 State；
+- `character_sheet`：识别同一人物的一套已接受造型；
+- `location_plate`：固定一个地点的观察方向和地理；
+- `prop_plate`：固定道具的尺度、形制、功能和当前状态；
 - `look_state_variant`：在同一身份上突出有因果与有效范围的差异；
 - `edit_delta`：对精确目标做有边界的修改，同时声明保留集。
 
-一个规格只承担一个主要复用目的。需要不同 Look/View/State 时分开写，不把互斥状态揉成“大全图”。
+一个规格只承担一个主要复用目的。需要不同造型、观察方向或状态时分开写，不把互相冲突的状态揉成“大全图”。
 
-### 2. 建立证据卡
+### 2. 整理输入
 
 从接受快照记录：
 
-1. exact asset + variant ID；
-2. stable anchors 与本 variant 的 delta；
-3. 来源 artifact/hash/field pointer；
+1. 准确的资产 ID 与版本 ID；
+2. 稳定识别点与本版本的变化；
+3. 来源的 `artifact/hash/field`；
 4. 用途、构图、背景、光线与文字政策；
-5. 必须出现、必须保持和明确排除的内容；
-6. 未决定项以及 creator 的明确覆盖。
+5. 每张参考图的准确引用、单一作用、可参考内容、不可照搬内容与检查状态；只有
+   创作者/参考图权利人的说明，或经过授权的输入参考图检查，才能给出像素/文字结论；
+   前者写 `creator_described`，后者写 `visually_inspected`，都没有时保持 `unverified` 并列出风险；
+6. 必须出现、必须保持和明确排除的内容；
+7. 未决定项以及创作者的明确选择。
 
-只带入当前操作必需的信息。私有引用在文本中仅写 `REF-*`，不泄露本地路径、URL 或原始内容。
+只带入当前操作必需的信息。私有引用在文本中仅写 `REF-*`，不泄露本地路径、网址或原始内容。
 
-### 3. 按重要性编译规格与通用提示词
+### 3. 按重要性写规格与通用提示词
 
-按“用途/主体 → 识别锚点 → 状态差异 → 构图/方向/尺度/空间关系 → 材质/色彩/光线 → 背景 → 文字政策 → 排除/保留”组织。身份、地理、尺度和可读文字等高信息事实先于“精致、电影感”等泛化审美词。
+按“用途/主体 → 识别点 → 状态差异 → 构图/方向/尺度/空间关系 → 材质/色彩/光线 → 背景 → 文字政策 → 排除/保留”组织。身份、地理、尺度和可读文字等重要事实先于“精致、电影感”等空泛审美词。
 
-- `structural_invariant`：绑定精确接受 ID/版本；edit 写清 target/hash/region、changes、preserve、continuity impact；`readable` 不得与全局 no-text 并存。
-- `reviewed_invariant`：人物在一个规格中保持同一身份和一套连贯 Look；场景保持可导航地理；道具保持可辨尺度、形制与功能。
-- `craft_default`：用少量可观察、彼此正交的锚点；负面约束只防止当前风险，不写长篇万能禁词。
+- `structural_invariant`：绑定准确的已接受 ID/版本；局部修改写清 `target/hash/region`、`changes`、`preserve` 和连续性影响；`readable` 不得与全局 `no-text` 并存。
+- `reviewed_invariant`：人物在一个规格中保持同一身份和一套连贯造型；场景保持清楚的地理；道具保持可辨尺度、形制与功能。
+- `reviewed_invariant`：参考图只决定已经声明的内容；构图、尺度或效果参考不得顺带改写身份、文字、人数或故事状态。
+- `craft_default`：用少量可观察、彼此不重复的识别点；负面约束只防止当前风险，不写长篇万能禁词。
 - `taste_option`：写实/绘制、镜头审美、色彩浓度、文风密度由创作者决定。
 
 ### 4. 做矛盾与可复用性审查
@@ -75,28 +83,30 @@ description: 为已确认的短剧角色、造型、场景、视图、道具和�
 
 ### 5. 让创作者接受，再写正式产物
 
-先展示人能读懂的预览：绑定对象、关键选择、警告与 copyable prompt。接受后写：
+先展示人能读懂的预览：绑定对象、关键选择、警告与可复制提示词。接受后写：
 
 - `episodes/<EP>/assets/image-prompt-specs.jsonl`：权威规格；
-- `episodes/<EP>/assets/image-prompts.md`：由已接受规格和 recipe hash 重渲染的缓存视图。
+- `episodes/<EP>/assets/image-prompts.md`：由已接受规格和配方 `hash` 重新生成的文本版本。
 
-跨文件发布遵循 core 的事务与恢复流程；不得以半成品覆盖已接受版本。
+跨文件发布遵循主技能的提交与恢复流程；不得以半成品覆盖已接受版本。
 
 ## 自然语言修订
 
 用户可直接说“外套保持不变，只把袖口变湿”“场景里不要出现演员”。不要让用户编辑 JSONL。
 
-1. 把请求解析为字段级候选 diff，并标记 source-owned 事实；
-2. 展示 `before → after`、影响的绑定/连续性、未映射或有损内容；
-3. 等待接受或拒绝；拒绝时原规格与 Markdown 不变；
-4. 接受后先提交规格，再从规格重渲染 Markdown。
+1. 把请求整理成按字段列出的修改方案，并标记哪些事实由上游负责；
+2. 展示 `before → after`、受影响的绑定和连续性，以及无法对应或会丢失的内容；
+3. 等待接受或拒绝；拒绝时原规格与 Markdown 文本不变；
+4. 接受后先提交规格，再从规格重新导出 Markdown 文本。
 
-若 Markdown 被手改：`restore` 先预览恢复；`adopt` 只把可无损映射的改动变成规格提案。无法映射的文句阻断 adopt，绝不让缓存反向悄悄取得权威。详见 [编辑与修订](references/edit-and-revision.md)。
+若 Markdown 文本被手改：`restore` 先预览恢复；`adopt` 只把能完整对应字段的改动变成
+规格提案。无法对应的文句会阻断 `adopt`，绝不让派生文本反向成为事实来源。详见
+[编辑与修订](references/edit-and-revision.md)。
 
 ## 完成标准
 
-- 每个规格能追溯到精确接受资产与 variant，且 generic prompt 可独立复制；
+- 每个规格能追溯到准确的已接受资产与版本，且通用提示词可独立复制；
 - 类型配方完整，重要事实在泛化审美词之前，无未决占位或内部工作指令；
-- edit 同时说明改什么、保留什么、连续性影响什么；
-- 已运行本地结构检查，再交给独立 `$short-drama-review` 做证据化语义复核；
-- 交付中没有媒体、远程执行任务/API、远端 ID、私有映射或“生成成功”声明。
+- 局部修改同时说明改什么、保留什么、会影响哪些连续性；
+- 已运行本地结构检查，再交给独立 `$short-drama-review` 结合来源资料审查内容；
+- 交付中没有媒体、远程执行任务或接口信息、远端 ID、私有对应表或“生成成功”声明。
