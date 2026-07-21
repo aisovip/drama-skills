@@ -11,7 +11,9 @@
 整条流程里影响很大的人工输入：写在拆分/分镜之前，约束全剧后续工作——分镜
 格式、摄影职责、节奏方向和已知能力条件。在本套件中，它落入
 `short-drama.json#/creator_authority` 中的 `visual_direction` 与 `production_profile`，
-由本技能在项目规划阶段起草、创作者接受后生效；不替代各环节对本环节文件的最终归属。
+由本技能在 `development/director-brief.md` 中起草候选并展示语义差异。创作者接受后，
+由 `$short-drama` 路由提升到 creator authority 才生效；本技能不直接写 creator-owned
+配置，也不替代各环节对本环节文件的最终归属。
 
 ## 基础写法
 

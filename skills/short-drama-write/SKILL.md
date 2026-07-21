@@ -1,11 +1,17 @@
 ---
 name: short-drama-write
-description: 创作或修订中文短剧单集卡、因果节拍与可拍摄的 Markdown 剧本，也负责把现有中文剧本以保留原文、预览语义差异、创作者接受后发布的方式规范化。用户提出“写/改一集短剧”“把大纲写成剧本”“优化场景/对白”“续写下一集”或提供现成剧本要求进入后续制作时使用；不负责资产、分镜、媒体提示词或终审。
+description: 创作或修订中文短剧单集卡、因果节拍与可拍摄的 Markdown 剧本，也负责把现有中文剧本以保留原文、预览语义差异、创作者接受后发布的方式规范化。用户提出“写/改一集短剧”“把大纲写成剧本”“优化场景/对白”“去模板感地修订”“去 AI 味润色”“续写下一集”或提供现成剧本要求进入后续制作时使用；不负责资产、分镜、媒体提示词或终审。
 ---
 
 # 短剧写作
 
 把单集意图写成可表演、可追踪且会改变故事状态的场景。`screenplay.md` 是唯一可编辑剧本源；卡片和节拍帮助推理，不是另一份正文。
+
+## 先定位套件
+
+从本技能目录读取 `suite-ref.json`，按其中相对 `core_manifest` 定位唯一同级主技能与
+套件清单；确认声明的 core、contract、recipe 和清单 hash 一致后再读写项目。
+随后执行主技能的 [运行时预检](../short-drama/references/runtime-preflight.md)：先恢复事务、读取状态，再进入本阶段。
 
 ## 先判断入口
 
@@ -35,6 +41,9 @@ diff，让创作者明确选择 authority 迁移，将 standalone 契约标记 s
 字段里偷改。不要用悬念替代整集回报。
 
 单集设计细节见 [episode-design.md](../short-drama-develop/references/episode-design.md)。若只做原文规范化，跳过本步，不推断缺失剧情。
+从想法或 `write_standalone` 直接写作、且题材机制会影响压力、证据、场面或集尾交接时，
+按需读取 [题材条件与钩子手册](../short-drama-develop/references/genre-and-hook-playbook.md)；
+已有已接受单集契约时以契约为准，不为贴题材标签另造公式。
 
 ### 3. 建立因果节拍
 
@@ -79,8 +88,13 @@ diff，让创作者明确选择 authority 迁移，将 standalone 契约标记 s
 ```bash
 python3 <skill-dir>/scripts/screenplay_index.py episodes/EP001/screenplay.md \
   --output episodes/EP001/screenplay-index.jsonl \
-  --source-ref episodes/EP001/screenplay.md
+  --source-ref episodes/EP001/screenplay.md \
+  --speaker 葛晴 --speaker 游森
 ```
+
+由 write owner 阅读当前剧本后，把本集实际说话者逐个传给 `--speaker`；索引器只做精确
+标签核对，不用冒号正则猜人物。未登记的 `前缀：内容` 写成
+`ambiguous_dialogue_or_action`，由 agent 判断应保留为动作、改用 `[画面文字]`，还是补入说话者清单。
 
 规范化预览尚未获 creator acceptance 时加 `--authority candidate`，使 meta、block 与
 source issue 的 refs 都保持 candidate；accepted 剧本发布后再以默认 accepted authority

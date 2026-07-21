@@ -110,6 +110,11 @@ Motion spec 存 dialogue/VO/SFX/audio 的 artifact/hash/field refs；copyable pr
 - **`reviewed_invariant`**：delivery 必须符合角色 agenda 和表演弧；不能把威胁台词提示成真诚道歉，除非剧本有反讽依据。
 - **`taste_option`**：严格口型、近似同步、VO 优先、现场感/配乐密度由 production profile 决定。
 
+若 Character 已有 `voice_direction`，运动规格分别绑定角色身份引用、逐字台词引用与声音
+方向引用；本场的气息、音量、停顿和情绪仍写在 delivery，不能覆盖持续音色/发音锚点。
+声音参考只在创作者授权且有可解析的本地产物记录时进入，缺失时保持文字方向，不编造服务
+ID 或网址。即使引用齐全，本套件也只证明文本绑定一致，不能承诺真实音色、配音或音画同步。
+
 ### 音频矛盾
 
 - exact dialogue 同时要求“全程无人说话”；

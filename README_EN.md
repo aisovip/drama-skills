@@ -2,15 +2,12 @@
 
 # Drama Skills
 
-An AI short-drama creation skill suite covering the full text production chain:
-story development, episode scripts, asset sheets, storyboards, image/video
-prompts, and independent review. Works with Claude Code, Codex, and any other
-runtime that supports Agent Skills.
-
-This repository only produces text: screenplays, asset decisions, image prompts,
-storyboard/keyframe prompts, video prompts, and review records. It sits at the
-very top of the generation pipeline; it **generates no images, video, or audio
-and calls no media-generation services**.
+An AI short-drama creation suite for screenwriters, motion-comic studios, and
+directors. It develops an idea or long-form source into episode scripts, asset
+decisions, image prompts, storyboards/keyframes, video prompts, and independent
+review records, while carrying creator decisions, source evidence, and
+continuity through the entire chain. It works with Claude Code, Codex, and other
+runtimes that support Agent Skills.
 
 ## Core ideas
 
@@ -21,15 +18,15 @@ Three principles run through the whole chain:
 >    performance notes only when the creator deliberately chooses them.
 > 2. **Assets own identity and state; storyboards own the current presentation.**
 >    Reference-sheet layout, background, and view count follow the project's
->    reuse job rather than one universal white-background formula.
+>    reuse job, so each composition serves an explicit downstream purpose.
 > 3. **Continuity is explicit engineering.** Compare authoritative shot
->    boundaries exactly, then repeat only the local anchors execution needs—not
->    the whole state ledger verbatim and not an assumed model memory.
+>    boundaries exactly, then repeat only the local anchors execution needs and
+>    use project records as the shared memory across stages.
 
 Above those three sits a **four-tier rule system** (structural invariant /
-reviewed invariant / craft default / taste option) that splits requirements into
-what machines must verify, what reviewers must back with evidence, and what stays
-the creator's call.
+reviewed invariant / craft default / taste option) that separates deterministic
+file and contract checks from evidence-based craft review and creator-owned style
+choices.
 
 ## Production chain
 
@@ -56,19 +53,26 @@ flowchart LR
 
 `$short-drama` is the entry router: it initializes, resumes, recovers, and
 delivers projects, dispatching the actual work to the matching skill. An
-existing screenplay can enter normalization or asset extraction directly.
+existing screenplay can enter normalization or asset extraction directly, while
+an idea or long-form source enters through story development.
+
+There are two image-prompt paths with distinct ownership. `$short-drama-image-prompts`
+writes reusable prompts for **asset references** (characters, locations, and
+props). `$short-drama-storyboard` writes **shot keyframe prompts** representing
+each authored shot's start state. Both share accepted asset facts while keeping
+reusable design decisions separate from shot-specific presentation.
 
 ## Skills
 
 | Skill | Responsibility |
 |---|---|
 | `short-drama` | Init, routing, state, recovery, acceptance/review lifecycle, delivery |
-| `short-drama-develop` | Story promise, story engine, episode map, director brief, genre & hook playbook |
-| `short-drama-write` | Episode contract, causal beats, shootable screenplay; production dialect (△/▲, OS/VO, system-genre syntax) |
+| `short-drama-develop` | Traceable novel/long-form adaptation, story engine, episode map, director brief, genre & hook playbook |
+| `short-drama-write` | Episode contract, causal beats, performable screenplay, and the project's accepted production dialect |
 | `short-drama-assets` | Character/Look, Location/View, Prop/State, continuity decisions |
-| `short-drama-image-prompts` | Character turnaround sheets, directional scene plates, prop white-background shots, pinpoint edit prompts |
-| `short-drama-storyboard` | Beat-to-shot translation, five-connective time chains, camera-move decision table, frozen keyframes |
-| `short-drama-video-prompts` | State-continuation quads, character state tracking, negative-constraint system, emotion arcs |
+| `short-drama-image-prompts` | Reusable character/location/prop reference prompts and scoped edit instructions |
+| `short-drama-storyboard` | Source coverage, motivated shots, staging/continuity boundaries, and frozen keyframe prompts |
+| `short-drama-video-prompts` | Ordered action, performance, camera/audio intent, timing, and exact start/end continuity |
 | `short-drama-review` | Structural validation, evidence-based review, production quality gates, independent verdicts |
 
 ## Install
@@ -107,13 +111,14 @@ Remove any same-named skill links first — do not mix versions. Start from
 # 1. New project
 Use $short-drama to init a vertical 9:16 urban face-slapping short-drama project
 
-# 2. Write episode 1 (check character choice, local result, and exact handoff;
-#    do not impose fixed beat or reversal formulas)
+# 2. Write episode 1 around character choice, a local result, and exact handoff
 Use $short-drama-write to write EP1: a delivery rider humiliated at a luxury
 hotel turns out to be the group chairman
 
-# 3. Assets, storyboard, video prompts
+# 3. Assets; optionally run asset-reference prompts and storyboard keyframes in
+#    parallel, then write video prompts
 Use $short-drama-assets to extract characters/scenes/props from EP1
+Use $short-drama-image-prompts to write reference prompts for accepted assets
 Use $short-drama-storyboard to storyboard EP1
 Use $short-drama-video-prompts to translate each authored shot into a video prompt
 
@@ -123,20 +128,3 @@ Use $short-drama-review to review EP1's script and prompts
 
 See [demo/](demo/) for a complete worked example: one episode's script → asset
 sheets → storyboard → video prompts.
-
-## Verify & develop
-
-```bash
-PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests -v
-ruff check --no-cache .
-python3 tools/verify_suite.py skills/short-drama
-```
-
-Repository maintenance tools are not installed with the Skills. After changing
-anything under `skills/`, rebuild the suite manifest from the repository root:
-`python3 tools/update_suite_manifest.py skills/short-drama`.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
-
-## License
-
-MIT — see [LICENSE](LICENSE).

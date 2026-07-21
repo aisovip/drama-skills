@@ -1,16 +1,25 @@
 ---
 name: short-drama-develop
-description: 将中文短剧想法、梗概、改编材料或已有系列笔记发展成可选择的戏剧方向、创作简报、故事引擎与分集地图。用户提出“开发短剧”“做故事设定/系列大纲/分集规划”“把这个点子变成短剧”或需要梳理人物冲突与集间交接时使用；已有剧本可直接进入写作、资产或审查流程，不强制补开发文件。
+description: 将中文小说、短剧想法、梗概、改编材料或已有系列笔记发展成可追溯的改编方案、戏剧方向、创作简报、故事引擎与分集地图。用户提出“导入小说做短剧”“开发短剧”“做故事设定/系列大纲/分集规划”“把这个点子变成短剧”或需要梳理人物冲突与集间交接时使用；已有剧本可直接进入写作、资产或审查流程，不强制补开发文件。
 ---
 
 # 短剧开发
 
 把创作者的意图变成能持续制造**选择、代价与状态变化**的故事系统。保留创作者的题材、结局和尺度选择；不要把流行套路当成剧情答案。
 
+## 先定位套件
+
+从本技能目录读取 `suite-ref.json`，按其中相对 `core_manifest` 定位唯一同级主技能与
+套件清单；确认声明的 core、contract、recipe 和清单 hash 一致后再读写项目。
+随后执行主技能的 [运行时预检](../short-drama/references/runtime-preflight.md)：先恢复事务、读取状态，再进入本阶段。
+涉及制作形态时按需读取 [production-form-profiles.md](../short-drama/references/production-form-profiles.md)，只投影本阶段负责的形、层、材质、光、运动或声音。
+
 ## 先判断入口
 
 1. **只有想法、题材或情绪目标**：完成方向探索，再建立创作简报与故事引擎。
-2. **已有梗概、改编材料或系列笔记**：先列出已承诺事实、可改范围和待确认项，再深化；不要偷换原意。
+2. **已有梗概、小说、改编材料或系列笔记**：保存来源并先列出已承诺事实、可改范围、
+   来源片段与待确认项。长材料先做语义分段、功能账本和候选分集，不用正则人名/名词命中
+   直接发布剧集或资产；不要偷换原意。
 3. **方向已定，只需规划分集**：读取既有简报与引擎，直接制作或修订分集地图。
 4. **已有剧本**：不要为了流程完整而虚构开发材料。写/改剧本交给 `$short-drama-write`；拆资产或后续制作可从相应技能直接进入。
 
@@ -72,6 +81,10 @@ description: 将中文短剧想法、梗概、改编材料或已有系列笔记�
 
 这些是所有者自检，不是终审。展示创作者可读的新增/修改摘要，请创作者接受后再作为下游来源；需要质量结论时交给独立的 `$short-drama-review`。本技能不得批准自己的产物。
 
+若项目需要导演阐述，本技能只产出 `development/director-brief.md` 候选，并标明它准备
+写入的 `visual_direction` / `production_profile` 语义差异。创作者接受后，由
+`$short-drama` 路由把选择提升到 creator authority；开发技能不直接改写该权威配置。
+
 ## 规则分级
 
 - **`structural_invariant`**：本地可证明的引用、ID、显式状态矛盾；可由校验器阻断。
@@ -87,6 +100,10 @@ description: 将中文短剧想法、梗概、改编材料或已有系列笔记�
 
 - `development/creative-brief.md`
 - `development/story-engine.md`
+- `development/director-brief.md`（项目需要时；仅为 creator authority 候选）
+- `development/adaptation-map.jsonl`（长材料改编时；只保留输入 locator/span/hash、
+  去引用的功能摘要、候选去向与未决项，不复制原文；例见
+  [adaptation-map.example.jsonl](assets/adaptation-map.example.jsonl)）
 - `development/series-arc.json`（项目需要时）
 - `development/episode-map.jsonl`
 

@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 
 SUITE = Path(__file__).resolve().parents[1]
@@ -16,15 +17,27 @@ screenplay_index = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(screenplay_index)
 
 
-def read_jsonl(path: Path) -> list[dict[str, object]]:
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
-def blocks(path: Path) -> list[dict[str, object]]:
+def blocks(path: Path) -> list[dict[str, Any]]:
     return [row for row in read_jsonl(path) if row["record_type"] == "block"]
 
 
 class ScreenplayIndexTests(unittest.TestCase):
+    def test_speaker_roster_rejects_non_text_and_empty_names(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "screenplay.md"
+            output = root / "screenplay-index.jsonl"
+            source.write_text("# EP001\n\n## EP001-SC001 内 · 门厅 · 夜\n", encoding="utf-8")
+
+            for speakers in ([123], ["   "]):
+                with self.subTest(speakers=speakers):
+                    with self.assertRaisesRegex(ValueError, "speaker names"):
+                        screenplay_index.build_index(source, output, speakers=speakers)
+
     def test_candidate_preview_marks_every_source_ref_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -63,12 +76,13 @@ class ScreenplayIndexTests(unittest.TestCase):
             first = root / "旧 索引.jsonl"
             second = root / "新 索引.jsonl"
 
-            screenplay_index.build_index(source, first)
+            screenplay_index.build_index(source, first, speakers={"林岚"})
             screenplay_index.build_index(
                 source,
                 second,
                 previous_index_path=first,
                 previous_source_path=source,
+                speakers={"林岚"},
             )
 
             self.assertEqual(source.read_bytes(), source_bytes)
@@ -125,12 +139,13 @@ class ScreenplayIndexTests(unittest.TestCase):
             new_index = root / "new.jsonl"
             old_source.write_text(old_text, encoding="utf-8", newline="")
             new_source.write_text(new_text, encoding="utf-8", newline="")
-            screenplay_index.build_index(old_source, old_index)
+            screenplay_index.build_index(old_source, old_index, speakers={"周野"})
             screenplay_index.build_index(
                 new_source,
                 new_index,
                 previous_index_path=old_index,
                 previous_source_path=old_source,
+                speakers={"周野"},
             )
 
             old_by_hash = {row["content_sha256"]: row["block_id"] for row in blocks(old_index)}
@@ -210,12 +225,13 @@ class ScreenplayIndexTests(unittest.TestCase):
             new_index = root / "new.jsonl"
             old_source.write_text(old_text, encoding="utf-8")
             new_source.write_text(new_text, encoding="utf-8")
-            screenplay_index.build_index(old_source, old_index)
+            screenplay_index.build_index(old_source, old_index, speakers={"林岚"})
             screenplay_index.build_index(
                 new_source,
                 new_index,
                 previous_index_path=old_index,
                 previous_source_path=old_source,
+                speakers={"林岚"},
             )
 
             repeated_hash = hashlib.sha256("门外传来两声敲门。".encode()).hexdigest()
@@ -253,7 +269,7 @@ class ScreenplayIndexTests(unittest.TestCase):
             source = root / "screenplay.md"
             output = root / "screenplay-index.jsonl"
             source.write_text(text, encoding="utf-8")
-            summary = screenplay_index.build_index(source, output)
+            summary = screenplay_index.build_index(source, output, speakers={"周野"})
 
             rows = read_jsonl(output)
             issues = [row for row in rows if row["record_type"] == "source_issue"]
@@ -264,6 +280,74 @@ class ScreenplayIndexTests(unittest.TestCase):
             self.assertIn("invalid_dialogue_syntax", codes)
             self.assertIn("malformed_production_tag", codes)
             self.assertEqual(summary["review_status"], "review_required")
+            self.assertEqual(
+                [row["kind"] for row in rows if row["record_type"] == "block"],
+                ["scene_heading"],
+            )
+
+    def test_colon_action_requires_owner_resolution_instead_of_speaker_guessing(self) -> None:
+        cases = {
+            "single_line": "手机屏幕显示：密码错误。",
+            "second_line": "她抬头看向墙面。\n墙上写着：闲人免进。",
+        }
+        for name, action in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                source = root / "screenplay.md"
+                output = root / "screenplay-index.jsonl"
+                source.write_text(
+                    "# EP001 夜班\n\n"
+                    "## EP001-SC001 内 · 档案室 · 夜\n\n"
+                    f"{action}\n",
+                    encoding="utf-8",
+                )
+
+                summary = screenplay_index.build_index(source, output)
+                rows = read_jsonl(output)
+
+                self.assertEqual(summary["review_status"], "review_required")
+                self.assertIn(
+                    "ambiguous_dialogue_or_action",
+                    {
+                        row["issue_code"]
+                        for row in rows
+                        if row["record_type"] == "source_issue"
+                    },
+                )
+                self.assertFalse(
+                    any(
+                        row.get("kind") == "dialogue"
+                        for row in rows
+                        if row["record_type"] == "block"
+                    )
+                )
+
+    def test_missing_separator_before_dialogue_requires_review(self) -> None:
+        text = """# EP001 夜班
+
+## EP001-SC001 内 · 档案室 · 夜
+
+林岚把复检记录压在桌角。
+周野：日期不是我改的。
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "screenplay.md"
+            output = root / "screenplay-index.jsonl"
+            source.write_text(text, encoding="utf-8")
+
+            summary = screenplay_index.build_index(source, output, speakers={"周野"})
+            rows = read_jsonl(output)
+
+            self.assertEqual(summary["review_status"], "review_required")
+            self.assertIn(
+                "missing_block_separator",
+                {
+                    row["issue_code"]
+                    for row in rows
+                    if row["record_type"] == "source_issue"
+                },
+            )
             self.assertEqual(
                 [row["kind"] for row in rows if row["record_type"] == "block"],
                 ["scene_heading"],
@@ -284,7 +368,15 @@ class ScreenplayIndexTests(unittest.TestCase):
             source.write_bytes(source_bytes)
 
             result = subprocess.run(
-                [sys.executable, str(SCRIPT), str(source), "--output", str(output)],
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    str(source),
+                    "--output",
+                    str(output),
+                    "--speaker",
+                    "林岚",
+                ],
                 check=False,
                 capture_output=True,
                 text=True,

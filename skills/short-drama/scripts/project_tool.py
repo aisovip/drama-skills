@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-import fcntl
 import hashlib
+import importlib
 import json
 import os
 import re
@@ -103,6 +103,11 @@ def sha256_file(path: Path) -> str:
 
 
 def _fsync_directory(path: Path) -> None:
+    # Windows cannot open a directory as a regular file for fsync. The file
+    # itself is flushed before os.replace; POSIX additionally persists the
+    # parent-directory entry here.
+    if os.name == "nt":
+        return
     descriptor = os.open(path, os.O_RDONLY)
     try:
         os.fsync(descriptor)
@@ -266,7 +271,8 @@ def project_status(path: Path) -> dict[str, Any]:
     project = json.loads((root / PROJECT_FILE).read_text(encoding="utf-8"))
     state_path = root / STATE_FILE
     state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
-    artifacts = state.get("artifacts") if isinstance(state.get("artifacts"), dict) else {}
+    raw_artifacts = state.get("artifacts")
+    artifacts: dict[str, Any] = raw_artifacts if isinstance(raw_artifacts, dict) else {}
     lifecycle: dict[str, dict[str, int]] = {axis: {} for axis in LIFECYCLE_STATES}
     for record in artifacts.values():
         if not isinstance(record, dict):
@@ -381,11 +387,25 @@ def _transaction_lock(root: Path):
     lock = root / ".short-drama/locks/transaction.lock"
     lock.parent.mkdir(parents=True, exist_ok=True)
     with lock.open("a+b") as handle:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        if os.name == "nt":
+            locking = importlib.import_module("msvcrt")
+            handle.seek(0, os.SEEK_END)
+            if handle.tell() == 0:
+                handle.write(b"\0")
+                handle.flush()
+            handle.seek(0)
+            locking.locking(handle.fileno(), locking.LK_LOCK, 1)
+        else:
+            locking = importlib.import_module("fcntl")
+            locking.flock(handle.fileno(), locking.LOCK_EX)
         try:
             yield
         finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            if os.name == "nt":
+                handle.seek(0)
+                locking.locking(handle.fileno(), locking.LK_UNLCK, 1)
+            else:
+                locking.flock(handle.fileno(), locking.LOCK_UN)
 
 
 def _fault(injector: FaultInjector | None, point: str, txid: str) -> None:
@@ -1178,7 +1198,9 @@ def _validate_candidate_content(relative: str, content: bytes) -> None:
                 ) from error
 
 
-def _structured_candidate_refs(relative: str, content: bytes) -> list[tuple[str, str]]:
+def _structured_candidate_refs(
+    relative: str, content: bytes
+) -> list[tuple[str, str, str | None]]:
     suffix = PurePosixPath(relative).suffix.lower()
     if suffix == ".md":
         return []
@@ -1188,7 +1210,7 @@ def _structured_candidate_refs(relative: str, content: bytes) -> list[tuple[str,
     else:
         documents = [json.loads(line) for line in text.splitlines() if line.strip()]
 
-    references: list[tuple[str, str]] = []
+    references: list[tuple[str, str, str | None]] = []
 
     def collect(value: Any) -> None:
         if isinstance(value, dict):
@@ -1201,7 +1223,12 @@ def _structured_candidate_refs(relative: str, content: bytes) -> list[tuple[str,
                 and isinstance(digest, str)
                 and re.fullmatch(r"[0-9a-f]{64}", digest) is not None
             ):
-                references.append((_relative_path(artifact), digest))
+                authority = value.get("authority")
+                if authority not in {None, "accepted", "candidate"}:
+                    raise ValueError(
+                        f"structured ref authority is invalid: {_relative_path(artifact)}"
+                    )
+                references.append((_relative_path(artifact), digest, authority))
             for child in value.values():
                 collect(child)
         elif isinstance(value, list):
@@ -1494,7 +1521,8 @@ def publish_candidate(
     if not normalized_outputs:
         raise ValueError("a candidate publication needs at least one output")
     state = _read_state(root)
-    existing = state.get("artifacts", {}).get(artifact_id, {})
+    artifacts = state["artifacts"]
+    existing = artifacts.get(artifact_id, {})
     if isinstance(existing, dict) and existing.get("owner") not in (None, owner):
         raise ValueError("artifact owner cannot change during candidate publication")
     exact_inputs: dict[str, str] = {}
@@ -1511,16 +1539,46 @@ def publish_candidate(
         for relative, content in normalized_outputs.items()
     }
     for output, content in normalized_outputs.items():
-        for referenced_path, referenced_hash in _structured_candidate_refs(
+        for referenced_path, referenced_hash, reference_authority in _structured_candidate_refs(
             output, content
         ):
             if referenced_path in candidate_hashes:
+                if reference_authority != "candidate":
+                    raise ValueError(
+                        "same-publication ref must declare candidate authority: "
+                        f"{referenced_path}"
+                    )
                 if candidate_hashes[referenced_path] != referenced_hash:
                     raise ValueError(
                         "same-publication ref hash does not match candidate output: "
                         f"{referenced_path}"
                     )
                 continue
+            if reference_authority == "candidate":
+                accepted_provider = any(
+                    isinstance(record, dict)
+                    and isinstance(record.get("accepted_targets"), dict)
+                    and record["accepted_targets"].get(referenced_path)
+                    == referenced_hash
+                    for record in artifacts.values()
+                )
+                candidate_provider = any(
+                    isinstance(record, dict)
+                    and isinstance(record.get("candidate_targets"), dict)
+                    and record["candidate_targets"].get(referenced_path)
+                    == referenced_hash
+                    for record in artifacts.values()
+                )
+                if accepted_provider:
+                    raise ValueError(
+                        "accepted input cannot declare candidate authority: "
+                        f"{referenced_path}"
+                    )
+                if not candidate_provider:
+                    raise ValueError(
+                        "candidate input has no matching candidate provider: "
+                        f"{referenced_path}"
+                    )
             if referenced_path not in exact_inputs:
                 raise ValueError(
                     f"structured ref requires exact input: {referenced_path}"
@@ -1658,6 +1716,7 @@ def _normalize_reviewer_evidence(
     *,
     verdict_owner: str,
     artifact_owner: str,
+    require_independent: bool = True,
 ) -> dict[str, Any]:
     if not isinstance(raw_reviewer, dict):
         raise ValueError("reviewer evidence must be an object")
@@ -1666,10 +1725,6 @@ def _normalize_reviewer_evidence(
     excluded = raw_reviewer.get("excluded_owner_skills")
     if reviewer_owner != verdict_owner:
         raise ValueError("reviewer owner does not match verdict owner")
-    if not isinstance(reviewer_kind, str) or not reviewer_kind:
-        raise ValueError("reviewer kind is invalid")
-    if raw_reviewer.get("independent") is not True:
-        raise ValueError("reviewer does not assert independence")
     if (
         not isinstance(excluded, list)
         or any(not isinstance(owner, str) or not owner for owner in excluded)
@@ -1677,11 +1732,45 @@ def _normalize_reviewer_evidence(
         or set(excluded) != {artifact_owner}
     ):
         raise ValueError("reviewer excluded owner must match artifact owner")
+    if not require_independent:
+        if reviewer_kind not in {"self_check", "unattested"}:
+            raise ValueError("provisional reviewer kind must be self_check or unattested")
+        if raw_reviewer.get("independent") is not False:
+            raise ValueError("provisional reviewer must not assert independence")
+        if raw_reviewer.get("provenance") is not None:
+            raise ValueError("provisional reviewer must not claim fresh provenance")
+        return {
+            "owner": reviewer_owner,
+            "kind": reviewer_kind,
+            "independent": False,
+            "excluded_owner_skills": list(excluded),
+            "provenance": None,
+        }
+
+    provenance = raw_reviewer.get("provenance")
+    if reviewer_kind != "independent_agent":
+        raise ValueError("reviewer kind must be independent_agent")
+    if raw_reviewer.get("independent") is not True:
+        raise ValueError("reviewer does not assert independence")
+    if not isinstance(provenance, dict):
+        raise ValueError("reviewer fresh-context provenance is missing")
+    context_id = provenance.get("context_id")
+    if not isinstance(context_id, str) or not context_id.strip():
+        raise ValueError("reviewer fresh-context provenance has no context_id")
+    if provenance.get("fresh_context") is not True:
+        raise ValueError("reviewer context is not fresh")
+    if provenance.get("authored_reviewed_artifacts") is not False:
+        raise ValueError("reviewer authored a reviewed artifact")
     return {
         "owner": reviewer_owner,
         "kind": reviewer_kind,
         "independent": True,
         "excluded_owner_skills": list(excluded),
+        "provenance": {
+            "context_id": context_id,
+            "fresh_context": True,
+            "authored_reviewed_artifacts": False,
+        },
     }
 
 
@@ -1717,7 +1806,6 @@ def _open_blocking_finding_ids(root: Path, findings_ref: Mapping[str, Any]) -> s
         if not isinstance(severity, str) or severity.casefold() not in {
             "fatal",
             "error",
-            "blocker",
             "warning",
             "note",
         }:
@@ -1729,7 +1817,7 @@ def _open_blocking_finding_ids(root: Path, findings_ref: Mapping[str, Any]) -> s
         if str(finding.get("status", "")).casefold() == "open"
         and (
             str(finding.get("severity", "")).casefold()
-            in {"fatal", "error", "blocker"}
+            in {"fatal", "error"}
             or finding.get("blocking") is True
         )
     }
@@ -1756,17 +1844,30 @@ def _validate_review_verdict_evidence(
         raise ValueError("independent review verdict artifact is invalid") from error
     if not isinstance(document, dict):
         raise ValueError("independent review verdict must be a JSON object")
+    if document.get("requested_review_mode") != "independent_agent":
+        raise ValueError("verdict did not request an independent agent")
+    effective_review_mode = document.get("effective_review_mode")
+    provisional = verdict == "provisional"
+    allowed_effective_modes = (
+        {"self_check", "unattested"} if provisional else {"fresh_agent"}
+    )
+    if effective_review_mode not in allowed_effective_modes:
+        raise ValueError("verdict effective review mode is incompatible with verdict")
     if _normalize_review_verdict(str(document.get("verdict", ""))) != verdict:
         raise ValueError("review verdict does not match its evidence artifact")
     reviewer = _normalize_reviewer_evidence(
         document.get("reviewer"),
         verdict_owner=reference["owner"],
         artifact_owner=artifact_owner,
+        require_independent=not provisional,
     )
     if document.get("required_reviewer_independence") is not True:
         raise ValueError("verdict does not assert required reviewer independence")
     structural_validation = document.get("structural_validation")
-    if structural_validation not in {"pass", "pass_with_warnings", "fail"}:
+    allowed_validation = {"pass", "pass_with_warnings", "fail"}
+    if provisional:
+        allowed_validation.add("not_run")
+    if structural_validation not in allowed_validation:
         raise ValueError("verdict structural_validation is invalid")
     if (
         verdict in {"approve", "approve_with_notes"}
@@ -1888,7 +1989,11 @@ def record_independent_review(
                 "kind": reviewer["kind"],
                 "independent": reviewer["independent"],
                 "excluded_owner_skills": reviewer["excluded_owner_skills"],
-                "verified": True,
+                "provenance": reviewer["provenance"],
+                "requested_review_mode": _document["requested_review_mode"],
+                "effective_review_mode": _document["effective_review_mode"],
+                "attestation_structure_valid": reviewer["independent"],
+                "verification_scope": "declared_provenance_structure",
             },
         }
         artifacts[artifact_id] = updated
@@ -1913,9 +2018,10 @@ def _validate_delivery_text(
         text = content.decode("utf-8")
     except UnicodeDecodeError as error:
         raise PackageBlockedError(f"delivery file is not UTF-8 text: {relative}") from error
+    structured_documents: list[Any] = []
     if suffix == ".json":
         try:
-            json.loads(text)
+            structured_documents.append(json.loads(text))
         except json.JSONDecodeError as error:
             raise PackageBlockedError(f"invalid delivery JSON: {relative}") from error
     elif suffix == ".jsonl":
@@ -1923,19 +2029,42 @@ def _validate_delivery_text(
             if not line.strip():
                 continue
             try:
-                json.loads(line)
+                structured_documents.append(json.loads(line))
             except json.JSONDecodeError as error:
                 raise PackageBlockedError(
                     f"invalid delivery JSONL at {relative}:{number}"
                 ) from error
 
+    credential_fields = {
+        "apikey",
+        "accesstoken",
+        "authtoken",
+        "bearertoken",
+        "clientsecret",
+        "password",
+        "privatekey",
+        "secretkey",
+    }
+
+    def reject_structured_credentials(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                normalized = re.sub(r"[^a-z0-9]", "", str(key).casefold())
+                if normalized in credential_fields:
+                    raise PackageBlockedError(
+                        f"credential field is excluded from delivery: {relative}"
+                    )
+                reject_structured_credentials(child)
+        elif isinstance(value, list):
+            for child in value:
+                reject_structured_credentials(child)
+
+    for document in structured_documents:
+        reject_structured_credentials(document)
+
     unsafe_patterns = {
         "machine path": re.compile(r"(?<![\w.])/(?:Users|home|private|var|tmp)/|\b[A-Za-z]:[\\/]"),
         "file URL": re.compile(r"\bfile://", re.IGNORECASE),
-        "credential": re.compile(
-            r"(?:api[_-]?key|access[_-]?token|password|secret)\s*[:=]\s*[\"']?[A-Za-z0-9_-]{8,}",
-            re.IGNORECASE,
-        ),
         "private key": re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
     }
     for label, pattern in unsafe_patterns.items():
@@ -2044,7 +2173,9 @@ def _validate_delivery_evidence(
     independence = review.get("reviewer_independence")
     if (
         not isinstance(independence, dict)
-        or independence.get("verified") is not True
+        or independence.get("attestation_structure_valid") is not True
+        or independence.get("verification_scope")
+        != "declared_provenance_structure"
         or independence.get("artifact_owner") != owner
         or independence.get("reviewer_owner") == owner
         or independence.get("independent") is not True

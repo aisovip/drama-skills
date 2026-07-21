@@ -3,14 +3,14 @@
   "decision_id": "SUPERSESSION-EXAMPLE",
   "alternate_ref": {
     "owner": "short-drama-video-prompts",
-    "artifact": "episodes/EP001/video/motion-specs.jsonl",
+    "artifact": "episodes/EP001/storyboard/motion-specs.jsonl",
     "hash": "<candidate-sha256>",
     "record_id": "MOTION-ALTERNATE",
     "authority": "candidate"
   },
   "master_ref": {
     "owner": "short-drama-video-prompts",
-    "artifact": "episodes/EP001/video/motion-specs.jsonl",
+    "artifact": "episodes/EP001/storyboard/motion-specs.jsonl",
     "hash": "<accepted-sha256>",
     "record_id": "MOTION-MASTER",
     "authority": "accepted"

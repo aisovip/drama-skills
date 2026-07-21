@@ -16,6 +16,33 @@
 4. **来源边界**：仓库不得包含非公开项目内容、内部标识、私有网址、供应商任务
    或媒体文件；示例一律合成改写。边界测试会检查这些要求。
 
+## 受保护发布检查
+
+普通开发只能证明公开的通用边界；它不能声称已经检查维护者私有词汇或语义近似泄漏。
+受保护发布环境必须在仓库外准备每行一项的本地词表，并启用 fail-closed 模式：
+
+```bash
+DRAMA_REQUIRE_PRIVATE_RELEASE_GATE=1 \
+DRAMA_PRIVATE_TERMS_FILE=/path/outside/repository/release-terms.txt \
+PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests -v
+```
+
+文件缺失或只有注释时，测试必须失败；词表内容、扫描命中和私有来源指纹不得提交或写入
+公共日志。精确词扫描只负责明显泄漏，不能证明去复刻。任何由非公开材料晋升的候选还必须
+按 maintainer-only `$short-drama-knowhow` 流程，由未看过来源和作者答案的 fresh agent 做
+语义 de-copy 盲审；无法取得 fresh 独立上下文时不得发布该候选。
+
+该维护技能故意不在公共 `skills/*` 安装循环或 public manifest 中。维护者需从受控 checkout
+显式链接后调用，普通创作者无需安装：
+
+```bash
+mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
+ln -s "$PWD/maintainers/skills/short-drama-knowhow" \
+  "${CODEX_HOME:-$HOME/.codex}/skills/short-drama-knowhow"
+```
+
+已存在同名路径时先核对并移除旧链接；不要把此目录移动到公共 `skills/` 或加入套件清单。
+
 ## 修改后必跑
 
 ```bash

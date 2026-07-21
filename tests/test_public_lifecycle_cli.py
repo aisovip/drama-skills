@@ -20,6 +20,20 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def fresh_reviewer(excluded_owner: str) -> dict[str, object]:
+    return {
+        "owner": "short-drama-review",
+        "kind": "independent_agent",
+        "independent": True,
+        "excluded_owner_skills": [excluded_owner],
+        "provenance": {
+            "context_id": "test-fresh-review-context",
+            "fresh_context": True,
+            "authored_reviewed_artifacts": False,
+        },
+    }
+
+
 class PublicLifecycleCliTests(unittest.TestCase):
     def make_project(self, directory: str) -> Path:
         root = Path(directory) / "public lifecycle"
@@ -116,12 +130,9 @@ class PublicLifecycleCliTests(unittest.TestCase):
                         "artifact": findings_relative,
                         "hash": digest(findings),
                     },
-                    "reviewer": {
-                        "owner": "short-drama-review",
-                        "kind": "independent_agent",
-                        "independent": True,
-                        "excluded_owner_skills": [owner],
-                    },
+                    "requested_review_mode": "independent_agent",
+                    "effective_review_mode": "fresh_agent",
+                    "reviewer": fresh_reviewer(owner),
                     "structural_validation": "pass",
                     "verdict": "APPROVE",
                     "blocking_findings": [],
@@ -159,6 +170,103 @@ class PublicLifecycleCliTests(unittest.TestCase):
         for command in ("publish", "accept", "review"):
             self.assertIn(command, result.stdout)
 
+    def test_unattested_fallback_can_only_record_provisional_review(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_project(directory)
+            artifact_id = "EP001:script"
+            owner = "short-drama-write"
+            output = "episodes/EP001/screenplay.md"
+            project_tool.publish_candidate(
+                root,
+                owner=owner,
+                artifact_id=artifact_id,
+                outputs={output: "# 第一集\n\n门被推开。\n"},
+            )
+            targets = {output: digest(root / output)}
+            decision = root / "creator-decisions/ep001.json"
+            decision.parent.mkdir(parents=True, exist_ok=True)
+            decision.write_text(
+                json.dumps(
+                    {
+                        "decision_id": "CD-EP001",
+                        "decision_kind": "artifact_acceptance",
+                        "artifact_id": artifact_id,
+                        "status": "accepted",
+                        "target_hashes": targets,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            project_tool.record_creator_acceptance(
+                root,
+                artifact_id=artifact_id,
+                decision="accepted",
+                target_hashes=targets,
+                evidence_ref={
+                    "owner": "creator",
+                    "artifact": "creator-decisions/ep001.json",
+                    "hash": digest(decision),
+                    "record_id": "CD-EP001",
+                },
+            )
+            findings = root / "reviews/ep001-findings.jsonl"
+            findings.parent.mkdir(parents=True, exist_ok=True)
+            findings.write_text("", encoding="utf-8")
+            verdict = root / "reviews/ep001-verdict.json"
+            verdict.write_text(
+                json.dumps(
+                    {
+                        "review_id": "REVIEW-EP001-PROVISIONAL",
+                        "scope": ["story_script"],
+                        "reviewed_artifacts": [
+                            {"owner": owner, "artifact": output, "hash": targets[output]}
+                        ],
+                        "findings_ref": {
+                            "owner": "short-drama-review",
+                            "artifact": "reviews/ep001-findings.jsonl",
+                            "hash": digest(findings),
+                        },
+                        "requested_review_mode": "independent_agent",
+                        "effective_review_mode": "unattested",
+                        "reviewer": {
+                            "owner": "short-drama-review",
+                            "kind": "unattested",
+                            "independent": False,
+                            "excluded_owner_skills": [owner],
+                            "provenance": None,
+                        },
+                        "structural_validation": "not_run",
+                        "verdict": "PROVISIONAL",
+                        "blocking_findings": [],
+                        "open_blocker_count": 0,
+                        "required_reviewer_independence": True,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = project_tool.record_independent_review(
+                root,
+                artifact_id=artifact_id,
+                verdict="provisional",
+                reviewed_targets=targets,
+                verdict_ref={
+                    "owner": "short-drama-review",
+                    "artifact": "reviews/ep001-verdict.json",
+                    "hash": digest(verdict),
+                },
+            )
+
+            self.assertEqual(result["independent_review"], "provisional")
+            state = json.loads((root / ".short-drama/state.json").read_text())
+            record = state["artifacts"][artifact_id]
+            self.assertEqual(record["delivery_gate"], "blocked")
+            independence = record["review_evidence"]["reviewer_independence"]
+            self.assertFalse(independence["attestation_structure_valid"])
+            self.assertEqual(
+                independence["verification_scope"], "declared_provenance_structure"
+            )
+
     def test_publish_candidate_is_wal_backed_and_cannot_claim_acceptance(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = self.make_project(directory)
@@ -185,8 +293,8 @@ class PublicLifecycleCliTests(unittest.TestCase):
                 "--artifact-id",
                 "EP001:script",
             ]
-            for target, source in outputs.items():
-                arguments.extend(["--output", f"{target}={source}"])
+            for target, output_source in outputs.items():
+                arguments.extend(["--output", f"{target}={output_source}"])
             _, result = self.run_cli(*arguments)
 
             assert result is not None
@@ -362,6 +470,105 @@ class PublicLifecycleCliTests(unittest.TestCase):
                         upstream_path: upstream_content,
                         projection_path: bad_projection,
                     },
+                )
+
+    def test_candidate_authority_distinguishes_accepted_preview_and_copublished_refs(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_project(directory)
+            upstream_path = "episodes/EP001/screenplay.json"
+            upstream = self.approve_artifact(
+                root,
+                artifact_id="EP001:script",
+                owner="short-drama-write",
+                outputs={upstream_path: '{"version":1}\n'},
+            )
+            external_candidate_ref = json.dumps(
+                {
+                    "source_ref": {
+                        "owner": "short-drama-write",
+                        "artifact": upstream_path,
+                        "hash": upstream[upstream_path],
+                        "authority": "candidate",
+                    }
+                }
+            )
+            with self.assertRaisesRegex(
+                ValueError, "accepted input cannot declare candidate authority"
+            ):
+                project_tool.publish_candidate(
+                    root,
+                    artifact_id="EP001:assets",
+                    owner="short-drama-assets",
+                    outputs={"episodes/EP001/assets.json": external_candidate_ref},
+                    input_hashes={upstream_path: upstream[upstream_path]},
+                )
+
+            preview_path = "episodes/EP002/screenplay.json"
+            preview_content = '{"version":2}\n'
+            project_tool.publish_candidate(
+                root,
+                artifact_id="EP002:script",
+                owner="short-drama-write",
+                outputs={preview_path: preview_content},
+            )
+            preview_hash = hashlib.sha256(preview_content.encode()).hexdigest()
+            preview_ref = json.dumps(
+                {
+                    "source_ref": {
+                        "owner": "short-drama-write",
+                        "artifact": preview_path,
+                        "hash": preview_hash,
+                        "authority": "candidate",
+                    }
+                }
+            )
+            project_tool.publish_candidate(
+                root,
+                artifact_id="EP002:assets",
+                owner="short-drama-assets",
+                outputs={"episodes/EP002/assets.json": preview_ref},
+                input_hashes={preview_path: preview_hash},
+            )
+
+            same_publication_path = "episodes/EP001/spec.json"
+            same_publication_content = b'{"spec_id":"SPEC-1"}\n'
+            digest = hashlib.sha256(same_publication_content).hexdigest()
+            missing_candidate_authority = json.dumps(
+                {
+                    "spec_ref": {
+                        "owner": "short-drama-image-prompts",
+                        "artifact": same_publication_path,
+                        "hash": digest,
+                    }
+                }
+            )
+            with self.assertRaisesRegex(
+                ValueError, "same-publication ref must declare candidate authority"
+            ):
+                project_tool.publish_candidate(
+                    root,
+                    artifact_id="EP001:image-prompts",
+                    owner="short-drama-image-prompts",
+                    outputs={
+                        same_publication_path: same_publication_content,
+                        "episodes/EP001/render.json": missing_candidate_authority,
+                    },
+                )
+
+    def test_review_findings_use_one_canonical_severity_vocabulary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_project(directory)
+            findings = root / "reviews/findings.jsonl"
+            findings.parent.mkdir(parents=True)
+            findings.write_text(
+                '{"finding_id":"FIND-1","severity":"blocker","status":"open"}\n',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "severity is invalid"):
+                project_tool._open_blocking_finding_ids(
+                    root, {"artifact": "reviews/findings.jsonl"}
                 )
 
     def test_committed_candidate_recovery_restores_only_candidate_authority(self) -> None:
@@ -959,6 +1166,10 @@ class PublicLifecycleCliTests(unittest.TestCase):
                         "artifact": "reviews/EP001-findings.jsonl",
                         "hash": digest(findings),
                     },
+                    "requested_review_mode": "independent_agent",
+                    "effective_review_mode": "fresh_agent",
+                    "reviewer": fresh_reviewer("short-drama-write"),
+                    "structural_validation": "pass",
                     "verdict": "APPROVE",
                     "blocking_findings": ["FIND-OPEN"],
                     "open_blocker_count": 1,
@@ -1210,8 +1421,10 @@ class PublicLifecycleCliTests(unittest.TestCase):
             self.assertEqual(
                 record["review_evidence"]["verdict_ref"]["hash"], digest(verdict)
             )
-            self.assertTrue(
-                record["review_evidence"]["reviewer_independence"]["verified"]
+            independence = record["review_evidence"]["reviewer_independence"]
+            self.assertTrue(independence["attestation_structure_valid"])
+            self.assertEqual(
+                independence["verification_scope"], "declared_provenance_structure"
             )
             self.assertEqual(record["validation_state"], "pass")
             self.assertEqual(
@@ -1395,7 +1608,8 @@ class PublicLifecycleCliTests(unittest.TestCase):
                 "kind": "legacy_owner_string",
                 "independent": True,
                 "excluded_owner_skills": ["short-drama-write"],
-                "verified": True,
+                "attestation_structure_valid": True,
+                "verification_scope": "declared_provenance_structure",
             }
             project_tool.atomic_json(state_path, state)
             with self.assertRaisesRegex(

@@ -18,8 +18,9 @@
   required outcome, owner, severity, and status.
 - `REV-03` — A semantic-invention finding pairs the authoritative source fact
   with the conflicting downstream fact; suspicion alone is not evidence.
-- `REV-04` — Owners may self-check but cannot issue final approval; reviewers
-  report and route findings but do not edit owner source.
+- `REV-04` — Final approval requires a fresh reviewer context that did not author
+  the targets; self-check/unattested review stays provisional, and reviewers report
+  and route findings but do not edit owner source.
 - `REV-05` — Diagnose generic/repeated mechanisms at exact locations and explain
   audience or production impact instead of applying an “AI-ish” label.
 - `REV-06` — Alternative preferences remain non-blocking notes unless the
@@ -41,6 +42,18 @@
 The same context that authored an artifact may run a self-check, but it cannot
 issue final approval. A final reviewer starts from accepted artifacts, creator
 constraints, and hashes—not the author's explanation of why the output is good.
+
+When the host supports agents or isolated sessions, start a fresh reviewer and
+pass only the frozen artifact paths/hashes, accepted constraints, selected
+rubrics, and output schema. Do not pass the owner's intended fix, self-score, or
+an answer key. Record `requested_review_mode: independent_agent` and the actual
+`effective_review_mode`. A fresh reviewer records its runtime context ID and
+attests that it did not author any reviewed target. When isolation is unavailable,
+record `self_check` or `unattested`, keep `independent:false`, and issue only
+`PROVISIONAL`; changing a role label inside the same context is not independence.
+The deterministic project tool validates the attestation shape and bound bytes,
+not the truth of host runtime identity; it records that limited verification
+scope explicitly. Host orchestration remains responsible for actual isolation.
 
 Freeze the review set. If a file changes during review, mark affected findings
 stale and restart only the dependent scopes.
@@ -92,7 +105,7 @@ The structured finding uses `target_ref` for the artifact to revise and
 `evidence_refs[]` for the source/consumer sides of the conflict; do not hide a
 second citation in free prose. A verdict binds exact `reviewed_artifacts`, its
 `findings_ref`, reviewer-independence proof, and open-blocker count. The referenced
-JSONL is authoritative for blocker reconciliation: every open fatal/error/blocker
+JSONL is authoritative for blocking-finding reconciliation: every open fatal/error
 ID is listed, and every listed ID exists and is still open. Delivery may trust
 approval only while those exact target and evidence hashes remain current. The
 `reviewer` value is a structured object with owner, kind, explicit independence,

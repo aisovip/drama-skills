@@ -12,19 +12,22 @@
   ],
   "findings_ref": {
     "owner": "short-drama-review",
-    "artifact": "review/findings.jsonl",
+    "artifact": "reviews/findings.jsonl",
     "hash": "<sha256>"
   },
+  "requested_review_mode": "independent_agent",
+  "effective_review_mode": "unattested",
   "reviewer": {
     "owner": "short-drama-review",
-    "kind": "independent_agent",
-    "independent": true,
+    "kind": "unattested",
+    "independent": false,
     "excluded_owner_skills": [
       "short-drama-write"
-    ]
+    ],
+    "provenance": null
   },
-  "structural_validation": "pass",
-  "verdict": "APPROVE",
+  "structural_validation": "not_run",
+  "verdict": "PROVISIONAL",
   "blocking_findings": [],
   "open_blocker_count": 0,
   "notes": [],

@@ -2,6 +2,8 @@ import re
 import unittest
 from pathlib import Path
 
+from tests.private_release_gate import load_private_terms
+
 
 SUITE = Path(__file__).resolve().parents[1]
 SHIPPED_SKILLS = SUITE / "skills"
@@ -18,17 +20,25 @@ def shipped_text_files() -> list[Path]:
     ]
 
 
+def release_facing_text_files() -> list[Path]:
+    roots = [SUITE / "skills", SUITE / "maintainers", SUITE / "demo"]
+    top_level = [SUITE / "README.md", SUITE / "README_EN.md", SUITE / "CONTRIBUTING.md"]
+    nested = [
+        path
+        for root in roots
+        if root.is_dir()
+        for path in root.rglob("*")
+        if path.is_file()
+        and path.suffix.lower() in {".md", ".json", ".jsonl", ".yaml", ".py"}
+        and "__pycache__" not in path.parts
+    ]
+    return [path for path in top_level if path.is_file()] + nested
+
+
 def local_forbidden_terms() -> frozenset[str]:
     # Maintainer-specific source vocabulary lives outside the repository so the
     # shipped tree never carries the terms it screens for. One term per line.
-    local = Path(__file__).resolve().parent / "local-terms.txt"
-    if not local.is_file():
-        return frozenset()
-    return frozenset(
-        stripped
-        for line in local.read_text(encoding="utf-8").splitlines()
-        if (stripped := line.strip()) and not stripped.startswith("#")
-    )
+    return load_private_terms(Path(__file__).resolve().parent / "local-terms.txt")
 
 
 class ShippingBoundaryTests(unittest.TestCase):
@@ -67,18 +77,38 @@ class ShippingBoundaryTests(unittest.TestCase):
             "backup" + "_project",
             "entity" + "_collections",
         }
-        forbidden |= local_forbidden_terms()
+        private_terms = local_forbidden_terms()
         findings: list[str] = []
         for path in shipped_text_files():
             text = path.read_text(encoding="utf-8").casefold()
             for term in sorted(forbidden):
                 if term.casefold() in text:
                     findings.append(f"{path.relative_to(SUITE)}: {term}")
+            if any(term.casefold() in text for term in private_terms):
+                findings.append(
+                    f"{path.relative_to(SUITE)}: maintainer-local exact term"
+                )
         self.assertEqual(
             findings,
             [],
             "private schema/source or provider task vocabulary shipped:\n"
             + "\n".join(findings),
+        )
+
+    def test_private_release_terms_are_absent_from_release_facing_text(self) -> None:
+        private_terms = local_forbidden_terms()
+        findings = [
+            str(path.relative_to(SUITE))
+            for path in release_facing_text_files()
+            if any(
+                term.casefold() in path.read_text(encoding="utf-8").casefold()
+                for term in private_terms
+            )
+        ]
+        self.assertEqual(
+            findings,
+            [],
+            "maintainer-local release vocabulary found in: " + ", ".join(findings),
         )
 
     def test_shipping_tree_has_no_machine_absolute_paths(self) -> None:

@@ -143,7 +143,10 @@ def _looks_like_markdown(text: str) -> bool:
     )
 
 
-def _parse_screenplay(data: bytes) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def _parse_screenplay(
+    data: bytes,
+    speaker_names: frozenset[str],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     # Decode once up front so invalid UTF-8 fails before any output is written.
     data.decode("utf-8")
     lines = _line_table(data)
@@ -250,6 +253,40 @@ def _parse_screenplay(data: bytes) -> tuple[list[dict[str, Any]], list[dict[str,
             index = end_index + 1
             continue
 
+        paragraph_lines = [line.strip() for line in paragraph.splitlines() if line.strip()]
+        if len(paragraph_lines) > 1:
+            later_dialogues = [
+                match
+                for line in paragraph_lines[1:]
+                if (match := DIALOGUE_RE.fullmatch(line)) is not None
+            ]
+            if any(match.group("speaker") in speaker_names for match in later_dialogues) or any(
+                ASCII_DIALOGUE_RE.match(line)
+                or TAG_RE.fullmatch(line)
+                or ANY_TAG_RE.match(line)
+                or MALFORMED_TAG_RE.match(line)
+                for line in paragraph_lines[1:]
+            ):
+                issues.append(
+                    _issue(
+                        span,
+                        "missing_block_separator",
+                        "动作、对白与生产标签之间需要空行，不能把不同语法块合成动作段落。",
+                    )
+                )
+                index = end_index + 1
+                continue
+            if later_dialogues:
+                issues.append(
+                    _issue(
+                        span,
+                        "ambiguous_dialogue_or_action",
+                        "冒号前缀不在本次说话者清单中；由 write owner 判断是动作、画面文字还是对白。",
+                    )
+                )
+                index = end_index + 1
+                continue
+
         tag_match = TAG_RE.fullmatch(paragraph)
         if tag_match:
             tag = tag_match.group("tag")
@@ -286,6 +323,16 @@ def _parse_screenplay(data: bytes) -> tuple[list[dict[str, Any]], list[dict[str,
 
         dialogue_match = DIALOGUE_RE.fullmatch(paragraph)
         if dialogue_match:
+            if dialogue_match.group("speaker") not in speaker_names:
+                issues.append(
+                    _issue(
+                        span,
+                        "ambiguous_dialogue_or_action",
+                        "冒号前缀不在本次说话者清单中；由 write owner 判断是动作、画面文字还是对白。",
+                    )
+                )
+                index = end_index + 1
+                continue
             append_block(
                 "dialogue",
                 span,
@@ -332,6 +379,7 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 def _load_previous(
     previous_index_path: Path,
     previous_source_path: Path,
+    speaker_names: frozenset[str],
 ) -> list[dict[str, Any]]:
     source_data = previous_source_path.read_bytes()
     records = _read_jsonl(previous_index_path)
@@ -340,7 +388,7 @@ def _load_previous(
     previous_ref = records[0].get("source_ref")
     if not isinstance(previous_ref, dict) or previous_ref.get("hash") != _sha256(source_data):
         raise ValueError("previous source hash does not match previous index")
-    parsed_blocks, _ = _parse_screenplay(source_data)
+    parsed_blocks, _ = _parse_screenplay(source_data, speaker_names)
     parsed_by_span = {
         (block["byte_start"], block["byte_end"], block["content_sha256"], block["kind"]): block
         for block in parsed_blocks
@@ -619,6 +667,7 @@ def build_index(
     previous_source_path: str | Path | None = None,
     source_ref: str | None = None,
     authority: str = "accepted",
+    speakers: list[str] | tuple[str, ...] | set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """Parse ``source_path`` and atomically publish its derived JSONL index."""
     source = Path(source_path)
@@ -629,6 +678,16 @@ def build_index(
         raise ValueError("--previous-index and --previous-source must be supplied together")
     if authority not in {"accepted", "candidate"}:
         raise ValueError("authority must be accepted or candidate")
+    raw_speakers = tuple(speakers or ())
+    if any(not isinstance(speaker, str) or not speaker.strip() for speaker in raw_speakers):
+        raise ValueError("speaker names must be non-empty text")
+    speaker_names = frozenset(speaker.strip() for speaker in raw_speakers)
+    if any(
+        len(speaker) > 40
+        or DIALOGUE_RE.fullmatch(f"{speaker}：占位") is None
+        for speaker in speaker_names
+    ):
+        raise ValueError("speaker names must match the screenplay dialogue label grammar")
 
     source_data = source.read_bytes()
     source_sha256 = _sha256(source_data)
@@ -639,7 +698,7 @@ def build_index(
     }
     if authority == "candidate":
         source_artifact_ref["authority"] = "candidate"
-    current, source_issues = _parse_screenplay(source_data)
+    current, source_issues = _parse_screenplay(source_data, speaker_names)
     previous: list[dict[str, Any]] = []
     raw_requests: list[dict[str, Any]] = []
     previous_source_ref: dict[str, str] | None = None
@@ -652,7 +711,11 @@ def build_index(
         }
         if authority == "candidate":
             previous_source_ref["authority"] = "candidate"
-        previous = _load_previous(Path(previous_index_path), previous_source)
+        previous = _load_previous(
+            Path(previous_index_path),
+            previous_source,
+            speaker_names,
+        )
         raw_requests = _mark_revision_mappings(current, previous)
     _assign_new_ids(current, previous)
 
@@ -736,6 +799,12 @@ def _parser() -> argparse.ArgumentParser:
         help="mark source refs candidate for a provisional normalization preview",
     )
     parser.add_argument(
+        "--speaker",
+        action="append",
+        default=[],
+        help="repeat for each agent-resolved dialogue speaker label",
+    )
+    parser.add_argument(
         "--fail-on-review",
         action="store_true",
         help="return exit code 2 after writing when source or mapping review is required",
@@ -754,6 +823,7 @@ def main(argv: list[str] | None = None) -> int:
             previous_source_path=args.previous_source,
             source_ref=args.source_ref,
             authority=args.authority,
+            speakers=args.speaker,
         )
     except (OSError, UnicodeDecodeError, ValueError) as error:
         print(json.dumps({"error": str(error)}, ensure_ascii=False), file=sys.stderr)

@@ -1,0 +1,17 @@
+{
+  "fixture_id": "JOURNEY-BIOGRAPHY-001",
+  "fixture_kind": "blind_journey_input",
+  "provenance": "synthetic",
+  "entry_mode": "idea",
+  "creator_input": {
+    "brief": "以一位虚构的民国女校测绘教师为主角：她年轻时坚持把乡镇水患数据公开，晚年却必须决定是否删去会牵连旧同伴的原始记录。",
+    "request": "规划跨三个时期的短剧方向，在保留人物复杂性与历史责任的同时形成可拍的单集运动。",
+    "constraints": [
+      "可确认公开水患数据、任职时期和记录最终去向；私下谈话没有直接记录",
+      "一张右下角折起的旧地图跨三个时期保留下来",
+      "三个时期分别发生在乡镇教室、测绘站和档案室",
+      "不要为增强戏剧性增加真实人物或确指现实机构"
+    ]
+  },
+  "coverage_layers": ["story", "script", "asset", "image_prompt", "continuity", "review"]
+}

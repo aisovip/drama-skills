@@ -4,6 +4,8 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from tests.private_release_gate import load_private_terms
+
 
 SUITE = Path(__file__).resolve().parents[1]
 FIXTURES = SUITE / "tests/fixtures"
@@ -87,13 +89,9 @@ class FixtureContractTests(unittest.TestCase):
             "project" + "token",
             "private" + "_backup",
         }
-        local = Path(__file__).resolve().parent / "local-terms.txt"
-        if local.is_file():
-            forbidden |= {
-                stripped
-                for line in local.read_text(encoding="utf-8").splitlines()
-                if (stripped := line.strip()) and not stripped.startswith("#")
-            }
+        forbidden |= load_private_terms(
+            Path(__file__).resolve().parent / "local-terms.txt"
+        )
         for path in FIXTURES.rglob("*.json"):
             text = path.read_text(encoding="utf-8")
             folded = text.casefold()
@@ -102,7 +100,10 @@ class FixtureContractTests(unittest.TestCase):
                 self.assertIsNone(windows_absolute.search(text))
                 self.assertIsNone(url.search(text))
                 for term in forbidden:
-                    self.assertNotIn(term.casefold(), folded)
+                    self.assertFalse(
+                        term.casefold() in folded,
+                        f"{path.relative_to(FIXTURES)} contains forbidden vocabulary",
+                    )
 
 
 if __name__ == "__main__":

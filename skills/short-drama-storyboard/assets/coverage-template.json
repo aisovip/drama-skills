@@ -19,8 +19,7 @@
   "screenplay_ref": {
     "owner": "short-drama-write",
     "artifact": "episodes/EP001/screenplay-index.jsonl",
-    "hash": "<sha256>",
-    "authority": "candidate"
+    "hash": "<sha256>"
   },
   "status": "candidate"
 }

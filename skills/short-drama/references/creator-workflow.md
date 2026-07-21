@@ -97,13 +97,14 @@ When the creator wants a full preview but intermediate acceptance is unavailable
 continue only as a **provisional preview chain**:
 
 - every dependent artifact says `status: provisional` or `candidate`;
-- candidate refs keep canonical ArtifactRef keys plus `authority: candidate`;
+- accepted upstream refs keep exact accepted hashes; refs to exact upstream
+  candidates or targets in one atomic candidate publication add `authority: candidate`;
 - no field is called `accepted_binding` and no accepted-snapshot hash is claimed;
 - creator acceptance stays pending, independent review stays provisional, and
   delivery stays blocked;
 - unresolved identity or story meaning still stops the affected dependency;
-- later acceptance promotes exact candidates through owner transactions, then
-  downstream refs/hashes refresh before approval.
+- later acceptance promotes each exact co-published candidate group through its
+  owner transaction; downstream publications then refresh refs/hashes before approval.
 
 This lets a creator inspect the whole production idea without confusing a
 forecast with project truth.

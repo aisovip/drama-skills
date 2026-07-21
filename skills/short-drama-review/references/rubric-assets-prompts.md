@@ -19,6 +19,11 @@ age/weathering state, validity range.
 Fail when a costume change creates a new person or incompatible Looks mix in one
 prompt without story reason.
 
+Relationship labels may guide current blocking, gaze, and social presentation,
+but they do not prove beauty, ugliness, body type, skin tone, or facial morality.
+Fail when protagonist/antagonist status silently invents those identity traits;
+creator-approved idealization or deliberate counter-casting remains a taste choice.
+
 ### Location / View
 
 Identity: architecture, layout, entrances, zones, anchors, materials, navigation.
@@ -61,6 +66,8 @@ apply type-specific criteria:
 - prompt copies the whole bible rather than the needed variant;
 - character description mixes immutable anchors with accidental pose;
 - location prose is rich but cannot orient entrances/zones;
+- one character or prop is assigned to mutually exclusive positions, hands, or
+  relationship lines in the same frozen instant;
 - prop has no scale or text state;
 - negative constraints contradict the required visible fact;
 - edit request says “make better” without target/change/preserve;

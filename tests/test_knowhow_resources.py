@@ -99,6 +99,43 @@ def parse_fenced_json(path: Path) -> dict:
 
 
 class KnowHowResourceTests(unittest.TestCase):
+    def test_production_form_guidance_translates_style_into_stage_decisions(self) -> None:
+        reference = SKILLS / "short-drama/references/production-form-profiles.md"
+        self.assertTrue(reference.is_file())
+        text = reference.read_text(encoding="utf-8")
+        for concept in (
+            "实拍",
+            "2D 动态漫",
+            "风格化 3D",
+            "水墨",
+            "Q 版知识",
+            "叙事职责",
+            "运动预算",
+            "来源",
+            "artifact",
+            "taste",
+        ):
+            with self.subTest(concept=concept):
+                self.assertIn(concept, text)
+        self.assertIn("风格名称、模型代码或供应商字段不能替代", text)
+        self.assertIn("不把拆镜或换形态默认为已经授权的替代", text)
+
+        linked_skills = {
+            "short-drama",
+            "short-drama-develop",
+            "short-drama-assets",
+            "short-drama-image-prompts",
+            "short-drama-storyboard",
+            "short-drama-video-prompts",
+            "short-drama-review",
+        }
+        for skill in linked_skills:
+            with self.subTest(skill=skill):
+                self.assertIn(
+                    "production-form-profiles.md",
+                    (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8"),
+                )
+
     def test_index_has_unique_rules_in_all_eight_layers(self) -> None:
         rules = parse_index()
         self.assertTrue(rules)
@@ -167,12 +204,50 @@ class KnowHowResourceTests(unittest.TestCase):
         )
         self.assertTrue({"dramatic_result", "rhythm"} <= beat.keys())
 
+    def test_character_example_separates_voice_identity_from_delivery_state(self) -> None:
+        character = json.loads(
+            (SKILLS / "short-drama-assets/assets/character-look.example.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()[0]
+        )
+        voice = character["voice_direction"]
+        self.assertTrue(
+            {
+                "language",
+                "persistent_anchors",
+                "pronunciation_notes",
+                "reference_ref",
+                "not_voice_identity",
+            }
+            <= voice.keys()
+        )
+        self.assertIsNone(voice["reference_ref"])
+        self.assertNotIn("provider", json.dumps(voice).casefold())
+
+    def test_adaptation_map_points_into_inputs_without_copying_source_text(self) -> None:
+        mapping = json.loads(
+            (SKILLS / "short-drama-develop/assets/adaptation-map.example.jsonl")
+            .read_text(encoding="utf-8")
+            .strip()
+        )
+        self.assertTrue(mapping["source_ref"]["artifact"].startswith("inputs/"))
+        self.assertTrue(
+            {"byte_start", "byte_end", "content_sha256"}
+            <= mapping["source_span"].keys()
+        )
+        self.assertIn("function_summary", mapping)
+        self.assertNotIn("source_text", mapping)
+        self.assertEqual(mapping["status"], "candidate")
+
     def test_new_rules_have_reviewed_classification(self) -> None:
         self.assertEqual(parse_index().get("IMG-08"), "reviewed_invariant")
         self.assertEqual(parse_index().get("IMG-09"), "reviewed_invariant")
         self.assertEqual(parse_index().get("SHT-12"), "reviewed_invariant")
         self.assertEqual(parse_index().get("VID-11"), "reviewed_invariant")
         self.assertEqual(parse_index().get("VID-12"), "reviewed_invariant")
+        self.assertEqual(parse_index().get("AST-07"), "reviewed_invariant")
+        self.assertEqual(parse_index().get("SHT-13"), "reviewed_invariant")
+        self.assertEqual(parse_index().get("SHT-14"), "reviewed_invariant")
 
     def test_reference_roles_visibility_and_pickup_scope_are_explicit(self) -> None:
         image_spec = parse_fenced_json(
@@ -243,6 +318,16 @@ class KnowHowResourceTests(unittest.TestCase):
             motion_binding["admission_status"],
             "unverified | creator_described | visually_inspected",
         )
+        audio = motion["audio"][0]
+        for field in ("source_ref", "speaker_ref", "voice_direction_ref"):
+            self.assertTrue(
+                {"owner", "artifact", "hash", "record_id"}
+                <= audio[field].keys()
+            )
+        self.assertEqual(audio["speaker_ref"]["owner"], "short-drama-assets")
+        self.assertEqual(
+            audio["voice_direction_ref"]["field"], "/voice_direction"
+        )
         coverage_scope = motion["coverage_scope"]
         self.assertTrue(
             {
@@ -261,9 +346,13 @@ class KnowHowResourceTests(unittest.TestCase):
             {"action", "reaction", "dialogue", "reveal", "directive", "end_boundary"},
         )
         for obligation in obligations:
+            source_ref = obligation["source_ref"]
             self.assertTrue(
-                {"owner", "artifact", "hash", "record_id"}
-                <= obligation["source_ref"].keys()
+                {"owner", "artifact", "hash"} <= source_ref.keys()
+            )
+            self.assertTrue(
+                "record_id" in source_ref or "field" in source_ref,
+                "JSON field refs may omit record_id; record refs must name the record",
             )
         self.assertTrue(
             {"kind", "source_ref", "disposition", "motion_field"}
@@ -397,7 +486,7 @@ class GovernanceSemanticsTests(unittest.TestCase):
                 with self.subTest(catalog=catalog.name, code=code):
                     self.assertRegex(code, r"^[A-Z][A-Z0-9_]+$")
                     self.assertIn(enforcer, {"validator", "reviewer", "creator"})
-                    self.assertTrue(severity)
+                    self.assertIn(severity, {"fatal", "error", "warning", "note"})
                     self.assertTrue(owner)
                     if classification == "structural_invariant":
                         self.assertEqual(enforcer, "validator")
@@ -405,9 +494,34 @@ class GovernanceSemanticsTests(unittest.TestCase):
                         self.assertEqual(enforcer, "reviewer")
                     else:
                         self.assertNotEqual(enforcer, "validator")
-                        self.assertNotIn(severity, {"fatal", "error", "revise"})
+                        self.assertNotIn(severity, {"fatal", "error"})
                 rows_checked += 1
         self.assertGreaterEqual(rows_checked, 8, "no usable diagnostic catalog was found")
+
+    def test_motion_and_review_templates_use_canonical_project_paths(self) -> None:
+        motion = (
+            SKILLS / "short-drama-video-prompts/assets/motion-spec.jsonl.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn('"record_id": "BLK-<EP>-<SC>-D<nn>"', motion)
+        self.assertIn('"artifact": "short-drama.json"', motion)
+        self.assertIn('"field": "/creator_authority/production_profile"', motion)
+        self.assertNotIn("DIALOGUE-<id>", motion)
+        self.assertNotIn("project-profile.json", motion)
+
+        supersession = json.loads(
+            (SKILLS / "short-drama-review/assets/supersession-decision.example.json")
+            .read_text(encoding="utf-8")
+        )
+        for key in ("alternate_ref", "master_ref"):
+            self.assertEqual(
+                supersession[key]["artifact"],
+                "episodes/EP001/storyboard/motion-specs.jsonl",
+            )
+        verdict = json.loads(
+            (SKILLS / "short-drama-review/assets/verdict-template.json")
+            .read_text(encoding="utf-8")
+        )
+        self.assertEqual(verdict["findings_ref"]["artifact"], "reviews/findings.jsonl")
 
 if __name__ == "__main__":
     unittest.main()

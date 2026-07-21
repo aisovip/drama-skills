@@ -58,6 +58,7 @@ questions. The index is navigation, not a formula sheet.
 | AST-04 | reviewed_invariant | Persistent identifying anchors and mutable state are not mixed. |
 | AST-05 | structural_invariant | Every downstream binding resolves to an accepted identity and valid variant. |
 | AST-06 | craft_default | Track only asset facts needed for recognition, reuse, prompt writing, or continuity. |
+| AST-07 | reviewed_invariant | Persistent voice identity and pronunciation refs stay separate from scene-level breath, emotion, volume, and delivery state. |
 
 ## Asset image prompts (`IMG`)
 
@@ -89,6 +90,8 @@ questions. The index is navigation, not a formula sheet.
 | SHT-10 | reviewed_invariant | Rendered keyframe prose contains only start-boundary facts, not state first created by the shot motion/end. |
 | SHT-11 | craft_default | When information changes another person's power, relationship, knowledge, or choice, preserve that reception visibly; shot count, framing, and duration follow the consequence and project profile. |
 | SHT-12 | reviewed_invariant | Each audience-visibility fact binds its exact source, carrier, permission, trigger, and protection method; framing neither reveals that fact early nor hides the carrier this shot must communicate. |
+| SHT-13 | reviewed_invariant | Multi-character blocking projects sourced, directed relationships into compatible positions, gaze, distance, and action lines for the current boundary. |
+| SHT-14 | reviewed_invariant | A contested moving object preserves ownership, trajectory, direction, time/round state, and end location across cuts unless an authorized ellipsis says otherwise. |
 
 ## Video prompts (`VID`)
 
@@ -125,7 +128,7 @@ questions. The index is navigation, not a formula sheet.
 | REV-01 | structural_invariant | Run mechanical checks before spending creative review attention. |
 | REV-02 | structural_invariant | A finding includes artifact/hash, evidence, impact, required fix, owner, severity, and status. |
 | REV-03 | reviewed_invariant | Semantic invention cites the source fact and conflicting downstream fact. |
-| REV-04 | structural_invariant | Owners cannot issue final approval; reviewers cannot edit owner source. |
+| REV-04 | structural_invariant | Final approval requires a fresh reviewer context that did not author the targets; self-check or unattested review remains provisional, and reviewers cannot edit owner source. |
 | REV-05 | craft_default | Diagnose repeated structure or generic language with location and impact; do not label output merely "AI-ish". |
 | REV-06 | taste_option | Alternatives remain notes unless they violate an accepted creator constraint. |
 | REV-07 | structural_invariant | An end-to-end drafting request cannot impersonate creator acceptance; preview chains remain provisional and undeliverable. |

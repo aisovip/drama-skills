@@ -9,6 +9,13 @@ description: 把已接受的中文短剧剧本和资产转成原文落实表、�
 变化的运动提示词，也不改写剧本或资产事实。中文项目使用中文镜头目的、边界说明和
 可复制提示词；ID 和字段名保持原样。
 
+## 先定位套件
+
+从本技能目录读取 `suite-ref.json`，按其中相对 `core_manifest` 定位唯一同级主技能与
+套件清单；确认声明的 core、contract、recipe 和清单 hash 一致后再读写项目。
+随后执行主技能的 [运行时预检](../short-drama/references/runtime-preflight.md)：先恢复事务、读取状态，再进入本阶段。
+涉及制作形态时按需读取 [production-form-profiles.md](../short-drama/references/production-form-profiles.md)，只投影本阶段负责的形、层、材质、光、运动或声音。
+
 ## 按需读取资料
 
 始终读取：

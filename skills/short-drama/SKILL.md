@@ -18,6 +18,7 @@ description: 基于文件系统初始化、继续、恢复和交付短剧项目�
 5. 按创作者当前任务路由；不强制补走整条流水线。
 
 入口、检查点、修订和交付见 [creator-workflow.md](references/creator-workflow.md)。
+每次入口先执行 [runtime-preflight.md](references/runtime-preflight.md)，统一验证安装、恢复事务并读取项目状态。
 所有权、文件过期标记 `stale`、隐私或恢复有疑问时读
 [contract-and-ownership.md](references/contract-and-ownership.md)。
 意图含混时读 [routing-examples.md](references/routing-examples.md)。
@@ -25,12 +26,14 @@ description: 基于文件系统初始化、继续、恢复和交付短剧项目�
 [knowhow-index.md](references/knowhow-index.md)；路由只负责分派，不代替创作技能判断。
 涉及参考图可以决定什么、观众揭示时机或补拍/替代提示词时读
 [reference-media-and-pickups.md](references/reference-media-and-pickups.md)。
+不同制作形态的执行翻译见 [production-form-profiles.md](references/production-form-profiles.md)。
 
 ## 意图路由
 
 | 创作者意图 | 路由 |
 |---|---|
 | 开发点子、故事承诺、系列、分集地图 | `$short-drama-develop` |
+| 导入小说/长材料并做可追溯分集与资产候选预览 | `$short-drama-develop` → 接受改编/分集 → `$short-drama-write` → 接受剧本 → `$short-drama-assets` |
 | 写/改单集契约、因果节拍、剧本 | `$short-drama-write` |
 | 拆人物/造型、地点/视图、道具/状态 | `$short-drama-assets` |
 | 写人物/地点/道具/局部修改的图片提示词 | `$short-drama-image-prompts` |
@@ -40,6 +43,10 @@ description: 基于文件系统初始化、继续、恢复和交付短剧项目�
 
 创作者明确意图优先于名义上的“下一检查点”。C2 资产接受后，图片提示词和分镜
 是平行分支；创作者只要其中一支时，不强迫等待另一支。
+
+若当前上下文参与过目标文件的创作，审查路由必须优先启动 fresh reviewer agent/context，
+只传目标、已接受限制和审查表；运行环境不支持 fresh agent 时透明降级为 `PROVISIONAL`
+自检，不能把切换 Skill 名称当成独立审查。
 
 ## 初始化
 
@@ -55,6 +62,10 @@ description: 基于文件系统初始化、继续、恢复和交付短剧项目�
 6. 告知项目路径和最有用的创作者动作。
 
 初始化不生成故事引擎、剧本或资产设定表。
+
+开发阶段若提交 `development/director-brief.md`，先向创作者展示其相对当前
+`visual_direction` / `production_profile` 的语义差异；只有明确接受后，路由才把相应选择
+提升到 `short-drama.json#/creator_authority`。候选文件本身不具有 creator authority。
 
 ## 确定性工具
 
@@ -103,7 +114,7 @@ description: 基于文件系统初始化、继续、恢复和交付短剧项目�
 
 ## 交付
 
-先路由到 `$short-drama-review` 校验，再在交付检查就绪时打包。只包含状态为 `accepted`
+先路由到 `$short-drama-review` 的 fresh 审查上下文校验，再在交付检查就绪时打包。只包含状态为 `accepted`
 的剧本、清单、提示词、审查、创作者备注与校验和。排除二进制媒体、非公开输入、
 机器状态、绝对路径、凭据、非公开来源材料和未批准草稿。
 

@@ -1,7 +1,7 @@
 # `motion-specs.jsonl` 填写模板
 
-每行一个候选运动规格对象。`boundary_refs` 只读并保留 `authority:candidate`；创作者接受后，
-通过事务发布刷新为准确的已确认 `hash`。不要加入 `duration_override`、`end_override` 或
+每行一个候选运动规格对象。`boundary_refs` 只读并绑定准确的已接受 `hash`；候选状态属于本运动规格，
+不向已经接受的上游引用传播。不要加入 `duration_override`、`end_override` 或
 `next_shot_write`。以下字符串只说明怎样填写，不是固定答案。
 
 ```json
@@ -12,23 +12,20 @@
     "artifact": "episodes/<EP>/storyboard/shots.jsonl",
     "hash": "<sha256>",
     "record_id": "SHOT-<id>",
-    "owner": "short-drama-storyboard",
-    "authority": "candidate"
+    "owner": "short-drama-storyboard"
   },
   "keyframe_ref": {
     "artifact": "episodes/<EP>/storyboard/keyframes.jsonl",
     "hash": "<sha256>",
     "record_id": "KEY-<id>",
-    "owner": "short-drama-storyboard",
-    "authority": "candidate"
+    "owner": "short-drama-storyboard"
   },
   "purpose_ref": {
     "artifact": "episodes/<EP>/storyboard/shots.jsonl",
     "hash": "<sha256>",
     "record_id": "SHOT-<id>",
     "field": "/purpose",
-    "owner": "short-drama-storyboard",
-    "authority": "candidate"
+    "owner": "short-drama-storyboard"
   },
   "coverage_scope": {
     "mode": "master",
@@ -39,8 +36,7 @@
           "owner": "short-drama-write",
           "artifact": "episodes/<EP>/screenplay-index.jsonl",
           "hash": "<sha256>",
-          "record_id": "BLK-<id>",
-          "authority": "candidate"
+          "record_id": "BLK-<id>"
         },
         "disposition": "covered_now",
         "motion_field": "/ordered_subject_motion/0"
@@ -52,8 +48,7 @@
           "artifact": "episodes/<EP>/storyboard/shots.jsonl",
           "hash": "<sha256>",
           "record_id": "SHOT-<id>",
-          "field": "/purpose",
-          "authority": "candidate"
+          "field": "/purpose"
         },
         "disposition": "covered_now | retained_in_master | separate_pickup | requires_storyboard_revision",
         "motion_field": "/<current motion field or none>"
@@ -64,8 +59,7 @@
           "owner": "short-drama-write",
           "artifact": "episodes/<EP>/screenplay-index.jsonl",
           "hash": "<sha256>",
-          "record_id": "DIALOGUE-<id>",
-          "authority": "candidate"
+          "record_id": "BLK-<EP>-<SC>-D<nn>"
         },
         "disposition": "covered_now | retained_in_master | separate_pickup | requires_storyboard_revision",
         "motion_field": "/audio/0"
@@ -77,8 +71,7 @@
           "artifact": "episodes/<EP>/storyboard/shots.jsonl",
           "hash": "<sha256>",
           "record_id": "SHOT-<id>",
-          "field": "/audience_visibility/0",
-          "authority": "candidate"
+          "field": "/audience_visibility/0"
         },
         "disposition": "covered_now | retained_in_master | separate_pickup | requires_storyboard_revision",
         "motion_field": "/performance_arc"
@@ -86,12 +79,10 @@
       {
         "kind": "directive",
         "source_ref": {
-          "owner": "short-drama",
-          "artifact": "project-profile.json",
+          "owner": "creator",
+          "artifact": "short-drama.json",
           "hash": "<sha256>",
-          "record_id": "PROJECT-PROFILE",
-          "field": "/directives/0",
-          "authority": "candidate"
+          "field": "/creator_authority/production_profile"
         },
         "disposition": "covered_now | retained_in_master | separate_pickup | requires_storyboard_revision",
         "motion_field": "/<field that carries this project requirement>"
@@ -103,8 +94,7 @@
           "artifact": "episodes/<EP>/storyboard/shots.jsonl",
           "hash": "<sha256>",
           "record_id": "SHOT-<id>",
-          "field": "/end_boundary",
-          "authority": "candidate"
+          "field": "/end_boundary"
         },
         "disposition": "covered_now | retained_in_master | separate_pickup | requires_storyboard_revision",
         "motion_field": "/end_report"
@@ -121,24 +111,21 @@
       "record_id": "SHOT-<id>",
       "field": "/duration_seconds",
       "value_seconds": 0.0,
-      "owner": "short-drama-storyboard",
-      "authority": "candidate"
+      "owner": "short-drama-storyboard"
     },
     "start": {
       "artifact": "episodes/<EP>/storyboard/shots.jsonl",
       "hash": "<sha256>",
       "record_id": "SHOT-<id>",
       "field": "/start_boundary",
-      "owner": "short-drama-storyboard",
-      "authority": "candidate"
+      "owner": "short-drama-storyboard"
     },
     "end": {
       "artifact": "episodes/<EP>/storyboard/shots.jsonl",
       "hash": "<sha256>",
       "record_id": "SHOT-<id>",
       "field": "/end_boundary",
-      "owner": "short-drama-storyboard",
-      "authority": "candidate"
+      "owner": "short-drama-storyboard"
     },
     "next_start": {
       "artifact": "episodes/<EP>/storyboard/shots.jsonl",
@@ -146,8 +133,7 @@
       "record_id": "SHOT-<next-id>",
       "field": "/start_boundary",
       "access": "comparison_only",
-      "owner": "short-drama-storyboard",
-      "authority": "candidate"
+      "owner": "short-drama-storyboard"
     }
   },
   "reference_bindings": [
@@ -156,8 +142,7 @@
         "owner": "short-drama-storyboard",
         "artifact": "episodes/<EP>/storyboard/keyframes.jsonl",
         "hash": "<sha256>",
-        "record_id": "KEY-<id>",
-        "authority": "candidate"
+        "record_id": "KEY-<id>"
       },
       "role": "start_frame",
       "may_control": [
@@ -234,8 +219,20 @@
         "artifact": "<screenplay/shot>",
         "hash": "<sha256>",
         "owner": "short-drama-write",
-        "record_id": "<dialogue|VO|OS|SFX-id>",
-        "authority": "candidate"
+        "record_id": "<dialogue|VO|OS|SFX-id>"
+      },
+      "speaker_ref": {
+        "artifact": "bible/characters.jsonl",
+        "hash": "<sha256>",
+        "owner": "short-drama-assets",
+        "record_id": "CHAR-<id>"
+      },
+      "voice_direction_ref": {
+        "artifact": "bible/characters.jsonl",
+        "hash": "<sha256>",
+        "owner": "short-drama-assets",
+        "record_id": "CHAR-<id>",
+        "field": "/voice_direction"
       },
       "kind": "dialogue | VO | OS | SFX | ambience | music",
       "exact_text": "<仅 source 有文本时逐字引用>",
@@ -292,19 +289,8 @@
 }
 ```
 
-`reported_end` 不成为下一镜的输入；出现 `mismatch` 时保持来源文件不变，修改运动说明或向分镜技能
-提出修改请求。末镜若没有已经存在的下一镜，删除范例的 `next_start`，改用
-`next_start_locator` 或已有的单集交接 `ArtifactRef`；不伪造记录或 `hash`。
-没有附加参考媒体时 `reference_bindings` 用空数组；每条绑定记录只决定声明的 `role`。
-普通完整版本用 `master`；同一 `motion-specs.jsonl` 内的局部补拍或替代版本用
-`master_motion_id` 与 `supplements_motion_ids` 指向已有记录。不能给同一文件写自己的
-`hash`；下游审查会用文件 `hash` 和记录 ID 绑定快照。`source_obligations` 把动作、反应、
-对白、揭示、项目要求与镜头终点分别指向来源，并用 `motion_field` 标出当前实现；
-未承担项仍留在母版、另一补拍版或分镜修改中，不能靠一段笼统说明消失。
 
-运动规格只能提出 `replacement_intent: requests_supersession`，不能在自身写入审查引用
-或宣布替代。独立审查者在下游审查结论的 `supersession_decisions` 中绑定固定的
-候选版和母版的固定 `hash` 后作决定，避免运动规格与审查结论互相引用、`hash` 无法稳定。
-没有创作者或参考图权利人的文字观察记录，参考图检查状态保持 `unverified`；本模板不查看
-或生成媒体。
-通用规格不含供应商、模型、远程任务或接口字段。
+复制后删除不适用的可选字段和占位引用。`reported_end` 只作比较；末镜没有真实下一镜时改用
+`next_start_locator`。附加参考为空时使用空数组；对白说话者与声音方向只有在已接受引用存在时才填写。
+母版、补拍和替代关系保留在同一规格文件内，替代决定由独立审查结论拥有。具体取舍按
+`references/motion-recipe.md` 与 `references/review-and-fixtures.md` 判断。

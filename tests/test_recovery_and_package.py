@@ -418,11 +418,18 @@ class PackageTests(unittest.TestCase):
             json.dumps(
                 {
                     "review_id": f"REVIEW-{slug}",
+                    "requested_review_mode": "independent_agent",
+                    "effective_review_mode": "fresh_agent",
                     "reviewer": {
                         "owner": "short-drama-review",
                         "kind": "independent_agent",
                         "independent": True,
                         "excluded_owner_skills": [owner],
+                        "provenance": {
+                            "context_id": "test-fresh-review-context",
+                            "fresh_context": True,
+                            "authored_reviewed_artifacts": False,
+                        },
                     },
                     "reviewed_artifacts": [
                         {
@@ -538,6 +545,47 @@ class PackageTests(unittest.TestCase):
                         episode="EP001",
                         selected_paths=selected,
                     )
+
+    def test_package_distinguishes_story_text_from_structured_credentials(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            self.approve_artifact(
+                root,
+                artifact_id="EP001:fictional-password-scene",
+                owner="short-drama-write",
+                outputs={
+                    "episodes/EP001/fictional-password-scene.md": (
+                        "[画面文字] 旧门禁提示：password: fictional123\n"
+                    )
+                },
+            )
+            project_tool.build_delivery_package(
+                root,
+                episode="EP001",
+                selected_paths=["episodes/EP001/fictional-password-scene.md"],
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            self.approve_artifact(
+                root,
+                artifact_id="EP001:unsafe-config",
+                owner="short-drama-image-prompts",
+                outputs={
+                    "episodes/EP001/assets/unsafe-config.json": (
+                        '{"api_key":"abcdefgh","prompt":"办公室"}\n'
+                    )
+                },
+            )
+            with self.assertRaisesRegex(
+                project_tool.PackageBlockedError,
+                "credential field is excluded",
+            ):
+                project_tool.build_delivery_package(
+                    root,
+                    episode="EP001",
+                    selected_paths=["episodes/EP001/assets/unsafe-config.json"],
+                )
 
     def test_explicit_on_screen_url_exception_is_reported(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

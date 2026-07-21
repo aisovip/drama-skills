@@ -3,4 +3,5 @@ __pycache__/
 .ruff_cache/
 .DS_Store
 .omc/
+.omx/
 tests/local-terms.txt

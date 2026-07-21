@@ -87,9 +87,14 @@ Every cross-artifact pointer uses one shape; stage-specific aliases such as
 }
 ```
 
-- `owner`, project-relative `artifact`, and file `hash` are required. Published
-  authority uses an accepted snapshot hash; preview refs add
-  `authority: "candidate"` and cannot satisfy an accepted binding.
+- `owner`, project-relative `artifact`, and file `hash` are required. An upstream
+  input omits `authority` (or declares `accepted`) and binds an accepted snapshot.
+  `authority: "candidate"` marks an exact candidate target: either a target
+  co-published in the same transaction or an upstream candidate in a provisional
+  preview chain. It cannot label an already accepted input or satisfy acceptance
+  by itself. Before creator acceptance, every external candidate input must exist
+  as an accepted provider at the same hash; atomic acceptance can then promote
+  exact co-published groups without rewriting mutually bound bytes.
 - `record_id` selects a stable JSONL/Markdown record; `field` is an RFC 6901-style
   pointer inside that record. File-level refs may omit both. Field-only JSON refs
   may omit `record_id`.

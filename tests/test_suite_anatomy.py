@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 
 SUITE = Path(__file__).resolve().parents[1]
@@ -136,6 +137,22 @@ class SuiteAnatomyTests(unittest.TestCase):
             self.assertNotIn("TODO", body, skill.name)
             self.assertLessEqual(len(body.splitlines()), 250, skill.name)
 
+    def test_readmes_stay_creator_facing(self) -> None:
+        disallowed_sections = {
+            "## 验证与开发",
+            "## 许可证",
+            "## Verify & develop",
+            "## License",
+        }
+        for name in ("README.md", "README_EN.md"):
+            with self.subTest(readme=name):
+                headings = {
+                    line.strip()
+                    for line in (SUITE / name).read_text(encoding="utf-8").splitlines()
+                    if line.startswith("## ")
+                }
+                self.assertTrue(disallowed_sections.isdisjoint(headings))
+
     def test_markdown_links_resolve_one_hop(self) -> None:
         for markdown in (SUITE / "skills").glob("*/SKILL.md"):
             for target in local_markdown_targets(markdown):
@@ -226,7 +243,8 @@ class SuiteAnatomyTests(unittest.TestCase):
         ]
         for path in fenced_templates:
             match = re.search(r"```json\n(\{.*?\})\n```", path.read_text(encoding="utf-8"), re.S)
-            self.assertIsNotNone(match, path)
+            if match is None:
+                self.fail(f"{path}: missing fenced JSON template")
             check(json.loads(match.group(1)), path)
 
     def test_asset_template_reference_graph_has_no_self_ref_or_hash_cycle(self) -> None:
@@ -277,8 +295,8 @@ class SuiteAnatomyTests(unittest.TestCase):
         for node in graph:
             visit(node, (), complete)
 
-    def test_candidate_templates_mark_candidate_refs_and_creator_authority_exists(self) -> None:
-        templates: list[tuple[Path, object]] = []
+    def test_candidate_templates_distinguish_inputs_from_same_publication_refs(self) -> None:
+        templates: list[tuple[Path, dict[str, Any]]] = []
         for relative in (
             "skills/short-drama-storyboard/assets/coverage-template.json",
             "skills/short-drama-storyboard/assets/shot-template.jsonl",
@@ -292,20 +310,29 @@ class SuiteAnatomyTests(unittest.TestCase):
         ):
             path = SUITE / relative
             match = re.search(r"```json\n(\{.*?\})\n```", path.read_text(encoding="utf-8"), re.S)
-            self.assertIsNotNone(match, path)
+            if match is None:
+                self.fail(f"{path}: missing fenced JSON template")
             templates.append((path, json.loads(match.group(1))))
 
+        candidate_ref_owners = {
+            "coverage-template.json": {"short-drama-storyboard"},
+            "shot-template.jsonl": set(),
+            "keyframe-template.jsonl": {"short-drama-storyboard"},
+            "image-prompt-spec.jsonl.md": set(),
+            "motion-spec.jsonl.md": set(),
+        }
         for path, document in templates:
             self.assertEqual(document.get("status"), "candidate", path)
+
+            observed_candidate_owners: set[str] = set()
 
             def check(value: object, cursor: str = "") -> None:
                 if isinstance(value, dict):
                     if {"owner", "artifact", "hash"}.issubset(value):
-                        self.assertEqual(
-                            value.get("authority"),
-                            "candidate",
-                            f"{path}:{cursor}",
-                        )
+                        authority = value.get("authority")
+                        self.assertIn(authority, {None, "candidate"}, f"{path}:{cursor}")
+                        if authority == "candidate":
+                            observed_candidate_owners.add(str(value["owner"]))
                     for key, child in value.items():
                         check(child, f"{cursor}/{key}")
                 elif isinstance(value, list):
@@ -313,6 +340,12 @@ class SuiteAnatomyTests(unittest.TestCase):
                         check(child, f"{cursor}/{index}")
 
             check(document)
+
+            self.assertEqual(
+                observed_candidate_owners,
+                candidate_ref_owners[path.name],
+                f"{path}: candidate authority is only for co-published targets",
+            )
 
         project = json.loads(
             (SUITE / "skills/short-drama/assets/project-template/short-drama.json")
@@ -341,7 +374,37 @@ class SuiteAnatomyTests(unittest.TestCase):
         self.assertTrue(verdict["reviewed_artifacts"])
         self.assertTrue({"owner", "artifact", "hash"}.issubset(verdict["findings_ref"]))
         self.assertEqual(verdict["open_blocker_count"], 0)
-        self.assertTrue(verdict["reviewer"]["independent"])
+        self.assertFalse(verdict["reviewer"]["independent"])
+        self.assertEqual(verdict["reviewer"]["kind"], "unattested")
+        self.assertEqual(verdict["requested_review_mode"], "independent_agent")
+        self.assertEqual(verdict["effective_review_mode"], "unattested")
+        self.assertEqual(verdict["structural_validation"], "not_run")
+        self.assertEqual(verdict["verdict"], "PROVISIONAL")
+
+    def test_review_requires_fresh_context_or_transparent_provisional_fallback(self) -> None:
+        review = (SUITE / "skills/short-drama-review/SKILL.md").read_text(encoding="utf-8")
+        router = (SUITE / "skills/short-drama/SKILL.md").read_text(encoding="utf-8")
+        for text in (review, router):
+            self.assertIn("fresh", text)
+            self.assertIn("PROVISIONAL", text)
+        self.assertIn("effective_review_mode", review)
+
+    def test_script_first_writing_can_load_genre_knowhow_directly(self) -> None:
+        write = (SUITE / "skills/short-drama-write/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("../short-drama-develop/references/genre-and-hook-playbook.md", write)
+
+    def test_media_generation_boundary_is_a_verified_product_policy(self) -> None:
+        manifest = json.loads((CORE / "suite-manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            manifest["trust_boundary"],
+            {
+                "host_text_inference": True,
+                "suite_scripts_outbound_network": False,
+                "media_generation": False,
+                "provider_api_calls": False,
+                "private_source_runtime_access": False,
+            },
+        )
 
     def test_template_field_refs_resolve_to_owned_example_fields(self) -> None:
         keyframe = json.loads(
@@ -364,7 +427,8 @@ class SuiteAnatomyTests(unittest.TestCase):
             / "skills/short-drama-image-prompts/assets/image-prompt-spec.jsonl.md"
         ).read_text(encoding="utf-8")
         match = re.search(r"```json\n(\{.*?\})\n```", image_template, re.S)
-        self.assertIsNotNone(match)
+        if match is None:
+            self.fail("image prompt template is missing fenced JSON")
         image_spec = json.loads(match.group(1))
         policy_ref = image_spec["text_handling"]["source_policy_ref"]
         prop = json.loads(

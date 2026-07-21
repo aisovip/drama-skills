@@ -1,8 +1,10 @@
 import importlib.util
 import json
 import tempfile
+import types
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SUITE = Path(__file__).resolve().parents[1]
@@ -14,6 +16,37 @@ SPEC.loader.exec_module(project_tool)
 
 
 class ProjectToolTests(unittest.TestCase):
+    def test_windows_directory_sync_avoids_unsupported_directory_fsync(self) -> None:
+        with patch.object(project_tool.os, "name", "nt"), patch.object(
+            project_tool.os, "open"
+        ) as open_mock:
+            project_tool._fsync_directory(Path("unused-on-windows"))
+        open_mock.assert_not_called()
+
+    def test_windows_transaction_lock_acquires_and_releases_on_error(self) -> None:
+        events: list[tuple[int, int, int]] = []
+        locking = types.SimpleNamespace(
+            LK_LOCK=1,
+            LK_UNLCK=2,
+            locking=lambda descriptor, mode, length: events.append(
+                (descriptor, mode, length)
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch.object(project_tool.os, "name", "nt"), patch.object(
+                project_tool.importlib,
+                "import_module",
+                return_value=locking,
+            ) as importer:
+                with self.assertRaisesRegex(RuntimeError, "injected"):
+                    with project_tool._transaction_lock(root):
+                        raise RuntimeError("injected")
+
+        importer.assert_called_once_with("msvcrt")
+        self.assertEqual([mode for _, mode, _ in events], [1, 2])
+        self.assertEqual([length for _, _, length in events], [1, 1])
+
     def test_initializes_minimal_project_without_creative_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "项目 空格"
@@ -102,6 +135,47 @@ class ProjectToolTests(unittest.TestCase):
                 axes,
                 {"delivery_gate": "accepted"},
             )
+
+    def test_independent_reviewer_requires_fresh_context_provenance(self) -> None:
+        reviewer = {
+            "owner": "short-drama-review",
+            "kind": "independent_agent",
+            "independent": True,
+            "excluded_owner_skills": ["short-drama-write"],
+        }
+        with self.assertRaisesRegex(ValueError, "fresh-context provenance"):
+            project_tool._normalize_reviewer_evidence(
+                reviewer,
+                verdict_owner="short-drama-review",
+                artifact_owner="short-drama-write",
+            )
+
+        reviewer["provenance"] = {
+            "context_id": "fresh-review-test",
+            "fresh_context": True,
+            "authored_reviewed_artifacts": False,
+        }
+        normalized = project_tool._normalize_reviewer_evidence(
+            reviewer,
+            verdict_owner="short-drama-review",
+            artifact_owner="short-drama-write",
+        )
+        self.assertTrue(normalized["provenance"]["fresh_context"])
+
+        provisional = project_tool._normalize_reviewer_evidence(
+            {
+                "owner": "short-drama-review",
+                "kind": "unattested",
+                "independent": False,
+                "excluded_owner_skills": ["short-drama-write"],
+                "provenance": None,
+            },
+            verdict_owner="short-drama-review",
+            artifact_owner="short-drama-write",
+            require_independent=False,
+        )
+        self.assertFalse(provisional["independent"])
+        self.assertIsNone(provisional["provenance"])
 
     def test_status_summarizes_all_axes_and_recovery_without_hashes_or_text(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

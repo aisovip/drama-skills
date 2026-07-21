@@ -1,0 +1,17 @@
+{
+  "fixture_id": "JOURNEY-LABOR-001",
+  "fixture_kind": "blind_journey_input",
+  "provenance": "synthetic",
+  "entry_mode": "idea",
+  "creator_input": {
+    "brief": "返乡维修工罗青发现合作社温室夜间结露不是肥料问题，而是旧风机停转与棚膜补丁改变了气流；她只有一小畦幼苗可做对照试验。",
+    "request": "发展第一集经营劳动短剧，并准备后续资产、分镜与连续性需要的文本。",
+    "constraints": [
+      "追踪夜间温度、棚内区域、风机状态、幼苗阶段、工具与工作服湿损",
+      "罗青只能动用一小畦幼苗和一台旧风机，合作社不允许她先改整棚",
+      "采购员次日清晨才到，是否收货取决于幼苗实际状态",
+      "本集不增加新机器、神奇配方或突然到账的资金"
+    ]
+  },
+  "coverage_layers": ["story", "script", "asset", "image_prompt", "shot", "continuity", "review"]
+}

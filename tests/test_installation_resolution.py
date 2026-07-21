@@ -50,6 +50,58 @@ class InstallationResolutionTests(unittest.TestCase):
             result = json.loads(completed.stdout)
             self.assertEqual(len(result["checked_skills"]), 8)
 
+    def test_verifier_checks_each_exposed_symlink_target(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            source_a = temp / "source-a/skills"
+            source_b = temp / "source-b/skills"
+            shutil.copytree(SUITE / "skills", source_a)
+            shutil.copytree(SUITE / "skills", source_b)
+            changed = source_b / "short-drama-write/SKILL.md"
+            changed.write_text(
+                changed.read_text(encoding="utf-8") + "\nchanged through mixed install\n",
+                encoding="utf-8",
+            )
+            installed = temp / "installed/skills"
+            installed.mkdir(parents=True)
+            for skill in source_a.iterdir():
+                target = source_b / skill.name if skill.name == "short-drama-write" else skill
+                (installed / skill.name).symlink_to(target, target_is_directory=True)
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(VERIFY_TOOL),
+                    str(installed / "short-drama"),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("content hash mismatch: short-drama-write/SKILL.md", completed.stderr)
+
+    def test_verifier_ignores_unrelated_sibling_skills(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            unrelated = skills / "unrelated-skill"
+            unrelated.mkdir()
+            (unrelated / "SKILL.md").write_text(
+                "---\nname: unrelated-skill\ndescription: unrelated\n---\n",
+                encoding="utf-8",
+            )
+
+            completed = subprocess.run(
+                [sys.executable, str(VERIFY_TOOL), str(skills / "short-drama")],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+
     def test_child_refs_are_relative_and_resolve_to_the_single_sibling_core(self) -> None:
         manifest = (SUITE / "skills/short-drama/suite-manifest.json").resolve()
         manifest_document = json.loads(manifest.read_text(encoding="utf-8"))
@@ -69,6 +121,36 @@ class InstallationResolutionTests(unittest.TestCase):
                 self.assertEqual(reference["recipe_version"], manifest_document["recipe_version"])
                 self.assertEqual(reference["core_manifest_sha256"], manifest_hash)
                 self.assertNotIn("cwd", json.dumps(reference).casefold())
+
+    def test_direct_child_invocation_discloses_suite_resolution(self) -> None:
+        for child in sorted((SUITE / "skills").iterdir()):
+            if not child.is_dir() or child.name == "short-drama":
+                continue
+            with self.subTest(skill=child.name):
+                instructions = (child / "SKILL.md").read_text(encoding="utf-8")
+                self.assertIn("suite-ref.json", instructions)
+                self.assertIn("core_manifest", instructions)
+
+    def test_every_entrypoint_discloses_the_shared_runtime_preflight(self) -> None:
+        runtime_preflight = SUITE / "skills/short-drama/references/runtime-preflight.md"
+        self.assertTrue(runtime_preflight.is_file())
+        guidance = runtime_preflight.read_text(encoding="utf-8")
+        for command in (
+            "suite_verify.py",
+            "project_tool.py recover",
+            "project_tool.py status",
+            "`publish`",
+            "`package`",
+        ):
+            self.assertIn(command, guidance)
+        for skill_md in sorted((SUITE / "skills").glob("*/SKILL.md")):
+            with self.subTest(skill=skill_md.parent.name):
+                self.assertIn("runtime-preflight.md", skill_md.read_text(encoding="utf-8"))
+
+    def test_installed_core_ships_the_suite_verifier(self) -> None:
+        verifier = SUITE / "skills/short-drama/scripts/suite_verify.py"
+        self.assertTrue(verifier.is_file())
+        self.assertIn("def verify_suite", verifier.read_text(encoding="utf-8"))
 
     def test_cli_initializes_and_discovers_space_path_from_unrelated_cwd(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -251,7 +333,60 @@ class InstallationResolutionTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(completed.returncode, 2)
-            self.assertIn("core manifest hash mismatch", completed.stderr)
+            self.assertIn("trust_boundary", completed.stderr)
+
+    def test_rebuilt_manifest_cannot_enable_forbidden_runtime_capabilities(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            manifest = skills / "short-drama/suite-manifest.json"
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["trust_boundary"]["media_generation"] = True
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            rebuilt = subprocess.run(
+                [sys.executable, str(UPDATE_TOOL), str(skills / "short-drama")],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(rebuilt.returncode, 0, rebuilt.stderr)
+
+            completed = subprocess.run(
+                [sys.executable, str(VERIFY_TOOL), str(skills / "short-drama")],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("trust_boundary", completed.stderr)
+
+    def test_rebuilt_manifest_cannot_hide_invalid_skill_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            skills = copy_installed_suite(temp)
+            skill_md = skills / "short-drama-write/SKILL.md"
+            skill_md.write_text(
+                skill_md.read_text(encoding="utf-8").replace(
+                    "---\n\n#", "metadata: forbidden\n---\n\n#", 1
+                ),
+                encoding="utf-8",
+            )
+            rebuilt = subprocess.run(
+                [sys.executable, str(UPDATE_TOOL), str(skills / "short-drama")],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(rebuilt.returncode, 0, rebuilt.stderr)
+
+            completed = subprocess.run(
+                [sys.executable, str(VERIFY_TOOL), str(skills / "short-drama")],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("frontmatter keys", completed.stderr)
 
 
 if __name__ == "__main__":

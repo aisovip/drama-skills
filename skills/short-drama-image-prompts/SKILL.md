@@ -7,6 +7,13 @@ description: 为已确认的短剧角色、造型、场景、视角、道具和�
 
 把已接受的资产事实写成“能认出、能复用、能区分状态”的参考图提示词。这里的产物是提示词，不是图片。
 
+## 先定位套件
+
+从本技能目录读取 `suite-ref.json`，按其中相对 `core_manifest` 定位唯一同级主技能与
+套件清单；确认声明的 core、contract、recipe 和清单 hash 一致后再读写项目。
+随后执行主技能的 [运行时预检](../short-drama/references/runtime-preflight.md)：先恢复事务、读取状态，再进入本阶段。
+涉及制作形态时按需读取 [production-form-profiles.md](../short-drama/references/production-form-profiles.md)，只投影本阶段负责的形、层、材质、光、运动或声音。
+
 ## 进入条件与边界
 
 - 可从现成项目直接进入，不要求先做故事开发；先定位 `short-drama.json` 和版本一致的主技能。

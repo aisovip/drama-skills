@@ -36,9 +36,9 @@ Finding 的“修复”必须可执行，例如“补回 View 中安全门相对
 | IMG_BINDING_UNRESOLVED | structural_invariant | validator | error | image-prompts | asset/variant 或 source ref 未解析 |
 | IMG_TEXT_POLICY_CONFLICT | structural_invariant | validator | error | image-prompts | readable 与 no-text 等显式冲突 |
 | IMG_EDIT_SCOPE_MISSING | structural_invariant | validator | error | image-prompts | edit 缺 target/change/preserve/impact |
-| IMG_VARIANT_INCOHERENT | reviewed_invariant | reviewer | revise | image-prompts | 一个规格混入不相容 Look/State |
-| IMG_GEOGRAPHY_LOSS | reviewed_invariant | reviewer | revise | image-prompts | 场景固定地理/方向被丢失或改写 |
-| IMG_PROP_UNRECOGNIZABLE | reviewed_invariant | reviewer | revise | image-prompts | 尺度、形制、材料、功能不足以辨认 |
+| IMG_VARIANT_INCOHERENT | reviewed_invariant | reviewer | error | image-prompts | 一个规格混入不相容 Look/State |
+| IMG_GEOGRAPHY_LOSS | reviewed_invariant | reviewer | error | image-prompts | 场景固定地理/方向被丢失或改写 |
+| IMG_PROP_UNRECOGNIZABLE | reviewed_invariant | reviewer | error | image-prompts | 尺度、形制、材料、功能不足以辨认 |
 | IMG_BOILERPLATE_DOMINANT | craft_default | reviewer | warning | image-prompts | 已有锚点但泛化词压过它们 |
 | IMG_STYLE_ALTERNATIVE | taste_option | reviewer | note | image-prompts | 可选审美方案，不单独阻断 |
 
@@ -77,7 +77,7 @@ Finding：
 - evidence：同一规格同时出现两套服装、两种发长和互斥干湿状态；
 - impact：无法成为一个 accepted Look 的复用参考，并抹去断眉/脸型等锚点；
 - required fix：绑定一个 Look，仅保留该状态的可观察 delta，把其他 Look 拆为独立规格；
-- classification：`reviewed_invariant`，owner `image-prompts`，severity `revise`。
+- classification：`reviewed_invariant`，owner `image-prompts`，severity `error`。
 
 ### 反例 B：文字矛盾
 

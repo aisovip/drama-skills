@@ -24,7 +24,7 @@ Finding 必须含 artifact/hash、引用片段、影响、required fix、owner�
 | Action budget | duration 内能否保留故事动作、对白与 reaction？ | duration、距离、台词、动作、camera |
 | Camera | lock/move 是否一致，且因注意/压力/揭示而发生？ | camera interval + shot purpose |
 | Environment | 是否只动了有依据的环境，未发明天气/事件？ | accepted continuity + environment |
-| Dialogue/audio | exact refs、说话人、VO/OS/SFX、delivery 是否保持？ | source audio fields + prompt |
+| Dialogue/audio | exact refs、`speaker_ref`、可选 `voice_direction_ref`、VO/OS/SFX 与本场 delivery 是否分别保持？ | source audio fields + character voice direction + prompt |
 | End fidelity | reported end 是否逐项等于 continuity out？ | end report + source end |
 | Economy | frame 已承载外观是否被无谓倾倒？ | reference contents + copy block |
 | Shot boundary | 是否偷改 duration/end/next shot 或藏多次 cut？ | source shot + motion |
@@ -40,8 +40,8 @@ Finding 必须含 artifact/hash、引用片段、影响、required fix、owner�
 | VID_CAMERA_INTERVAL_CONFLICT | structural_invariant | validator | error | video-prompts | 同一区间 lock 与 move 等显式冲突 |
 | VID_END_REPORT_MISMATCH | structural_invariant | validator | error | video-prompts | reported end 不等于 storyboard continuity out |
 | VID_BOUNDARY_OVERRIDE | structural_invariant | validator | error | video-prompts | motion 写入 duration/end/next-shot override |
-| VID_ACTION_INFEASIBLE | reviewed_invariant | reviewer | revise | video-prompts/storyboard | 一般动作负载不可行或掩盖故事变化 |
-| VID_SEMANTIC_INVENTION | reviewed_invariant | reviewer | revise | video-prompts | 新造故事、关系、知识、状态或音频事实 |
+| VID_ACTION_INFEASIBLE | reviewed_invariant | reviewer | error | video-prompts/storyboard | 一般动作负载不可行或掩盖故事变化 |
+| VID_SEMANTIC_INVENTION | reviewed_invariant | reviewer | error | video-prompts | 新造故事、关系、知识、状态或音频事实 |
 | VID_CAMERA_UNMOTIVATED | craft_default | reviewer | warning | video-prompts | movement 无助于目的/注意变化 |
 | VID_REFERENCE_DUMP | craft_default | reviewer | warning | video-prompts | bound frame 已带外观却重复整本 bible |
 | VID_STYLE_ALTERNATIVE | taste_option | reviewer | note | video-prompts | 表演/摄影/声音风格的非阻断选择 |
