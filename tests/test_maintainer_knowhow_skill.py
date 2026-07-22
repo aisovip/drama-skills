@@ -17,8 +17,6 @@ SKILL_MD = SKILL / "SKILL.md"
 OPENAI_YAML = SKILL / "agents/openai.yaml"
 REFERENCES = SKILL / "references"
 MANIFEST = PUBLIC_SKILLS / "short-drama/suite-manifest.json"
-PROMOTION_RECORD = MAINTAINERS / "evals/knowhow-promotion-2026-07.md"
-PRODUCTION_FORM_EVAL = MAINTAINERS / "evals/production-form-2026-07"
 
 
 def text_files() -> list[Path]:
@@ -264,75 +262,6 @@ class MaintainerKnowhowSkillTests(unittest.TestCase):
         for item in required:
             with self.subTest(item=item):
                 self.assertIn(item, protocol)
-
-    def test_promotion_record_is_auditable_deidentified_and_reversible(self) -> None:
-        record = PROMOTION_RECORD.read_text(encoding="utf-8")
-        required = [
-            "Baseline revision",
-            "Input SHA-256",
-            "Baseline output SHA-256",
-            "Candidate output SHA-256",
-            "Executor provenance",
-            "Reviewer provenance",
-            "Blind findings",
-            "Claim decisions",
-            "Rollback / retire",
-            "Retention status",
-            "SHT-14",
-            "STY-17",
-            "STY-18",
-            "STY-19",
-            "deidentified",
-            "synthetic",
-        ]
-        for item in required:
-            with self.subTest(item=item):
-                self.assertIn(item, record)
-        self.assertRegex(record, r"(?m)^Baseline revision: [0-9a-f]{40}$")
-        self.assertGreaterEqual(
-            len(re.findall(r"(?m)^Input SHA-256: [0-9a-f]{64}$", record)),
-            2,
-        )
-        self.assertGreaterEqual(
-            len(
-                re.findall(
-                    r"(?m)^(?:Baseline|Candidate) output SHA-256: [0-9a-f]{64}$",
-                    record,
-                )
-            ),
-            4,
-        )
-        self.assertNotIn("TODO", record)
-        self.assertNotIn("TBD", record)
-
-    def test_promoted_production_form_eval_retains_blind_audit_artifacts(self) -> None:
-        expected = {
-            "fixture.md",
-            "arm-A.md",
-            "arm-B.md",
-            "blind-verdict.md",
-            "candidate-reference-evaluated.md",
-            "candidate-reference-promoted.md",
-            "executor-brief.md",
-            "reviewer-brief.md",
-            "decision.md",
-        }
-        self.assertEqual(
-            {path.name for path in PRODUCTION_FORM_EVAL.iterdir() if path.is_file()},
-            expected,
-        )
-        decision = (PRODUCTION_FORM_EVAL / "decision.md").read_text(encoding="utf-8")
-        for evidence in (
-            "Arm A = candidate",
-            "Arm B = baseline",
-            "Confidence `0.82`".lower(),
-            "media_observed: false",
-            "outcome_evidence",
-            "Rollback / retire",
-        ):
-            with self.subTest(evidence=evidence):
-                self.assertIn(evidence.casefold(), decision.casefold())
-
 
 if __name__ == "__main__":
     unittest.main()

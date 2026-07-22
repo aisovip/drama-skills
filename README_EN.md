@@ -28,6 +28,11 @@ reviewed invariant / craft default / taste option) that separates deterministic
 file and contract checks from evidence-based craft review and creator-owned style
 choices.
 
+Genre playbooks choose craft by pressure source, character strategy, audience
+payoff, and production load. A production-form card then translates live action,
+2D motion comics, stylized 3D, ink work, and other directions into shape, layers,
+material, light, action, and sound across writing, assets, storyboards, and prompts.
+
 ## Production chain
 
 ```mermaid
@@ -126,5 +131,5 @@ Use $short-drama-video-prompts to translate each authored shot into a video prom
 Use $short-drama-review to review EP1's script and prompts
 ```
 
-See [demo/](demo/) for a complete worked example: one episode's script → asset
+See [demo/](demo/) for a worked example: one episode's script → asset
 sheets → storyboard → video prompts.

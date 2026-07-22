@@ -1,5 +1,14 @@
 # Evidence-Based Review Method
 
+## Contents
+
+1. Independence and target freeze
+2. Mechanical-before-taste pass
+3. Evidence anatomy
+4. Cross-layer synthesis
+5. Revision and re-review
+6. Anti-template review
+
 ## Rule classification
 
 - `structural_invariant`: objectively checkable artifact integrity; validators
@@ -27,15 +36,6 @@
   current choice violates an accepted creator constraint.
 - `REV-07` — An end-to-end drafting request does not sign later artifacts;
   preview chains remain provisional, creator-pending, and delivery-blocked.
-
-## Contents
-
-1. Independence and target freeze
-2. Mechanical-before-taste pass
-3. Evidence anatomy
-4. Cross-layer synthesis
-5. Revision and re-review
-6. Anti-template review
 
 ## Independence and target freeze
 

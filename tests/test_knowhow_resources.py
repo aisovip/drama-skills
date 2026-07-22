@@ -99,6 +99,98 @@ def parse_fenced_json(path: Path) -> dict:
 
 
 class KnowHowResourceTests(unittest.TestCase):
+    def test_knowhow_index_routes_topics_to_authoritative_reference_headings(self) -> None:
+        text = INDEX.read_text(encoding="utf-8")
+        self.assertIn("## 主题权威路由", text)
+        section = text.split("## 主题权威路由", 1)[1].split("## Story", 1)[0]
+        routes = re.findall(
+            r"^\| [^|]+ \| \[[^]]+\]\(([^)#]+)#([^)]+)\) \| [^|]+ \| [^|]+ \|$",
+            section,
+            re.MULTILINE,
+        )
+        self.assertGreaterEqual(len(routes), 15)
+
+        def heading_anchor(heading: str) -> str:
+            value = heading.strip().lower()
+            value = re.sub(r"[^\w\-\s\u4e00-\u9fff]", "", value)
+            return re.sub(r"\s+", "-", value)
+
+        for relative, fragment in routes:
+            target = (INDEX.parent / relative).resolve()
+            with self.subTest(target=relative, fragment=fragment):
+                target.relative_to(SKILLS.resolve())
+                self.assertTrue(target.is_file())
+                anchors = {
+                    heading_anchor(line.lstrip("# "))
+                    for line in target.read_text(encoding="utf-8").splitlines()
+                    if line.startswith("## ")
+                }
+                self.assertIn(fragment, anchors)
+
+    def test_creator_reference_intake_recalls_mechanism_without_copying_expression(self) -> None:
+        reference = (
+            SKILLS
+            / "short-drama-develop/references/creative-reference-intake.md"
+        )
+        self.assertTrue(reference.is_file())
+        skill = (SKILLS / "short-drama-develop/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("references/creative-reference-intake.md", skill)
+        text = reference.read_text(encoding="utf-8")
+        for concept in (
+            "may_influence",
+            "must_not_copy",
+            "观众状态",
+            "戏剧问题",
+            "可选机制",
+            "可见效果",
+            "失效边界",
+            "机制摘要",
+            "文风",
+            "原句",
+            "独特情节顺序",
+            "当前会话",
+        ):
+            with self.subTest(concept=concept):
+                self.assertIn(concept, text)
+
+    def test_interrupted_episode_writing_uses_a_disposable_handoff_capsule(self) -> None:
+        reference = SKILLS / "short-drama-write/references/scene-handoff-capsule.md"
+        self.assertTrue(reference.is_file())
+        skill = (SKILLS / "short-drama-write/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("references/scene-handoff-capsule.md", skill)
+        text = reference.read_text(encoding="utf-8")
+        for concept in (
+            "派生",
+            "不是第二份权威",
+            "scene_id",
+            "agenda",
+            "opposition",
+            "turn",
+            "exit_state",
+            "setup_debt",
+            "information_permissions",
+            "tail_locator",
+            "screenplay.md",
+        ):
+            with self.subTest(concept=concept):
+                self.assertIn(concept, text)
+
+    def test_anti_template_review_catches_over_explanation_without_a_banlist(self) -> None:
+        text = (
+            SKILLS / "short-drama-review/references/anti-template-repair.md"
+        ).read_text(encoding="utf-8")
+        for concept in (
+            "过度解释",
+            "过度收口",
+            "过度工整",
+            "同构微动作",
+            "已经表达",
+            "禁词表",
+            "至少两个位置",
+        ):
+            with self.subTest(concept=concept):
+                self.assertIn(concept, text)
+
     def test_production_form_guidance_translates_style_into_stage_decisions(self) -> None:
         reference = SKILLS / "short-drama/references/production-form-profiles.md"
         self.assertTrue(reference.is_file())
@@ -114,6 +206,11 @@ class KnowHowResourceTests(unittest.TestCase):
             "来源",
             "artifact",
             "taste",
+            "环境物理",
+            "身份形态",
+            "身份占用",
+            "陆地动作词",
+            "风格代码",
         ):
             with self.subTest(concept=concept):
                 self.assertIn(concept, text)
@@ -135,6 +232,39 @@ class KnowHowResourceTests(unittest.TestCase):
                     "production-form-profiles.md",
                     (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8"),
                 )
+
+    def test_genre_playbook_includes_identity_mismatch_and_small_life_stories(self) -> None:
+        text = (
+            SKILLS
+            / "short-drama-develop/references/genre-and-hook-playbook.md"
+        ).read_text(encoding="utf-8")
+        for concept in (
+            "身份错位",
+            "外部任务",
+            "身份状态",
+            "设定梗",
+            "生活流",
+            "小目标",
+            "温柔反转",
+            "真人爽剧",
+        ):
+            with self.subTest(concept=concept):
+                self.assertIn(concept, text)
+
+    def test_review_distinguishes_current_text_authority_from_task_status(self) -> None:
+        text = (
+            SKILLS / "short-drama-review/references/production-quality-gates.md"
+        ).read_text(encoding="utf-8")
+        for concept in (
+            "当前权威版本",
+            "accepted artifact",
+            "旧版本",
+            "技术状态",
+            "语义质量",
+            "提示词 hash",
+        ):
+            with self.subTest(concept=concept):
+                self.assertIn(concept, text)
 
     def test_index_has_unique_rules_in_all_eight_layers(self) -> None:
         rules = parse_index()

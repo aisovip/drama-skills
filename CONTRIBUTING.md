@@ -42,6 +42,9 @@ ln -s "$PWD/maintainers/skills/short-drama-knowhow" \
 ```
 
 已存在同名路径时先核对并移除旧链接；不要把此目录移动到公共 `skills/` 或加入套件清单。
+盲测 arms、verdict、promotion 证据和回滚记录保存在仓库外的受控工作区或被忽略的
+`.omx/evals/`；`maintainers/evals/` 也被忽略，公共测试不得依赖其中的本地评测内容。
+受保护 CI 需要检查这些证据时，通过显式的外部路径注入，不能把它们复制回公开 tree。
 
 ## 修改后必跑
 

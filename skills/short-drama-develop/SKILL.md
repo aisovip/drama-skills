@@ -117,6 +117,8 @@ description: 将中文小说、短剧想法、梗概、改编材料或已有系�
   [serial-character-and-memory.md](references/serial-character-and-memory.md)
 - **有原材料、需要压缩/合并人物场景/把信息视觉化**：
   [adaptation-craft.md](references/adaptation-craft.md)
+- **创作者提供对标作品、样例剧本或提示词，希望学习机制而非仿写表达**：
+  [creative-reference-intake.md](references/creative-reference-intake.md)
 - **需要区分揭示、反转、回报和钩子，或按题材选压力机制**：
   [reveal-reversal-payoff.md](references/reveal-reversal-payoff.md)
 - **按题材选择冲突推进方式、设计开场或规划集尾钩子时的定性案例方法**：

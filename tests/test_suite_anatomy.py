@@ -169,6 +169,17 @@ class SuiteAnatomyTests(unittest.TestCase):
                 with self.subTest(skill=name, reference=relative):
                     self.assertIn(relative, body)
 
+    def test_long_references_expose_a_contents_navigation_near_the_top(self) -> None:
+        """A preview of a long reference must reveal its available sections."""
+
+        navigation_headings = {"## 内容导航", "## 目录", "## Contents"}
+        for reference in sorted((SUITE / "skills").glob("*/references/*.md")):
+            lines = reference.read_text(encoding="utf-8").splitlines()
+            if len(lines) <= 100:
+                continue
+            with self.subTest(reference=reference.relative_to(SUITE)):
+                self.assertTrue(navigation_headings.intersection(lines[:15]))
+
     def test_directly_linked_markdown_has_no_broken_second_hop(self) -> None:
         for skill_md in (SUITE / "skills").glob("*/SKILL.md"):
             for target in local_markdown_targets(skill_md):
@@ -388,6 +399,16 @@ class SuiteAnatomyTests(unittest.TestCase):
             self.assertIn("fresh", text)
             self.assertIn("PROVISIONAL", text)
         self.assertIn("effective_review_mode", review)
+
+    def test_router_separates_template_diagnosis_from_owner_revision(self) -> None:
+        router = (SUITE / "skills/short-drama/SKILL.md").read_text(encoding="utf-8")
+        examples = (
+            SUITE / "skills/short-drama/references/routing-examples.md"
+        ).read_text(encoding="utf-8")
+        for text in (router, examples):
+            self.assertIn("诊断模板感", text)
+            self.assertIn("去 AI 味", text)
+            self.assertIn("fresh re-review", text)
 
     def test_script_first_writing_can_load_genre_knowhow_directly(self) -> None:
         write = (SUITE / "skills/short-drama-write/SKILL.md").read_text(encoding="utf-8")

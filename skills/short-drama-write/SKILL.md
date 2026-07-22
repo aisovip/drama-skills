@@ -68,6 +68,10 @@ diff，让创作者明确选择 authority 迁移，将 standalone 契约标记 s
 
 写对白前读取 [dialogue-craft.md](references/dialogue-craft.md)，尤其检查人物策略、潜台词、信息争夺和声音差异。
 
+长单集需要跨多轮续写、上下文即将切换或中断恢复时，读取
+[scene-handoff-capsule.md](references/scene-handoff-capsule.md)，只保存从当前剧本派生的
+最小场景交接；一次完成或局部修订时不要额外建立第二份摘要。
+
 ### 5. 写唯一剧本源
 
 复制 [screenplay.md](assets/screenplay.md)，严格按 [screenplay-format.md](references/screenplay-format.md) 写：

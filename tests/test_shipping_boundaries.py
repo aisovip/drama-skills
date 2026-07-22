@@ -1,4 +1,5 @@
 import re
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -42,6 +43,27 @@ def local_forbidden_terms() -> frozenset[str]:
 
 
 class ShippingBoundaryTests(unittest.TestCase):
+    def test_maintainer_private_artifacts_are_local_only(self) -> None:
+        ignored = (SUITE / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("maintainers/evals/", ignored)
+        self.assertIn("tests/local-terms.txt", ignored)
+        if not (SUITE / ".git").exists():
+            return
+        tracked = subprocess.run(
+            [
+                "git",
+                "ls-files",
+                "--",
+                "maintainers/evals",
+                "tests/local-terms.txt",
+            ],
+            cwd=SUITE,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        self.assertEqual(tracked, [])
+
     def test_release_manifest_contains_no_cache_or_binary_artifact(self) -> None:
         import json
 

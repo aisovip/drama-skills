@@ -112,6 +112,35 @@ class ScreenplayIndexTests(unittest.TestCase):
             self.assertTrue(all("source_sha256" not in row for row in read_jsonl(second)))
             self.assertEqual(meta["newline_style"], "crlf")
 
+    def test_previous_index_blocks_must_still_match_parsed_source_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "screenplay.md"
+            previous_index = root / "previous.jsonl"
+            next_index = root / "next.jsonl"
+            source.write_text(
+                "# EP001\n\n## EP001-SC001 内 · 门厅 · 夜\n\ndoor opens.\n",
+                encoding="utf-8",
+            )
+            screenplay_index.build_index(source, previous_index)
+            records = read_jsonl(previous_index)
+            action = next(row for row in records if row.get("kind") == "action")
+            action["byte_start"] += 1
+            selected = source.read_bytes()[action["byte_start"] : action["byte_end"]]
+            action["content_sha256"] = hashlib.sha256(selected).hexdigest()
+            previous_index.write_text(
+                "\n".join(json.dumps(row, ensure_ascii=False) for row in records) + "\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "does not resolve against previous source"):
+                screenplay_index.build_index(
+                    source,
+                    next_index,
+                    previous_index_path=previous_index,
+                    previous_source_path=source,
+                )
+
     def test_nearby_insertion_reuses_unchanged_block_ids(self) -> None:
         old_text = """# EP001 夜班
 
@@ -204,6 +233,82 @@ class ScreenplayIndexTests(unittest.TestCase):
                 self.assertEqual(len(requests), 1)
                 self.assertEqual(requests[0]["reason"], name)
                 self.assertIn(old_action_id, requests[0]["previous_block_ids"])
+
+    def test_large_split_and_merge_are_unresolved_without_an_arbitrary_width_cap(self) -> None:
+        parts = [f"她推开第{number}扇门。" for number in range(1, 10)]
+        cases = {
+            "split": ("".join(parts), "\n\n".join(parts)),
+            "merge": ("\n\n".join(parts), "".join(parts)),
+        }
+        for name, (old_action, new_action) in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                old_source = root / "old.md"
+                new_source = root / "new.md"
+                old_index = root / "old.jsonl"
+                new_index = root / "new.jsonl"
+                shell = "# EP001 夜班\n\n## EP001-SC001 内 · 门厅 · 夜\n\n{}\n"
+                old_source.write_text(shell.format(old_action), encoding="utf-8")
+                new_source.write_text(shell.format(new_action), encoding="utf-8")
+                screenplay_index.build_index(old_source, old_index)
+
+                summary = screenplay_index.build_index(
+                    new_source,
+                    new_index,
+                    previous_index_path=old_index,
+                    previous_source_path=old_source,
+                )
+
+                requests = [
+                    row
+                    for row in read_jsonl(new_index)
+                    if row["record_type"] == "mapping_review_request"
+                ]
+                self.assertEqual(summary["review_status"], "review_required")
+                self.assertEqual(len(requests), 1)
+                self.assertEqual(requests[0]["reason"], name)
+                current_actions = [
+                    row for row in blocks(new_index) if row["kind"] == "action"
+                ]
+                self.assertTrue(current_actions)
+                self.assertTrue(
+                    all(row["mapping"]["status"] == "unresolved" for row in current_actions)
+                )
+
+    def test_previous_dialogue_is_loaded_independently_of_current_speaker_roster(self) -> None:
+        old_text = """# EP001 夜班
+
+## EP001-SC001 内 · 门厅 · 夜
+
+林岚：这句话会在修订中删除。
+"""
+        new_text = """# EP001 夜班
+
+## EP001-SC001 内 · 门厅 · 夜
+
+周野：现在只剩我在场。
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old_source = root / "old.md"
+            new_source = root / "new.md"
+            old_index = root / "old.jsonl"
+            new_index = root / "new.jsonl"
+            old_source.write_text(old_text, encoding="utf-8")
+            new_source.write_text(new_text, encoding="utf-8")
+            screenplay_index.build_index(old_source, old_index, speakers={"林岚"})
+
+            summary = screenplay_index.build_index(
+                new_source,
+                new_index,
+                previous_index_path=old_index,
+                previous_source_path=old_source,
+                speakers={"周野"},
+            )
+
+            self.assertEqual(summary["review_status"], "clean")
+            dialogue = next(row for row in blocks(new_index) if row["kind"] == "dialogue")
+            self.assertEqual(dialogue["speaker"], "周野")
 
     def test_moved_duplicate_exact_blocks_require_explicit_mapping(self) -> None:
         old_text = """# EP001 夜班

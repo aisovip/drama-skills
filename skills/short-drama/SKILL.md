@@ -40,6 +40,9 @@ description: 基于文件系统初始化、继续、恢复和交付短剧项目�
 | 做原文覆盖、镜头或冻结关键帧 | `$short-drama-storyboard` |
 | 写动作/表演/运镜/声音视频提示词 | `$short-drama-video-prompts` |
 | 校验、审查或发修订请求 | `$short-drama-review` |
+| 只检查或诊断模板感、AI 味 | fresh `$short-drama-review`，只发带证据 finding |
+| 直接去 AI 味、润色或定点改稿 | `$short-drama-write`，保留作者声音并展示语义差异 |
+| 先检查再改 | fresh review → write owner 定点修订 → fresh re-review |
 
 创作者明确意图优先于名义上的“下一检查点”。C2 资产接受后，图片提示词和分镜
 是平行分支；创作者只要其中一支时，不强迫等待另一支。
@@ -47,6 +50,11 @@ description: 基于文件系统初始化、继续、恢复和交付短剧项目�
 若当前上下文参与过目标文件的创作，审查路由必须优先启动 fresh reviewer agent/context，
 只传目标、已接受限制和审查表；运行环境不支持 fresh agent 时透明降级为 `PROVISIONAL`
 自检，不能把切换 Skill 名称当成独立审查。
+
+“像不像模板/AI 写的”是诊断请求；“把它改掉”是 owner 修订请求。不要让 write owner
+先自诊断再给自己签发结论，也不要让 reviewer 越权直接改正文。组合请求先冻结目标版本，
+由 fresh reviewer 定位证据和损失，再交 write owner 只改被接受的范围，最后换一个 fresh
+reviewer 对新 hash 做 re-review；任何无法取得独立上下文的环节都保持 `PROVISIONAL`。
 
 ## 初始化
 

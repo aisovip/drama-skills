@@ -379,7 +379,6 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 def _load_previous(
     previous_index_path: Path,
     previous_source_path: Path,
-    speaker_names: frozenset[str],
 ) -> list[dict[str, Any]]:
     source_data = previous_source_path.read_bytes()
     records = _read_jsonl(previous_index_path)
@@ -388,7 +387,14 @@ def _load_previous(
     previous_ref = records[0].get("source_ref")
     if not isinstance(previous_ref, dict) or previous_ref.get("hash") != _sha256(source_data):
         raise ValueError("previous source hash does not match previous index")
-    parsed_blocks, _ = _parse_screenplay(source_data, speaker_names)
+    previous_speakers = frozenset(
+        speaker
+        for record in records
+        if record.get("record_type") == "block"
+        and record.get("kind") == "dialogue"
+        and isinstance((speaker := record.get("speaker")), str)
+    )
+    parsed_blocks, _ = _parse_screenplay(source_data, previous_speakers)
     parsed_by_span = {
         (block["byte_start"], block["byte_end"], block["content_sha256"], block["kind"]): block
         for block in parsed_blocks
@@ -404,13 +410,19 @@ def _load_previous(
         if block_id in seen_ids:
             raise ValueError("previous index contains duplicate block_id values")
         seen_ids.add(block_id)
-        key = (
-            record.get("byte_start"),
-            record.get("byte_end"),
-            record.get("content_sha256"),
-            record.get("kind"),
-        )
-        parsed = parsed_by_span.get(key)
+        byte_start = record.get("byte_start")
+        byte_end = record.get("byte_end")
+        digest = record.get("content_sha256")
+        kind = record.get("kind")
+        if (
+            not isinstance(byte_start, int)
+            or not isinstance(byte_end, int)
+            or not 0 <= byte_start < byte_end <= len(source_data)
+            or not isinstance(digest, str)
+            or kind not in KIND_CODES
+        ):
+            raise ValueError(f"previous block {block_id} does not resolve against previous source")
+        parsed = parsed_by_span.get((byte_start, byte_end, digest, kind))
         if parsed is None:
             raise ValueError(f"previous block {block_id} does not resolve against previous source")
         previous.append({**record, "_text": parsed["_text"], "_order": parsed["_order"]})
@@ -525,19 +537,24 @@ def _find_split_merge_requests(
     for old_index, old in enumerate(previous):
         if old_index in matched_previous:
             continue
+        old_text = _normalized(old["_text"])
         for start in range(len(current)):
-            for width in range(2, min(8, len(current) - start) + 1):
-                new_indices = list(range(start, start + width))
-                if any(
-                    item in matched_current or item in claimed_new for item in new_indices
-                ):
+            new_indices: list[int] = []
+            new_parts: list[str] = []
+            for item in range(start, len(current)):
+                if item in matched_current or item in claimed_new:
+                    break
+                block = current[item]
+                if not compatible([old, block]):
+                    break
+                new_indices.append(item)
+                new_parts.append(_normalized(block["_text"]))
+                combined = "".join(new_parts)
+                if not old_text.startswith(combined):
+                    break
+                if len(new_indices) < 2:
                     continue
-                group = [current[item] for item in new_indices]
-                if not compatible([old, *group]):
-                    continue
-                if _normalized(old["_text"]) != "".join(
-                    _normalized(block["_text"]) for block in group
-                ):
+                if combined != old_text:
                     continue
                 requests.append(
                     {
@@ -555,19 +572,24 @@ def _find_split_merge_requests(
     for new_index, new in enumerate(current):
         if new_index in matched_current or new_index in claimed_new:
             continue
+        new_text = _normalized(new["_text"])
         for start in range(len(previous)):
-            for width in range(2, min(8, len(previous) - start) + 1):
-                old_indices = list(range(start, start + width))
-                if any(
-                    item in matched_previous or item in claimed_old for item in old_indices
-                ):
+            old_indices: list[int] = []
+            old_parts: list[str] = []
+            for item in range(start, len(previous)):
+                if item in matched_previous or item in claimed_old:
+                    break
+                block = previous[item]
+                if not compatible([new, block]):
+                    break
+                old_indices.append(item)
+                old_parts.append(_normalized(block["_text"]))
+                combined = "".join(old_parts)
+                if not new_text.startswith(combined):
+                    break
+                if len(old_indices) < 2:
                     continue
-                group = [previous[item] for item in old_indices]
-                if not compatible([new, *group]):
-                    continue
-                if "".join(_normalized(block["_text"]) for block in group) != _normalized(
-                    new["_text"]
-                ):
+                if combined != new_text:
                     continue
                 requests.append(
                     {
@@ -714,7 +736,6 @@ def build_index(
         previous = _load_previous(
             Path(previous_index_path),
             previous_source,
-            speaker_names,
         )
         raw_requests = _mark_revision_mappings(current, previous)
     _assign_new_ids(current, previous)
