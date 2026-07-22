@@ -9,6 +9,10 @@ review records, while carrying creator decisions, source evidence, and
 continuity through the entire chain. It works with Claude Code, Codex, and other
 runtimes that support Agent Skills.
 
+The current release delivers scripts, asset notes, storyboards, prompts, review
+records, and structured text. It does not call image, video, or audio generation services,
+and it does not infer rendered quality from prompt text or task status.
+
 ## Core ideas
 
 Three principles run through the whole chain:
@@ -131,5 +135,6 @@ Use $short-drama-video-prompts to translate each authored shot into a video prom
 Use $short-drama-review to review EP1's script and prompts
 ```
 
-See [demo/](demo/) for a worked example: one episode's script → asset
-sheets → storyboard → video prompts.
+See [demo/](demo/) for a creator-facing excerpt chain: one episode's script →
+asset sheets → storyboard → video prompts. It illustrates the main text
+handoffs; it is not a complete project state, independent review, or delivery package.

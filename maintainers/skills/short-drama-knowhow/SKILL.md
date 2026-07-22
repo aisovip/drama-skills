@@ -105,5 +105,7 @@ fixture，以及预期受益任务和潜在副作用。proposal 先留在维护�
   [synthesis-and-promotion.md](references/synthesis-and-promotion.md)。
 - 设计 fresh-agent blind forward eval、盲评和 reviewer handoff 时读
   [blind-forward-eval.md](references/blind-forward-eval.md)。
+- 准备 promotion / hold / retire，或需要让公共规则的评测与回滚证据可重放时读
+  [promotion-ledger.md](references/promotion-ledger.md)。
 
 不要预加载所有 reference；只读当前阶段需要的一份。

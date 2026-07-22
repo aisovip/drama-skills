@@ -137,6 +137,30 @@ class SuiteAnatomyTests(unittest.TestCase):
             self.assertNotIn("TODO", body, skill.name)
             self.assertLessEqual(len(body.splitlines()), 250, skill.name)
 
+    def test_router_description_defers_explicit_craft_requests_to_child_skills(self) -> None:
+        lines = (CORE / "SKILL.md").read_text(encoding="utf-8").splitlines()
+        description_line = next(
+            line for line in lines if line.startswith("description: ")
+        )
+        description_value = description_line.removeprefix("description: ")
+        description = (
+            json.loads(description_value)
+            if description_value.startswith('"')
+            else description_value
+        )
+
+        self.assertIn("意图不明确", description)
+        for child_trigger in (
+            "直接要求写短剧",
+            "拆资产",
+            "写资产图片提示词",
+            "拆分镜",
+            "写视频提示词",
+            "审查短剧",
+        ):
+            with self.subTest(child_trigger=child_trigger):
+                self.assertNotIn(child_trigger, description)
+
     def test_readmes_stay_creator_facing(self) -> None:
         disallowed_sections = {
             "## 验证与开发",
@@ -152,6 +176,20 @@ class SuiteAnatomyTests(unittest.TestCase):
                     if line.startswith("## ")
                 }
                 self.assertTrue(disallowed_sections.isdisjoint(headings))
+
+        self.assertRegex(
+            (SUITE / "README.md").read_text(encoding="utf-8"),
+            r"不调用真正的\s*图片、视频或音频生成服务",
+        )
+        english_readme = re.sub(
+            r"\s+",
+            " ",
+            (SUITE / "README_EN.md").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            "does not call image, video, or audio generation services",
+            english_readme,
+        )
 
     def test_markdown_links_resolve_one_hop(self) -> None:
         for markdown in (SUITE / "skills").glob("*/SKILL.md"):

@@ -58,7 +58,7 @@ questions. The index is navigation, not a formula sheet.
 | STY-07 | reviewed_invariant | Character/scene merges preserve dramatic function, knowledge permissions, relationship position, and causal bridges. |
 | STY-08 | craft_default | Translate exposition through consequential behavior, evidence, spatial pressure, or dialogue strategy before adding neutral explanation. |
 | STY-09 | reviewed_invariant | A reveal/reversal grows from established facts and changes a plan, explanation, relationship, or costly choice. |
-| STY-10 | craft_default | Episode 1 states the recurring-payoff promise within the cold open; hook type per episode is planned from the outgoing pressure, not repeated without escalation. |
+| STY-10 | craft_default | Establish the recurring-payoff promise once the opening pressure makes it legible; an opening may imply, delay, or state it according to genre and creator intent. Plan each outgoing hook from the episode's local result rather than repeating a type by quota. |
 | STY-11 | craft_default | Build only the prior-world reservoir needed to predict present choices, then enter where an established strategy begins to create visible cost. |
 | STY-12 | reviewed_invariant | Claimed character progression cites a pressure test, choice or retreat, local result, cost, and changed visible strategy. |
 | STY-13 | reviewed_invariant | Each episode produces a local dramatic result before its outgoing hook; serialization cannot rely only on pausing an unfinished action. |
@@ -76,7 +76,7 @@ questions. The index is navigation, not a formula sheet.
 | SCR-05 | structural_invariant | Existing production tags use supported, closed syntax and resolvable references. |
 | SCR-06 | taste_option | Silence, slang, interruption, narration, and sentence rhythm remain character/style choices. |
 | SCR-07 | reviewed_invariant | Story-critical text, VO/OS, SFX, transition, and continuity requirements are not left indistinguishable from ordinary prose. |
-| SCR-08 | craft_default | Carry emotion through millimeter-scale performable body signals instead of adjective stacks; dialogue exchanges stay short attack-defense turns. |
+| SCR-08 | craft_default | When abstract emotion obscures performance, translate it into character-specific behavior, object handling, distance, silence, or delivery. Dialogue turn length and tactic follow the scene agenda rather than a universal attack-defense cadence. |
 
 ## Assets (`AST`)
 
@@ -110,7 +110,7 @@ questions. The index is navigation, not a formula sheet.
 |---|---|---|
 | SHT-01 | structural_invariant | Every production-relevant screenplay block has a coverage disposition. |
 | SHT-02 | reviewed_invariant | Each shot has a dramatic/viewing purpose and preserves its source meaning. |
-| SHT-03 | craft_default | One primary action plus a necessary reaction is the default for a short shot. |
+| SHT-03 | craft_default | Keep a short shot focused on the smallest action/reaction unit that carries its purpose; combine or split it according to performance, information, and continuity rather than a fixed count. |
 | SHT-04 | craft_default | Change framing/camera because attention, pressure, alignment, reveal, or rhythm changes. |
 | SHT-05 | structural_invariant | A keyframe projects one accepted shot boundary and exact asset variants. |
 | SHT-06 | reviewed_invariant | A keyframe is one freezeable instant, not an ordered action chain. |
@@ -136,7 +136,7 @@ questions. The index is navigation, not a formula sheet.
 | VID-07 | taste_option | Camera may be locked or moving; audio/lip-sync detail follows the chosen production profile. |
 | VID-08 | reviewed_invariant | Structured motion names this shot's exact actor, action, contact, performance path, and result rather than reusable placeholders. |
 | VID-09 | structural_invariant | Next-start is an existing canonical ref or an explicit provisional locator, never an invented record/hash. |
-| VID-10 | craft_default | Keep one production profile per volume and resolve its text/audio/negative constraints without overriding source coverage or exact-readable obligations. |
+| VID-10 | craft_default | Resolve one accepted production profile for the current delivery scope; local variants may coexist when their range and precedence are explicit, without overriding source coverage or exact-readable obligations. |
 | VID-11 | reviewed_invariant | A selective transform names its trigger, exact target scope, end geometry/state, and preserve set so non-target people, props, text surfaces, and spatial anchors do not change with it. |
 | VID-12 | reviewed_invariant | A pickup/alternate names stable master/supplement motion IDs and maps each source requirement to a field or disposition; motion may request replacement, but only a downstream independent verdict can bind fixed hashes and approve it. |
 
@@ -162,5 +162,5 @@ questions. The index is navigation, not a formula sheet.
 | REV-05 | craft_default | Diagnose repeated structure or generic language with location and impact; do not label output merely "AI-ish". |
 | REV-06 | taste_option | Alternatives remain notes unless they violate an accepted creator constraint. |
 | REV-07 | structural_invariant | An end-to-end drafting request cannot impersonate creator acceptance; preview chains remain provisional and undeliverable. |
-| REV-08 | craft_default | Check production-observed defects — text/subtitle residue, music-boundary violations, wardrobe drift, axis breaks, lip-sync mismatch — citing the exact prompt/spec text. |
+| REV-08 | craft_default | When authorized text notes report production defects, trace text/subtitle residue, music-boundary violations, wardrobe drift, axis breaks, or lip-sync mismatch to the exact prompt/spec text and keep unobserved outcomes unknown. |
 | REV-09 | reviewed_invariant | After prompt revision or repackaging, recheck source coverage and every applicable accepted directive; correct asset bindings alone do not prove compliance. |

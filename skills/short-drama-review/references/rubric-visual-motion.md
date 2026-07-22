@@ -8,7 +8,7 @@
 - [Motion](#motion)
 - [Continuity](#cross-shot-continuity)
 - [Findings](#common-findings)
-- [Observed defects](#production-observed-defect-checklist-rev-08)
+- [Production risks and authorized observations](#production-risk-and-authorized-observation-checklist-rev-08)
 
 ## Coverage and meaning
 
@@ -94,10 +94,14 @@ ellipsis, dream, or deliberate disorientation.
 - a narrowed pickup silently replaces the master and drops dialogue, reaction,
   reveal, end-boundary, or accepted-directive obligations.
 
-## Production-observed defect checklist (REV-08)
+## Production-risk and authorized-observation checklist (REV-08)
 
-Recurring defects that real short-drama production review guards against; cite
-the exact prompt/spec text when raising them:
+本套件不查看媒体。先把下列项目当作文字风险，引用准确的 prompt/spec 说明为什么会造成
+执行歧义或违背已接受约束；只有创作者提供了授权的文字观察记录时，才能称为已观察缺陷，
+并把该记录作为外部证据引用。没有观察记录时保持结果未知，不从任务成功、结果地址或提示词
+存在推断成片质量。
+
+短剧生产中需要防范的文字风险或获授权观察包括：
 
 - on-screen text or subtitle residue despite a declared no-text constraint;
 - a text-bearing reference admitted under no-text or exact-readable policy

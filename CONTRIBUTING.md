@@ -45,6 +45,9 @@ ln -s "$PWD/maintainers/skills/short-drama-knowhow" \
 盲测 arms、verdict、promotion 证据和回滚记录保存在仓库外的受控工作区或被忽略的
 `.omx/evals/`；`maintainers/evals/` 也被忽略，公共测试不得依赖其中的本地评测内容。
 受保护 CI 需要检查这些证据时，通过显式的外部路径注入，不能把它们复制回公开 tree。
+任何公共规则的 promotion / hold / retire 还要按维护技能的
+`references/promotion-ledger.md` 留下去标识事件：绑定合成输入、匿名输出、公共 diff、
+独立 reviewer 结论和回滚目标；hash 只能保证字节可重放，不能代替语义审查。
 
 ## 修改后必跑
 

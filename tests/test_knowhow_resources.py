@@ -191,6 +191,23 @@ class KnowHowResourceTests(unittest.TestCase):
             with self.subTest(concept=concept):
                 self.assertIn(concept, text)
 
+    def test_craft_defaults_keep_context_and_text_only_observation_boundaries(self) -> None:
+        index = INDEX.read_text(encoding="utf-8")
+        self.assertNotIn("within the cold open", index)
+        self.assertNotIn("dialogue exchanges stay short attack-defense turns", index)
+        self.assertIn("according to genre and creator intent", index)
+        self.assertIn("rather than a fixed count", index)
+        self.assertIn("authorized text notes", index)
+        self.assertIn("keep unobserved outcomes unknown", index)
+
+        visual_rubric = (
+            SKILLS
+            / "short-drama-review/references/rubric-visual-motion.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("不查看媒体", visual_rubric)
+        self.assertIn("文字风险", visual_rubric)
+        self.assertIn("授权的文字观察记录", visual_rubric)
+
     def test_production_form_guidance_translates_style_into_stage_decisions(self) -> None:
         reference = SKILLS / "short-drama/references/production-form-profiles.md"
         self.assertTrue(reference.is_file())

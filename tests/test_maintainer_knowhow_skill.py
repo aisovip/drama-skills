@@ -263,5 +263,46 @@ class MaintainerKnowhowSkillTests(unittest.TestCase):
             with self.subTest(item=item):
                 self.assertIn(item, protocol)
 
+        for hygiene_rule in (
+            "reviewer-facing",
+            "绝对路径",
+            "arm 身份",
+            "协调者单独保存",
+            "不能进入盲评正文",
+        ):
+            with self.subTest(hygiene_rule=hygiene_rule):
+                self.assertIn(hygiene_rule, protocol)
+
+    def test_promotion_ledger_is_replayable_without_private_evidence(self) -> None:
+        ledger = (REFERENCES / "promotion-ledger.md").read_text(encoding="utf-8")
+        for field in (
+            "rule_id",
+            "public_diff_hash",
+            "baseline_skill_hash",
+            "candidate_skill_hash",
+            "synthetic_task_refs",
+            "baseline_output_hashes",
+            "candidate_output_hashes",
+            "reviewer_context_ref",
+            "independent",
+            "verdict",
+            "rollback",
+            "supersedes",
+            "retire_trigger",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, ledger)
+
+        for boundary in (
+            "不得记录私有来源定位",
+            "不能用脚本给创作质量打分",
+            "fresh agent",
+            "independent reviewer",
+            "hold",
+            "retire",
+        ):
+            with self.subTest(boundary=boundary):
+                self.assertIn(boundary, ledger)
+
 if __name__ == "__main__":
     unittest.main()
