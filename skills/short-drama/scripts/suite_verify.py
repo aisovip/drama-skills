@@ -28,6 +28,45 @@ EXPECTED_TRUST_BOUNDARY = {
     "private_source_runtime_access": False,
 }
 OPENAI_INTERFACE_KEYS = {"display_name", "short_description", "default_prompt"}
+# Editor, OS and tool artifacts that are never release content. The list is
+# deliberately closed: anything not named here stays visible to both the
+# manifest and this verifier, so an extra executable file is still reported and
+# runtime-preflight's "额外可执行文件 -> 停止写入" promise still holds.
+# tools/update_suite_manifest.py repeats these sets; a test asserts they agree.
+NOISE_DIR_NAMES = frozenset({".ruff_cache", ".mypy_cache", ".pytest_cache"})
+NOISE_FILE_NAMES = frozenset({".DS_Store"})
+NOISE_FILE_SUFFIXES = ("~", ".swp", ".swo")
+BYTECODE_SUFFIXES = (".pyc", ".pyo")
+EXECUTABLE_SUFFIXES = (
+    ".py", ".sh", ".bash", ".zsh", ".fish", ".js", ".mjs", ".cjs",
+    ".rb", ".pl", ".php", ".exe", ".dll", ".so", ".dylib", ".command",
+)
+
+
+def is_local_noise(parts: tuple[str, ...]) -> bool:
+    """True only for known-noise artifacts, never for arbitrary dot-paths."""
+
+    name = parts[-1]
+    # Executable content is never noise, wherever it sits. A payload planted
+    # inside a cache directory stays reported.
+    if name.endswith(EXECUTABLE_SUFFIXES):
+        return False
+    # Bytecode caches regenerate at runtime, so the bytecode itself is
+    # tolerated; anything else under them is not.
+    if "__pycache__" in parts[:-1]:
+        return name.endswith(BYTECODE_SUFFIXES)
+    if any(part in NOISE_DIR_NAMES for part in parts[:-1]):
+        return True
+    return name in NOISE_FILE_NAMES or name.endswith(NOISE_FILE_SUFFIXES)
+
+
+REQUIRED_FRONTMATTER_KEYS = {"name", "description"}
+# allowed-tools is spec-legal but deliberately not accepted here: it grants tool
+# access, and this suite's trust boundary (EXPECTED_TRUST_BOUNDARY) declares no
+# outbound network, no provider calls and no media generation. Accepting it
+# unvalidated would let a skill claim tools the declared boundary forbids.
+OPTIONAL_FRONTMATTER_KEYS = {"license", "metadata"}
+MAX_METADATA_LENGTH = 1024
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -41,7 +80,14 @@ def verify_skill_contract(skill: Path, expected_name: str) -> None:
     """Verify the portable subset of the official Agent Skill contract."""
 
     skill_md = skill / "SKILL.md"
-    lines = skill_md.read_text(encoding="utf-8").splitlines()
+    raw = skill_md.read_text(encoding="utf-8")
+    # str.splitlines() also splits on \x0b \x0c \x1c \x1d \x1e \x85  ,
+    # which YAML rejects. Splitting on those would let this verifier attest a
+    # frontmatter no YAML parser can load, so split on \n only and reject the
+    # control characters outright.
+    lines = raw.split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
     if len(lines) > 500:
         raise ValueError(f"{expected_name} SKILL.md exceeds 500 lines")
     if not lines or lines[0] != "---":
@@ -52,12 +98,43 @@ def verify_skill_contract(skill: Path, expected_name: str) -> None:
         raise ValueError(f"{expected_name} SKILL.md has unclosed frontmatter") from error
     frontmatter: dict[str, str] = {}
     for line in lines[1:closing]:
-        match = re.fullmatch(r"([a-z_]+):\s+(.+)", line)
+        if any(character < " " or character in "\x7f\x85  " for character in line):
+            raise ValueError(f"{expected_name} SKILL.md frontmatter has control characters")
+        # Literal spaces only: \s would also accept the control characters and
+        # line separators that YAML rejects.
+        match = re.fullmatch(r"([a-z][a-z0-9_-]*): +(.+)", line)
         if match is None or match.group(1) in frontmatter:
             raise ValueError(f"{expected_name} SKILL.md has invalid frontmatter")
         frontmatter[match.group(1)] = match.group(2).strip()
-    if set(frontmatter) != {"name", "description"}:
-        raise ValueError(f"{expected_name} frontmatter keys must be name and description")
+    # The official Agent Skill contract requires name and description and allows
+    # license, allowed-tools and metadata. Keep the optional set closed so a
+    # rebuilt manifest still cannot smuggle an unknown key past the verifier.
+    if not REQUIRED_FRONTMATTER_KEYS <= set(frontmatter):
+        raise ValueError(f"{expected_name} frontmatter keys must include name and description")
+    if not set(frontmatter) <= REQUIRED_FRONTMATTER_KEYS | OPTIONAL_FRONTMATTER_KEYS:
+        raise ValueError(f"{expected_name} frontmatter keys are not allowed by the skill contract")
+    if "license" in frontmatter and not frontmatter["license"]:
+        raise ValueError(f"{expected_name} frontmatter license is empty")
+    if "metadata" in frontmatter:
+        if len(frontmatter["metadata"]) > MAX_METADATA_LENGTH:
+            raise ValueError(f"{expected_name} frontmatter metadata is too long")
+        # metadata is a mapping in the spec; a bare scalar is not a valid value.
+        # parse_constant rejects NaN/Infinity, which JSON allows but YAML does not.
+        def _reject_constant(name: str) -> Any:
+            raise ValueError(f"{expected_name} frontmatter metadata has a non-JSON constant: {name}")
+
+        try:
+            metadata_value = json.loads(
+                frontmatter["metadata"], parse_constant=_reject_constant
+            )
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                f"{expected_name} frontmatter metadata must be an inline JSON object"
+            ) from error
+        if not isinstance(metadata_value, dict):
+            raise ValueError(
+                f"{expected_name} frontmatter metadata must be an inline JSON object"
+            )
     if frontmatter["name"] != expected_name:
         raise ValueError(f"{expected_name} frontmatter name does not match its directory")
     if not frontmatter["description"] or len(frontmatter["description"]) > 1024:
@@ -127,7 +204,9 @@ def verify_suite(core: Path) -> dict[str, Any]:
         for path in skill_source.rglob("*"):
             # Local bytecode caches are development noise, never release content;
             # sibling skills outside public_skills are unrelated installations.
-            if not path.is_file() or "__pycache__" in path.parts:
+            if not path.is_file():
+                continue
+            if is_local_noise(path.relative_to(skill_source).parts):
                 continue
             child_relative = path.relative_to(skill_source).as_posix()
             relative = f"{name}/{child_relative}"

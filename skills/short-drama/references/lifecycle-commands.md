@@ -60,5 +60,13 @@ Markdown、JSON 或 JSONL。命令把来源文件和 `--input` 依赖的准确�
 
 `recover --transaction <txid>` 只处理指定事务。`package` 会重新验证状态文件中保存的创作者
 决定和独立审查记录，只打包当前 `hash` 与已接受快照一致、并且各项交付状态都已就绪的
-Markdown、JSON 或 JSONL。故事中确实需要交付屏显网址时，要有明确的例外文件，绑定准确的
-文字、路径、字段、来源和文字呈现方法；其他网址默认阻断。
+Markdown、JSON 或 JSONL。故事中确实需要交付屏显网址或屏显机器路径时，要有明确的例外
+文件，绑定准确的文字、路径、字段、来源和文字呈现方法；其他网址与机器路径默认阻断。
+例外只释放它逐字声明的那一个字符串：路径必须写到完整的那一条，只写盘符或目录开头会被
+拒绝，整段文档也不能当作一条例外。文件协议网址、私钥与结构化凭据字段无条件阻断，
+没有例外通道。
+
+每条例外必须写齐七个字段，缺一即整体拒绝：`exact_text`（逐字原文）、`path`（绑定到哪个
+交付文件）、`field`（该文字在产物中的字段位置）、`purpose`（固定为 `on_screen_text`）、
+`provenance`（`creator_supplied` 或 `story_world_authored`）、`text_policy`
+（`visible_on_screen` 或 `fictional_interface_text`）、`allow_delivery`（必须为 `true`）。

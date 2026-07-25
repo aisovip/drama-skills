@@ -620,6 +620,304 @@ class PackageTests(unittest.TestCase):
             )
             self.assertEqual(manifest["text_exceptions"][0]["exact_text"], text)
 
+    def test_on_screen_machine_path_is_blocked_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            self.approve_artifact(
+                root,
+                artifact_id="EP001:script",
+                owner="short-drama-write",
+                outputs={
+                    "episodes/EP001/screenplay.md": "[画面文字] 屏幕显示：/var/log/auth.log\n"
+                },
+            )
+
+            with self.assertRaises(project_tool.PackageBlockedError):
+                project_tool.build_delivery_package(
+                    root,
+                    episode="EP001",
+                    selected_paths=["episodes/EP001/screenplay.md"],
+                )
+
+    def test_explicit_on_screen_machine_path_exception_is_reported(self) -> None:
+        """A story that shows a path on screen needs an appeal channel."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            text = "/var/log/auth.log"
+            self.approve_artifact(
+                root,
+                artifact_id="EP001:script",
+                owner="short-drama-write",
+                outputs={"episodes/EP001/screenplay.md": f"[画面文字] 屏幕显示：{text}\n"},
+            )
+
+            project_tool.build_delivery_package(
+                root,
+                episode="EP001",
+                selected_paths=["episodes/EP001/screenplay.md"],
+                text_exceptions=[
+                    {
+                        "exact_text": text,
+                        "path": "episodes/EP001/screenplay.md",
+                        "field": "screenplay.visible_text",
+                        "purpose": "on_screen_text",
+                        "provenance": "story_world_authored",
+                        "text_policy": "fictional_interface_text",
+                        "allow_delivery": True,
+                    }
+                ],
+            )
+
+            manifest = json.loads(
+                (root / "delivery/EP001/manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(manifest["text_exceptions"][0]["exact_text"], text)
+
+    def test_bare_path_marker_cannot_be_declared_as_an_exception(self) -> None:
+        """A marker alone would act as a wildcard over every path sharing it."""
+
+        markers = ["/Users" + "/", "/var" + "/", "/tmp" + "/", "C" + ":/", "C" + ":\\"]
+        for marker in markers:
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as directory:
+                root = self.make_approved_project(directory)
+                self.approve_artifact(
+                    root,
+                    artifact_id="EP001:script",
+                    owner="short-drama-write",
+                    outputs={
+                        "episodes/EP001/screenplay.md": (
+                            f"[画面文字] A：{marker}alpha/one.md\n\n"
+                            f"[画面文字] B：{marker}beta/secret.key\n"
+                        )
+                    },
+                )
+                with self.assertRaises(project_tool.PackageBlockedError):
+                    project_tool.build_delivery_package(
+                        root,
+                        episode="EP001",
+                        selected_paths=["episodes/EP001/screenplay.md"],
+                        text_exceptions=[
+                            {
+                                "exact_text": marker,
+                                "path": "episodes/EP001/screenplay.md",
+                                "field": "screenplay.visible_text",
+                                "purpose": "on_screen_text",
+                                "provenance": "story_world_authored",
+                                "text_policy": "fictional_interface_text",
+                                "allow_delivery": True,
+                            }
+                        ],
+                    )
+
+    def test_declared_path_must_be_a_whole_token_not_a_prefix(self) -> None:
+        """Guards MACHINE_PATH_TOKEN_RE on its own: prefix-only would leak."""
+
+        prefix = "/var" + "/log"
+        longer = prefix + "extra/secret.key"
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            self.approve_artifact(
+                root,
+                artifact_id="EP001:script",
+                owner="short-drama-write",
+                outputs={"episodes/EP001/screenplay.md": f"[画面文字] A：{longer}\n"},
+            )
+            with self.assertRaises(project_tool.PackageBlockedError):
+                project_tool.build_delivery_package(
+                    root,
+                    episode="EP001",
+                    selected_paths=["episodes/EP001/screenplay.md"],
+                    text_exceptions=[
+                        {
+                            "exact_text": prefix,
+                            "path": "episodes/EP001/screenplay.md",
+                            "field": "screenplay.visible_text",
+                            "purpose": "on_screen_text",
+                            "provenance": "story_world_authored",
+                            "text_policy": "fictional_interface_text",
+                            "allow_delivery": True,
+                        }
+                    ],
+                )
+
+    def test_declaration_gate_rejects_markers_oversize_and_line_breaks(self) -> None:
+        """Each declaration defense asserted on its own, so none masks another."""
+
+        shown = "/var" + "/log/auth.log"
+
+        def declare(exact: str) -> None:
+            project_tool._normalize_text_exceptions(
+                [
+                    {
+                        "exact_text": exact,
+                        "path": "episodes/EP001/screenplay.md",
+                        "field": "screenplay.visible_text",
+                        "purpose": "on_screen_text",
+                        "provenance": "story_world_authored",
+                        "text_policy": "fictional_interface_text",
+                        "allow_delivery": True,
+                    }
+                ]
+            )
+
+        # A complete path is the only accepted shape.
+        declare(shown)
+
+        # A complete URL is exempt from the length bound; a long free-form
+        # on-screen string is not.
+        declare("https://example.invalid/" + "a" * 240)
+
+        rejected = {
+            "bare unix marker": "/var" + "/",
+            "bare windows marker": "C" + ":\\",
+            # A marker plus a delimiter is still only a marker.
+            "marker plus comma": "/var" + "/,",
+            "marker plus quote": "/var" + '/"',
+            "marker plus paren": "/var" + "/)",
+            "oversize": shown + " " + "x" * 300,
+            "newline": shown + "\n\u7b2c\u4e8c\u884c",
+            "carriage return": shown + "\r\u7b2c\u4e8c\u884c",
+            "line separator": shown + "\u2028\u7b2c\u4e8c\u884c",
+            "next line": shown + "\x85\u7b2c\u4e8c\u884c",
+            "vertical tab": shown + "\x0b\u7b2c\u4e8c\u884c",
+        }
+        for label, exact in rejected.items():
+            with self.subTest(label=label):
+                with self.assertRaises(project_tool.PackageBlockedError):
+                    declare(exact)
+
+    def test_on_screen_path_is_detected_next_to_chinese_text(self) -> None:
+        """CJK is \\w, so a lookbehind on word characters would miss this."""
+
+        for shown in ("显示/Users" + "/somebody/secret.key", "显示C" + ":\\somebody\\secret.key"):
+            with self.subTest(shown=shown), tempfile.TemporaryDirectory() as directory:
+                root = self.make_approved_project(directory)
+                self.approve_artifact(
+                    root,
+                    artifact_id="EP001:script",
+                    owner="short-drama-write",
+                    outputs={"episodes/EP001/screenplay.md": f"[画面文字] {shown}\n"},
+                )
+                with self.assertRaises(project_tool.PackageBlockedError):
+                    project_tool.build_delivery_package(
+                        root,
+                        episode="EP001",
+                        selected_paths=["episodes/EP001/screenplay.md"],
+                    )
+
+    def test_structured_field_path_can_still_be_released_by_exception(self) -> None:
+        """A path inside a JSON string must not be blocked by its own quotes."""
+
+        shown = "/var" + "/log/auth.log"
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            self.approve_artifact(
+                root,
+                artifact_id="EP001:script",
+                owner="short-drama-write",
+                outputs={
+                    "episodes/EP001/beats.jsonl": json.dumps(
+                        {"exact_text": shown}, ensure_ascii=False
+                    )
+                    + "\n"
+                },
+            )
+            project_tool.build_delivery_package(
+                root,
+                episode="EP001",
+                selected_paths=["episodes/EP001/beats.jsonl"],
+                text_exceptions=[
+                    {
+                        "exact_text": shown,
+                        "path": "episodes/EP001/beats.jsonl",
+                        "field": "beats.exact_text",
+                        "purpose": "on_screen_text",
+                        "provenance": "story_world_authored",
+                        "text_policy": "fictional_interface_text",
+                        "allow_delivery": True,
+                    }
+                ],
+            )
+            manifest = json.loads(
+                (root / "delivery/EP001/manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(manifest["text_exceptions"][0]["exact_text"], shown)
+
+    def test_text_exception_only_applies_to_the_file_it_declares(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            shown = "/var" + "/log/auth.log"
+            self.approve_artifact(
+                root,
+                artifact_id="EP001:script",
+                owner="short-drama-write",
+                outputs={
+                    "episodes/EP001/screenplay.md": f"[画面文字] A：{shown}\n",
+                    "episodes/EP001/beats.jsonl": json.dumps(
+                        {"note": f"B：{shown}"}, ensure_ascii=False
+                    )
+                    + "\n",
+                },
+            )
+
+            with self.assertRaises(project_tool.PackageBlockedError):
+                project_tool.build_delivery_package(
+                    root,
+                    episode="EP001",
+                    selected_paths=[
+                        "episodes/EP001/screenplay.md",
+                        "episodes/EP001/beats.jsonl",
+                    ],
+                    text_exceptions=[
+                        {
+                            "exact_text": shown,
+                            "path": "episodes/EP001/screenplay.md",
+                            "field": "screenplay.visible_text",
+                            "purpose": "on_screen_text",
+                            "provenance": "story_world_authored",
+                            "text_policy": "fictional_interface_text",
+                            "allow_delivery": True,
+                        }
+                    ],
+                )
+
+    def test_machine_path_exception_does_not_release_other_paths(self) -> None:
+        """An exception releases only the exact string it declared."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            declared = "/var/log/auth.log"
+            self.approve_artifact(
+                root,
+                artifact_id="EP001:script",
+                owner="short-drama-write",
+                outputs={
+                    "episodes/EP001/screenplay.md": (
+                        f"[画面文字] 屏幕显示：{declared}\n\n"
+                        "[画面文字] 另一处：/Users/someone/secret\n"
+                    )
+                },
+            )
+
+            with self.assertRaises(project_tool.PackageBlockedError):
+                project_tool.build_delivery_package(
+                    root,
+                    episode="EP001",
+                    selected_paths=["episodes/EP001/screenplay.md"],
+                    text_exceptions=[
+                        {
+                            "exact_text": declared,
+                            "path": "episodes/EP001/screenplay.md",
+                            "field": "screenplay.visible_text",
+                            "purpose": "on_screen_text",
+                            "provenance": "story_world_authored",
+                            "text_policy": "fictional_interface_text",
+                            "allow_delivery": True,
+                        }
+                    ],
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -26,6 +26,30 @@ from typing import Any
 
 
 PROJECT_FILE = "short-drama.json"
+# A machine-path token is the leading marker plus the rest of the path.
+# Delivery scans the token form, so an exception must quote a whole path to
+# release it. Declarations are checked against the complete form, which
+# requires at least one character after the marker, so a marker on its own can
+# never be declared and act as a wildcard over every path sharing it.
+# A path token ends at whitespace or at a character that cannot continue a
+# path: quotes and braces (so a path inside a JSON string is captured without
+# its delimiters) and CJK punctuation (so prose that ends a sentence right
+# after a path is captured without the full stop).
+_PATH_TAIL = r"[^\s\"'`,;<>)\]}，。；：、！？（）【】「」]"
+# The leading guard excludes only ASCII path-continuation characters, so a path
+# written straight after a CJK character — the normal case in this product —
+# is still detected, while a URL's own path is not double-reported.
+MACHINE_PATH_TOKEN_RE = re.compile(
+    rf"(?<![A-Za-z0-9_.\-])/(?:Users|home|private|var|tmp)/{_PATH_TAIL}*"
+    rf"|(?<![A-Za-z0-9])[A-Za-z]:[\\/]{_PATH_TAIL}*"
+)
+MACHINE_PATH_COMPLETE_RE = re.compile(
+    rf"(?<![A-Za-z0-9_.\-])/(?:Users|home|private|var|tmp)/{_PATH_TAIL}+"
+    rf"|(?<![A-Za-z0-9])[A-Za-z]:[\\/]{_PATH_TAIL}+"
+)
+# On-screen text is a single displayed string, never a document. Bounding it
+# stops a whole-file declaration from acting as a blanket release.
+MAX_TEXT_EXCEPTION_LENGTH = 200
 STATE_FILE = Path(".short-drama/state.json")
 OPERATIONS_DIR = Path(".short-drama")
 ABSENT_HASH: None = None
@@ -2062,14 +2086,35 @@ def _validate_delivery_text(
     for document in structured_documents:
         reject_structured_credentials(document)
 
+    # file URLs and private keys have no legitimate on-screen use, so they stay
+    # unconditional blocks. A machine path can be genuine story content (a
+    # hacking or investigation episode showing a path on screen), so it keeps
+    # the same declared-exception channel the URL rule uses: default blocked,
+    # released only for an exact text the creator bound to a path and field.
     unsafe_patterns = {
-        "machine path": re.compile(r"(?<![\w.])/(?:Users|home|private|var|tmp)/|\b[A-Za-z]:[\\/]"),
         "file URL": re.compile(r"\bfile://", re.IGNORECASE),
         "private key": re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
     }
     for label, pattern in unsafe_patterns.items():
         if pattern.search(text):
             raise PackageBlockedError(f"{label} is excluded from delivery: {relative}")
+    # Match the whole path token, not just its prefix. Containment is checked
+    # against the full token, so declaring a bare prefix cannot release every
+    # path that happens to share it.
+    exempt_spans = [
+        (match.start(), match.end())
+        for allowed in allowed_urls
+        for match in re.finditer(re.escape(allowed), text)
+    ]
+    for match in MACHINE_PATH_TOKEN_RE.finditer(text):
+        covered = any(
+            start <= match.start() and match.end() <= end
+            for start, end in exempt_spans
+        )
+        if not covered:
+            raise PackageBlockedError(
+                f"machine path is excluded from delivery: {relative}"
+            )
     url_pattern = re.compile(r"https?://[^\s<>\"'\])}，。；]+", re.IGNORECASE)
     disallowed = sorted(set(url_pattern.findall(text)) - allowed_urls)
     if disallowed:
@@ -2084,6 +2129,10 @@ def _normalize_text_exceptions(
     provenance_allowlist = {"creator_supplied", "story_world_authored"}
     text_policy_allowlist = {"visible_on_screen", "fictional_interface_text"}
     url_pattern = re.compile(r"https?://[^\s<>\"'\])}，。；]+", re.IGNORECASE)
+    # An exception releases either a complete URL or an exact on-screen string
+    # whose machine paths are quoted in full. A declaration that is only a path
+    # prefix (or that carries no complete path token) is rejected, so it cannot
+    # act as a wildcard over every path sharing that prefix.
     for exception in text_exceptions or []:
         exact = exception.get("exact_text")
         bound_path = exception.get("path")
@@ -2091,7 +2140,19 @@ def _normalize_text_exceptions(
         if (
             not isinstance(exact, str)
             or not exact
-            or url_pattern.fullmatch(exact) is None
+            # A complete URL is inherently a single token, so the length bound
+            # only needs to constrain free-form on-screen strings.
+            or (
+                len(exact) > MAX_TEXT_EXCEPTION_LENGTH
+                and url_pattern.fullmatch(exact) is None
+            )
+            # Any line break or control character, not just \n: a declaration
+            # spanning lines is a document, not a single on-screen string.
+            or any(character < " " or character in "\x7f\x85  " for character in exact)
+            or (
+                url_pattern.fullmatch(exact) is None
+                and MACHINE_PATH_COMPLETE_RE.search(exact) is None
+            )
             or not isinstance(bound_path, str)
             or not isinstance(field, str)
             or not re.fullmatch(r"[A-Za-z0-9_.:/-]+", field)
