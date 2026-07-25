@@ -68,7 +68,7 @@ Mechanical examples:
 - missing/duplicate IDs or unresolved references;
 - unknown asset variant;
 - missing coverage disposition;
-- explicit segments totaling more than declared duration;
+- explicit segments not totaling exactly the declared duration, in either direction;
 - mutually exclusive structured camera flags;
 - readable text with a global no-text policy;
 - prompt text/hash not matching its accepted spec and recipe;
