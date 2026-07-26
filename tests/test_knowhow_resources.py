@@ -77,7 +77,7 @@ LAYER_RESOURCES = {
 
 
 RULE_ROW = re.compile(
-    r"^\| ((?:STY|SCR|AST|IMG|SHT|VID|CON|REV)-\d{2}) \| ([a-z_]+) \|",
+    r"^\| ((?:STY|SCR|AST|IMG|SHT|VID|CON|REV)-\d{2}) \| ([a-z_]+) \| (.+?) \|$",
     re.MULTILINE,
 )
 
@@ -98,19 +98,20 @@ def parse_index() -> dict[str, str]:
     ID may appear more than once—but never with a different classification.
     """
 
-    rules: dict[str, str] = {}
+    rules: dict[str, tuple[str, str]] = {}
     for skill, text in stage_contracts().items():
         seen: set[str] = set()
-        for rule_id, classification in RULE_ROW.findall(text):
+        for rule_id, classification, knowledge in RULE_ROW.findall(text):
             if rule_id in seen:
                 raise AssertionError(f"{skill} repeats know-how ID: {rule_id}")
             seen.add(rule_id)
-            if rules.get(rule_id, classification) != classification:
+            body = (classification, knowledge.strip())
+            if rules.setdefault(rule_id, body) != body:
                 raise AssertionError(
-                    f"{rule_id} classified inconsistently across stage contracts"
+                    f"{rule_id} is restated differently in {skill}; a stable ID may not "
+                    "carry two meanings across stage contracts"
                 )
-            rules[rule_id] = classification
-    return rules
+    return {rule_id: body[0] for rule_id, body in rules.items()}
 
 
 def parse_fenced_json(path: Path) -> dict:
@@ -311,7 +312,7 @@ class KnowHowResourceTests(unittest.TestCase):
 
     def test_each_prefix_is_carried_by_a_skill_allowed_to_own_it(self) -> None:
         for skill, text in stage_contracts().items():
-            for rule_id, _ in RULE_ROW.findall(text):
+            for rule_id, _class, _knowledge in RULE_ROW.findall(text):
                 prefix = rule_id.split("-", 1)[0]
                 with self.subTest(skill=skill, rule=rule_id):
                     self.assertIn(skill, PREFIX_OWNERS[prefix])
@@ -325,11 +326,41 @@ class KnowHowResourceTests(unittest.TestCase):
                 self.assertIn(f"`${skill}`", text)
 
     def test_every_skill_is_self_contained_in_its_own_tree(self) -> None:
-        for skill_dir in sorted(SKILLS.glob("short-drama-*")):
+        """Resolve every relative link instead of guessing at path prefixes.
+
+        A prefix check misses sibling targets such as `../short-drama-develop/...`,
+        which differ from the core prefix by a single character.
+        """
+
+        link = re.compile(r"\[[^\]]+\]\(([^)#]+)(?:#[^)]*)?\)")
+        escapes: list[str] = []
+        for skill_dir in sorted(SKILLS.glob("short-drama*")):
+            root = skill_dir.resolve()
             for path in sorted(skill_dir.rglob("*.md")):
-                with self.subTest(path=path.relative_to(SKILLS)):
-                    self.assertNotIn("](../../short-drama", path.read_text(encoding="utf-8"))
-                    self.assertNotIn("](../short-drama/", path.read_text(encoding="utf-8"))
+                for target in link.findall(path.read_text(encoding="utf-8")):
+                    if "://" in target:
+                        continue
+                    resolved = (path.parent / target).resolve()
+                    try:
+                        resolved.relative_to(root)
+                    except ValueError:
+                        escapes.append(f"{path.relative_to(SKILLS)} -> {target}")
+        self.assertEqual(
+            escapes, [], "links escaping their own skill tree:\n" + "\n".join(escapes)
+        )
+
+    def test_repeated_continuity_rules_keep_one_meaning(self) -> None:
+        bodies: dict[str, set[tuple[str, str]]] = {}
+        for text in stage_contracts().values():
+            for rule_id, classification, knowledge in RULE_ROW.findall(text):
+                if rule_id.startswith("CON-"):
+                    bodies.setdefault(rule_id, set()).add(
+                        (classification, knowledge.strip())
+                    )
+        self.assertTrue(bodies, "no shared continuity rules were found")
+        for rule_id, variants in sorted(bodies.items()):
+            with self.subTest(rule=rule_id):
+                self.assertEqual(len(variants), 1)
 
     def test_each_layer_ships_reference_template_rubric_and_fixture(self) -> None:
         fixture_root = SUITE / "tests/fixtures"

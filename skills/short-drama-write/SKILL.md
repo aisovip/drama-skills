@@ -42,10 +42,11 @@ diff，让创作者明确选择 authority 迁移，将 standalone 契约标记 s
 再换成 pointer 卡。若上游契约需改，发 develop owner revision；不在 execution
 字段里偷改。不要用悬念替代整集回报。
 
-单集设计细节见 [episode-design.md](../short-drama-develop/references/episode-design.md)。若只做原文规范化，跳过本步，不推断缺失剧情。
-从想法或 `write_standalone` 直接写作、且题材机制会影响压力、证据、场面或集尾交接时，
-按需读取 [题材条件与钩子手册](../short-drama-develop/references/genre-and-hook-playbook.md)；
-已有已接受单集契约时以契约为准，不为贴题材标签另造公式。
+单集契约进入本阶段时必须包含哪些字段、缺失时怎么办，见
+[阶段契约](references/stage-contract.md) 的“单集契约与题材边界”。若只做原文规范化，
+跳过本步，不推断缺失剧情。
+从想法或 `write_standalone` 直接写作时，本阶段执行已接受的题材与钩子取向，不自行给项目
+归类题材；没有已接受取向时按同一节的做法处理，不为贴题材标签另造公式。
 
 ### 3. 建立因果节拍
 
