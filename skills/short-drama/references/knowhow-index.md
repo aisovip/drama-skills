@@ -29,6 +29,7 @@ questions. The index is navigation, not a formula sheet.
 | 长材料改编 | [adaptation-craft](../../short-drama-develop/references/adaptation-craft.md#2-用功能账本压缩) | 压缩、合并或把说明转成屏幕载体 | 不复制原句或文风到新剧本 |
 | 题材条件与钩子 | [genre-and-hook-playbook](../../short-drama-develop/references/genre-and-hook-playbook.md#不同题材怎么推进) | 需要按压力机制比较题材写法 | 不把案例节拍、数字或标签当公式 |
 | 单题材执行细节 | [genre-cards](../../short-drama-develop/references/genre-cards.md) | 已确定题材、要落到场面颗粒与打法 | 一次只读一张卡；卡片不产生可阻断约束 |
+| 前提装置（先知或外部授权） | [premise-devices](../../short-drama-develop/references/premise-devices.md#装置不是题材) | 主角带着已知结果开局，或获得一套外部规则给的能力 | 装置叠加在题材之上，不替代题材卡，也不新建题材 |
 | 单形态执行细节 | [production-form-profiles](production-form-profiles.md#按形态选择可执行词汇) | 已确定制作形态、要按表定位一张形态卡 | 一次只读一张卡；形态不改写身份与地理 |
 | 场景与可表演行动 | [script-craft](../../short-drama-write/references/script-craft.md#3-场景发动机目标反对转向退出) | 把单集节拍落实成场景 | 不决定分镜景别和运镜 |
 | 对白行动与人物声音 | [dialogue-craft](../../short-drama-write/references/dialogue-craft.md#3-台词是一种行动) | 写、改或诊断对白 | 不按句长、口癖数量判权力 |
@@ -40,7 +41,7 @@ questions. The index is navigation, not a formula sheet.
 | 图片提示词定点修改 | [edit-and-revision](../../short-drama-image-prompts/references/edit-and-revision.md#2-edit-delta-配方) | 修改局部并冻结 preserve set | 不把重写整图伪装成局部编辑 |
 | 镜头目的与覆盖 | [shot-craft](../../short-drama-storyboard/references/shot-craft.md#镜头目的) | 从剧本建立有动机的镜头 | 不为景别多样性硬拆镜 |
 | 冻结关键帧 | [keyframe-craft](../../short-drama-storyboard/references/keyframe-craft.md#start-only-drafting-discipline) | 写镜头起点的可冻结瞬间 | 不写动作链或镜头终态 |
-| 多人场面调度 | [blocking-playbooks](../../short-drama-storyboard/references/blocking-playbooks.md#1-竖屏多人调度) | 多人、群体、证据揭示或动态物体场面 | 不把一个布局复用于所有题材 |
+| 多人场面调度与交付面遮挡 | [blocking-playbooks](../../short-drama-storyboard/references/blocking-playbooks.md#1-竖屏多人调度) | 多人、群体、证据揭示、动态物体场面，或竖屏播放面会叠加遮挡 | 不把一个布局复用于所有题材；遮挡区来自已声明交付方案，不设通用安全框 |
 | 视频运动规格 | [motion-recipe](../../short-drama-video-prompts/references/motion-recipe.md#3-运动说明的七个部分) | 把已接受镜头边界写成时间变化 | 不改镜头、资产或剧本权威 |
 | 交付容器与分段算术 | [delivery-profile](../../short-drama-video-prompts/references/delivery-profile.md#二容器算术唯一允许的数字规则) | 项目声明了分段或多镜打包的交付方式 | 打包方式不改写镜头边界与可审查性 |
 | 表演动作与时长 | [performance-action-timing](../../short-drama-video-prompts/references/performance-action-timing.md#2-构造可演的动作链) | 动作、台词与落点可能超载 | 不用每秒动作数设通用阈值 |
@@ -70,6 +71,7 @@ questions. The index is navigation, not a formula sheet.
 | STY-14 | craft_default | Maintain compact serial memory for character strategy/state, relationships, information permissions, setup debt, rhythm, and exact handoff. |
 | STY-15 | reviewed_invariant | Calibrate each information release to what its visible carrier directly supports, while keeping unproved identity, cause, motive, or mechanism explicit as unresolved inference. |
 | STY-16 | craft_default | Before scene work, estimate each planned episode's shot and duration magnitude from the project's own accepted ratios, and resolve order-of-magnitude outliers in the map; the estimate informs the creator and never blocks delivery. |
+| STY-17 | reviewed_invariant | A premise device that grants foreknowledge or externally authorized ability states its scope, failure conditions, and cost of use when it first takes effect; later episodes may not widen that scope or drop the cost to escape a corner. A device redistributes information and ability without replacing the genre's pressure source, payoff, or ending promise. |
 
 ## Script (`SCR`)
 
@@ -130,6 +132,7 @@ questions. The index is navigation, not a formula sheet.
 | SHT-12 | reviewed_invariant | Each audience-visibility fact binds its exact source, carrier, permission, trigger, and protection method; framing neither reveals that fact early nor hides the carrier this shot must communicate. |
 | SHT-13 | reviewed_invariant | Multi-character blocking projects sourced, directed relationships into compatible positions, gaze, distance, and action lines for the current boundary. |
 | SHT-14 | reviewed_invariant | A contested moving object preserves ownership, trajectory, direction, time/round state, and end location across cuts unless an authorized ellipsis says otherwise. |
+| SHT-15 | reviewed_invariant | What a shot must be read for—face and gaze, readable evidence text, the decisive hand action—does not sit only where the accepted delivery surface overlays the frame; occupied regions come from the creator's declared delivery plan, and an undeclared plan stays unresolved rather than unconstrained. |
 
 ## Video prompts (`VID`)
 
@@ -148,7 +151,7 @@ questions. The index is navigation, not a formula sheet.
 | VID-11 | reviewed_invariant | A selective transform names its trigger, exact target scope, end geometry/state, and preserve set so non-target people, props, text surfaces, and spatial anchors do not change with it. |
 | VID-12 | reviewed_invariant | A pickup/alternate names stable master/supplement motion IDs and maps each source requirement to a field or disposition; motion may request replacement, but only a downstream independent verdict can bind fixed hashes and approve it. |
 | VID-13 | structural_invariant | A delivery container carries one or more accepted shots in source order; its duration equals the sum of their accepted durations, and packing changes neither shot boundaries nor per-shot reviewability. |
-| VID-14 | craft_default | A single-shot deliverable carries production dialogue, off-screen sources, ambience, and event effects; scored music belongs to the timeline layer unless the project accepted otherwise or the music is a diegetic source. |
+| VID-14 | craft_default | Music intent may be annotated per shot as a relative entry/exit/duck against neighbours, but its realization belongs to the timeline layer; a single-shot deliverable carries dialogue, off-screen sources, ambience, and event effects without a baked-in music bed unless the project accepted otherwise or the source is diegetic. |
 
 ## Continuity (`CON`)
 

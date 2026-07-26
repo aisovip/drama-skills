@@ -65,10 +65,11 @@
   downstream verdict may bind fixed alternate/master hashes and decide it. Use
   the [supersession decision example](../assets/supersession-decision.example.json)
   when that decision is needed.
-- Does single-shot audio stay production dialogue, off-screen sources, ambience,
-  and event effects, leaving scored music to the timeline layer unless the project
-  accepted otherwise or the music is diegetic? Do adjacent shots declare music
-  entries/exits that could actually join (`VID-14`)?
+- Is music intent written as a relative entry/exit/duck against neighbouring shots
+  rather than an independent cue per shot, and do adjacent annotations actually join
+  (`VID-14`)? Does the single-shot deliverable itself stay dialogue, off-screen
+  sources, ambience, and event effects with no baked-in music bed, unless the project
+  accepted otherwise or the source is diegetic?
 
 Explicit timing that does not sum exactly to its shot's accepted duration—over or
 under—is a structural error. Untimed overload is a

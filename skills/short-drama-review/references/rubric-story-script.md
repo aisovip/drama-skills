@@ -1,5 +1,15 @@
 # Story And Script Rubric
 
+## 目录
+
+- [Promise](#story-promise-and-engine)
+- [Episode](#episode-shape)
+- [Entry and serial memory](#entry-character-and-serial-memory)
+- [Scene](#scene-test)
+- [Action](#action-and-production-meaning)
+- [Dialogue](#dialogue)
+- [Findings](#common-findings)
+
 ## Story promise and engine
 
 - Can the creator state protagonist, pursuit, costly opposition, and recurring
@@ -23,6 +33,23 @@ planned episode's shot/duration magnitude is far from the project's own accepted
 ratios, note it as an advisory observation with the sampled basis, and leave the
 resolution to the creator. Never derive a word, line, or shot quota from it, and
 never compare against another project's numbers.
+
+When the premise grants foreknowledge or externally authorized ability (`STY-17`):
+
+- Where does the device first take effect, and are its scope, failure conditions, and
+  cost of use checkable from that point?
+- Strip the device out—does the episode still contain a choice? If not, cite what
+  resistance was removed and never replaced.
+- What did the opposition learn once the device was in play?
+- For foreknowledge: does the information degrade as the timeline diverges, or does the
+  author keep inventing reasons to weaken the protagonist? Is the audience's permission
+  level held constant across episodes?
+- For authorized ability: does every already-declared rule still hold in the later
+  episodes as written? Is the cost visible and landed on something the protagonist
+  cares about? Does the device offer options, or decide for them?
+- Cite any episode where the scope widened or the cost was dropped to escape a corner.
+- If the device uses an on-screen readable carrier, is the `exact-readable` obligation
+  stated instead of coexisting with a global no-text policy?
 
 ## Entry, character, and serial memory
 
