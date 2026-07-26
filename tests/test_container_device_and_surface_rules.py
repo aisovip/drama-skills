@@ -27,11 +27,16 @@ def fenced_json(path: Path) -> dict:
 
 
 def index_rules() -> dict[str, str]:
+    """Rules live in each skill's own stage contract, not in the core index."""
+
     pattern = re.compile(
         r"^\| ((?:STY|SCR|AST|IMG|SHT|VID|CON|REV)-\d{2}) \| ([a-z_]+) \|",
         re.MULTILINE,
     )
-    return dict(pattern.findall(read(INDEX)))
+    rules: dict[str, str] = {}
+    for path in sorted(SKILLS.glob("*/references/stage-contract.md")):
+        rules.update(pattern.findall(read(path)))
+    return rules
 
 
 class NewRuleRegistrationTests(unittest.TestCase):
@@ -53,7 +58,8 @@ class NewRuleRegistrationTests(unittest.TestCase):
     def test_segment_sum_rule_names_the_shot_not_the_container(self) -> None:
         """VID-04 and VID-13 apply to different objects; the text must say which."""
 
-        self.assertIn("sums exactly to its shot's accepted duration", read(INDEX))
+        contract = SKILLS / "short-drama-video-prompts/references/stage-contract.md"
+        self.assertIn("sums exactly to its shot's accepted duration", read(contract))
 
 
 class DeliveryContainerRecordTests(unittest.TestCase):

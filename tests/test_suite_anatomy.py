@@ -448,9 +448,20 @@ class SuiteAnatomyTests(unittest.TestCase):
             self.assertIn("去 AI 味", text)
             self.assertIn("fresh re-review", text)
 
-    def test_script_first_writing_can_load_genre_knowhow_directly(self) -> None:
-        write = (SUITE / "skills/short-drama-write/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("../short-drama-develop/references/genre-and-hook-playbook.md", write)
+    def test_script_first_writing_resolves_genre_boundaries_without_a_sibling_skill(
+        self,
+    ) -> None:
+        """Script-first entry still needs the genre boundary, but self-contained."""
+
+        skill_dir = SUITE / "skills/short-drama-write"
+        write = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+        self.assertNotIn("../short-drama-develop/", write)
+        self.assertIn("references/stage-contract.md", write)
+        contract = (skill_dir / "references/stage-contract.md").read_text(encoding="utf-8")
+        self.assertIn("## 单集契约与题材边界（上游输入）", contract)
+        for concept in ("write_standalone", "本阶段执行，不分类", "进入状态", "信息权限"):
+            with self.subTest(concept=concept):
+                self.assertIn(concept, contract)
 
     def test_media_generation_boundary_is_a_verified_product_policy(self) -> None:
         manifest = json.loads((CORE / "suite-manifest.json").read_text(encoding="utf-8"))

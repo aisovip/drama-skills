@@ -1,6 +1,6 @@
-import json
 import hashlib
 import importlib.util
+import json
 import os
 import shutil
 import subprocess
@@ -9,7 +9,6 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
-
 
 SUITE = Path(__file__).resolve().parents[1]
 VERIFY_TOOL = SUITE / "tools/verify_suite.py"
@@ -153,9 +152,23 @@ class InstallationResolutionTests(unittest.TestCase):
             "`package`",
         ):
             self.assertIn(command, guidance)
-        for skill_md in sorted((SUITE / "skills").glob("*/SKILL.md")):
-            with self.subTest(skill=skill_md.parent.name):
-                self.assertIn("runtime-preflight.md", skill_md.read_text(encoding="utf-8"))
+        self.assertIn(
+            "runtime-preflight.md",
+            (SUITE / "skills/short-drama/SKILL.md").read_text(encoding="utf-8"),
+        )
+        # Child skills are self-contained: each restates the preflight in its own
+        # stage contract rather than reading the core file.
+        for skill_md in sorted((SUITE / "skills").glob("short-drama-*/SKILL.md")):
+            skill_dir = skill_md.parent
+            with self.subTest(skill=skill_dir.name):
+                self.assertIn(
+                    "references/stage-contract.md", skill_md.read_text(encoding="utf-8")
+                )
+                contract = (
+                    skill_dir / "references/stage-contract.md"
+                ).read_text(encoding="utf-8")
+                for command in ("suite_verify.py", "project_tool.py", "recover", "status"):
+                    self.assertIn(command, contract)
 
     def test_installed_core_ships_the_suite_verifier(self) -> None:
         verifier = SUITE / "skills/short-drama/scripts/suite_verify.py"

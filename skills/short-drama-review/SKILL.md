@@ -14,8 +14,8 @@ license: MIT
 
 从本技能目录读取 `suite-ref.json`，按其中相对 `core_manifest` 定位唯一同级主技能与
 套件清单；确认声明的 core、contract、recipe 和清单 hash 一致后再读写项目。
-随后执行主技能的 [运行时预检](../short-drama/references/runtime-preflight.md)：先恢复事务、读取状态，再进入本阶段。
-涉及制作形态时按需读取 [production-form-profiles.md](../short-drama/references/production-form-profiles.md)，只投影本阶段负责的形、层、材质、光、运动或声音。
+随后执行 [阶段契约](references/stage-contract.md) 的运行时预检：先恢复事务、读取状态，再进入本阶段。
+该文件同时给出本阶段的所有权边界、需要从制作形态取得哪些输入，以及本阶段规则表；本技能不读取其他技能的文件。
 
 ## 选择审查范围
 
@@ -33,7 +33,7 @@ license: MIT
 [review-method.md](references/review-method.md)，再读三份审查表；制作端常见缺陷
 与各环节判据见 [production-quality-gates.md](references/production-quality-gates.md)。
 涉及参考图权限、遮挡式揭示或补拍版与替代版关系时加读
-[参考媒体权限与补拍契约](../short-drama/references/reference-media-and-pickups.md)。
+[阶段契约](references/stage-contract.md) 的参考媒体与补拍一节。
 不预先加载所有创作资料。
 证据来自项目产物和已接受限制，而非负责人的自我解释。
 只有审查问题涉及“模板感、重复手法或 AI 味”时才读

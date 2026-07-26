@@ -3,7 +3,6 @@ import re
 import unittest
 from pathlib import Path
 
-
 SUITE = Path(__file__).resolve().parents[1]
 SKILLS = SUITE / "skills"
 INDEX = SKILLS / "short-drama/references/knowhow-index.md"
@@ -77,22 +76,46 @@ LAYER_RESOURCES = {
 }
 
 
+RULE_ROW = re.compile(
+    r"^\| ((?:STY|SCR|AST|IMG|SHT|VID|CON|REV)-\d{2}) \| ([a-z_]+) \| (.+?) \|$",
+    re.MULTILINE,
+)
+
+
+def stage_contracts() -> dict[str, str]:
+    """Each skill ships its own rule table; the core no longer copies them."""
+
+    return {
+        path.parent.parent.name: path.read_text(encoding="utf-8")
+        for path in sorted(SKILLS.glob("*/references/stage-contract.md"))
+    }
+
+
 def parse_index() -> dict[str, str]:
-    rules: dict[str, str] = {}
-    pattern = re.compile(
-        r"^\| ((?:STY|SCR|AST|IMG|SHT|VID|CON|REV)-\d{2}) "
-        r"\| ([a-z_]+) \|",
-        re.MULTILINE,
-    )
-    for rule_id, classification in pattern.findall(INDEX.read_text(encoding="utf-8")):
-        if rule_id in rules:
-            raise AssertionError(f"duplicate know-how ID: {rule_id}")
-        rules[rule_id] = classification
-    return rules
+    """Collect every rule from the per-skill stage contracts.
+
+    `CON` is deliberately restated by each skill that must honour it, so the same
+    ID may appear more than once—but never with a different classification.
+    """
+
+    rules: dict[str, tuple[str, str]] = {}
+    for skill, text in stage_contracts().items():
+        seen: set[str] = set()
+        for rule_id, classification, knowledge in RULE_ROW.findall(text):
+            if rule_id in seen:
+                raise AssertionError(f"{skill} repeats know-how ID: {rule_id}")
+            seen.add(rule_id)
+            body = (classification, knowledge.strip())
+            if rules.setdefault(rule_id, body) != body:
+                raise AssertionError(
+                    f"{rule_id} is restated differently in {skill}; a stable ID may not "
+                    "carry two meanings across stage contracts"
+                )
+    return {rule_id: body[0] for rule_id, body in rules.items()}
 
 
 def parse_fenced_json(path: Path) -> dict:
-    match = re.search(r"```json\n(\{.*?\})\n```", path.read_text(encoding="utf-8"), re.S)
+    match = re.search(r"```json\n(\{.*?\})\n```", path.read_text(encoding="utf-8"), re.DOTALL)
     if match is None:
         raise AssertionError(f"missing fenced JSON object: {path}")
     return json.loads(match.group(1))
@@ -102,30 +125,19 @@ class KnowHowResourceTests(unittest.TestCase):
     def test_knowhow_index_routes_topics_to_authoritative_reference_headings(self) -> None:
         text = INDEX.read_text(encoding="utf-8")
         self.assertIn("## 主题权威路由", text)
-        section = text.split("## 主题权威路由", 1)[1].split("## Story", 1)[0]
+        section = text.split("## 主题权威路由", 1)[1].split("## 规则分级", 1)[0]
         routes = re.findall(
-            r"^\| [^|]+ \| \[[^]]+\]\(([^)#]+)#([^)]+)\) \| [^|]+ \| [^|]+ \|$",
+            r"^\| ([^|]+) \| `\$(short-drama[a-z-]*)` \| ([^|]+) \| ([^|]+) \|$",
             section,
             re.MULTILINE,
         )
         self.assertGreaterEqual(len(routes), 15)
-
-        def heading_anchor(heading: str) -> str:
-            value = heading.strip().lower()
-            value = re.sub(r"[^\w\-\s\u4e00-\u9fff]", "", value)
-            return re.sub(r"\s+", "-", value)
-
-        for relative, fragment in routes:
-            target = (INDEX.parent / relative).resolve()
-            with self.subTest(target=relative, fragment=fragment):
-                target.relative_to(SKILLS.resolve())
-                self.assertTrue(target.is_file())
-                anchors = {
-                    heading_anchor(line.lstrip("# "))
-                    for line in target.read_text(encoding="utf-8").splitlines()
-                    if line.startswith("## ")
-                }
-                self.assertIn(fragment, anchors)
+        installed = {path.name for path in SKILLS.iterdir() if path.is_dir()}
+        for _topic, skill, when, limit in routes:
+            with self.subTest(skill=skill):
+                self.assertIn(skill, installed)
+                self.assertTrue(when.strip())
+                self.assertTrue(limit.strip())
 
     def test_creator_reference_intake_recalls_mechanism_without_copying_expression(self) -> None:
         reference = (
@@ -192,13 +204,17 @@ class KnowHowResourceTests(unittest.TestCase):
                 self.assertIn(concept, text)
 
     def test_craft_defaults_keep_context_and_text_only_observation_boundaries(self) -> None:
-        index = INDEX.read_text(encoding="utf-8")
-        self.assertNotIn("within the cold open", index)
-        self.assertNotIn("dialogue exchanges stay short attack-defense turns", index)
-        self.assertIn("according to genre and creator intent", index)
-        self.assertIn("rather than a fixed count", index)
-        self.assertIn("authorized text notes", index)
-        self.assertIn("keep unobserved outcomes unknown", index)
+        contracts = stage_contracts()
+        develop = contracts["short-drama-develop"]
+        storyboard = contracts["short-drama-storyboard"]
+        review = contracts["short-drama-review"]
+        for text in contracts.values():
+            self.assertNotIn("within the cold open", text)
+            self.assertNotIn("dialogue exchanges stay short attack-defense turns", text)
+        self.assertIn("according to genre and creator intent", develop)
+        self.assertIn("rather than a fixed count", storyboard)
+        self.assertIn("authorized text notes", review)
+        self.assertIn("keep unobserved outcomes unknown", review)
 
         visual_rubric = (
             SKILLS
@@ -234,8 +250,12 @@ class KnowHowResourceTests(unittest.TestCase):
         self.assertIn("风格名称、模型代码或供应商字段不能替代", text)
         self.assertIn("不把拆镜或换形态默认为已经授权的替代", text)
 
-        linked_skills = {
-            "short-drama",
+        # 形态卡留在核心供路由选型；各技能改为在自己的阶段契约里声明需要什么形态输入。
+        self.assertIn(
+            "production-form-profiles.md",
+            (SKILLS / "short-drama/SKILL.md").read_text(encoding="utf-8"),
+        )
+        form_consumers = {
             "short-drama-develop",
             "short-drama-assets",
             "short-drama-image-prompts",
@@ -243,12 +263,13 @@ class KnowHowResourceTests(unittest.TestCase):
             "short-drama-video-prompts",
             "short-drama-review",
         }
-        for skill in linked_skills:
+        for skill in sorted(form_consumers):
             with self.subTest(skill=skill):
-                self.assertIn(
-                    "production-form-profiles.md",
-                    (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8"),
-                )
+                contract = (
+                    SKILLS / skill / "references/stage-contract.md"
+                ).read_text(encoding="utf-8")
+                self.assertIn("## 制作形态需要什么", contract)
+                self.assertIn("本技能不加载形态卡", contract)
 
     def test_genre_playbook_includes_identity_mismatch_and_small_life_stories(self) -> None:
         text = (
@@ -288,6 +309,58 @@ class KnowHowResourceTests(unittest.TestCase):
         self.assertTrue(rules)
         self.assertEqual({rule.split("-", 1)[0] for rule in rules}, set(PREFIX_OWNERS))
         self.assertEqual(set(rules.values()), CLASSES)
+
+    def test_each_prefix_is_carried_by_a_skill_allowed_to_own_it(self) -> None:
+        for skill, text in stage_contracts().items():
+            for rule_id, _class, _knowledge in RULE_ROW.findall(text):
+                prefix = rule_id.split("-", 1)[0]
+                with self.subTest(skill=skill, rule=rule_id):
+                    self.assertIn(skill, PREFIX_OWNERS[prefix])
+
+    def test_core_index_routes_by_skill_without_reaching_into_their_files(self) -> None:
+        text = INDEX.read_text(encoding="utf-8")
+        self.assertNotIn("](../short-drama-", text)
+        self.assertEqual(RULE_ROW.findall(text), [])
+        for skill in PREFIX_OWNERS["STY"] + PREFIX_OWNERS["REV"]:
+            with self.subTest(skill=skill):
+                self.assertIn(f"`${skill}`", text)
+
+    def test_every_skill_is_self_contained_in_its_own_tree(self) -> None:
+        """Resolve every relative link instead of guessing at path prefixes.
+
+        A prefix check misses sibling targets such as `../short-drama-develop/...`,
+        which differ from the core prefix by a single character.
+        """
+
+        link = re.compile(r"\[[^\]]+\]\(([^)#]+)(?:#[^)]*)?\)")
+        escapes: list[str] = []
+        for skill_dir in sorted(SKILLS.glob("short-drama*")):
+            root = skill_dir.resolve()
+            for path in sorted(skill_dir.rglob("*.md")):
+                for target in link.findall(path.read_text(encoding="utf-8")):
+                    if "://" in target:
+                        continue
+                    resolved = (path.parent / target).resolve()
+                    try:
+                        resolved.relative_to(root)
+                    except ValueError:
+                        escapes.append(f"{path.relative_to(SKILLS)} -> {target}")
+        self.assertEqual(
+            escapes, [], "links escaping their own skill tree:\n" + "\n".join(escapes)
+        )
+
+    def test_repeated_continuity_rules_keep_one_meaning(self) -> None:
+        bodies: dict[str, set[tuple[str, str]]] = {}
+        for text in stage_contracts().values():
+            for rule_id, classification, knowledge in RULE_ROW.findall(text):
+                if rule_id.startswith("CON-"):
+                    bodies.setdefault(rule_id, set()).add(
+                        (classification, knowledge.strip())
+                    )
+        self.assertTrue(bodies, "no shared continuity rules were found")
+        for rule_id, variants in sorted(bodies.items()):
+            with self.subTest(rule=rule_id):
+                self.assertEqual(len(variants), 1)
 
     def test_each_layer_ships_reference_template_rubric_and_fixture(self) -> None:
         fixture_root = SUITE / "tests/fixtures"

@@ -12,16 +12,15 @@ license: MIT
 
 从本技能目录读取 `suite-ref.json`，按其中相对 `core_manifest` 定位唯一同级主技能与
 套件清单；确认声明的 core、contract、recipe 和清单 hash 一致后再读写项目。
-随后执行主技能的 [运行时预检](../short-drama/references/runtime-preflight.md)：先恢复事务、读取状态，再进入本阶段。
-涉及制作形态时按需读取 [production-form-profiles.md](../short-drama/references/production-form-profiles.md)，只投影本阶段负责的形、层、材质、光、运动或声音。
+随后执行 [阶段契约](references/stage-contract.md) 的运行时预检：先恢复事务、读取状态，再进入本阶段。
+该文件同时给出本阶段的所有权边界、需要从制作形态取得哪些输入，以及本阶段规则表；本技能不读取其他技能的文件。
 
 ## 进入条件与边界
 
 - 可从现成项目直接进入，不要求先做故事开发；先定位 `short-drama.json` 和版本一致的主技能。
-- 所有权、下游文件何时变为 `stale` 或项目状态不清时，才读取主技能的
-  [所有权契约](../short-drama/references/contract-and-ownership.md)；需要定位规则 ID
-  或解释审查问题时，才读取 [规则索引](../short-drama/references/knowhow-index.md)
-  中相关 `IMG-*`、`AST-*`、`CON-*` 条目。
+- 所有权、下游文件何时变为 `stale` 或项目状态不清时，读
+  [阶段契约](references/stage-contract.md) 的所有权边界；需要定位规则 ID
+  或解释审查问题时，读同一文件的本阶段规则表。
 - 输入必须是已接受的 `CHAR/LOOK`、`LOC/VIEW` 或 `PROP/PSTATE` 精确 ID 与快照引用。未决指代、冲突变体或未知状态退回 `$short-drama-assets`，不代猜。
 - 始终读取 `short-drama.json#/creator_authority/{visual_direction,production_profile}` 中状态为
   `accepted` 的视觉方向与制作形态：它决定本阶段可执行的形状语言、线条/表面处理、材质对光的
@@ -45,7 +44,7 @@ license: MIT
 | 局部修改或自然语言改提示词 | 加读 [编辑与修订](references/edit-and-revision.md) |
 | 自检、复核、失败诊断 | [审查量表与合成案例](references/review-and-fixtures.md) |
 | 生产端三视图/场景方位/物品版式配方 | [生产资产图配方](references/production-sheet-recipes.md) |
-| 参考图只决定身份、构图或尺度等指定内容 | [参考图、揭示时机与补拍](../short-drama/references/reference-media-and-pickups.md) |
+| 参考图只决定身份、构图或尺度等指定内容 | [阶段契约](references/stage-contract.md) 的参考媒体与补拍 |
 
 写规格时使用 [结构化规格模板](assets/image-prompt-spec.jsonl.md)，交付文本使用 [Markdown 模板](assets/image-prompts.md)。只加载当前类型所需资料。
 
