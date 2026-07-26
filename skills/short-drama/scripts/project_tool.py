@@ -20,10 +20,20 @@ import shutil
 import sys
 import uuid
 from collections.abc import Callable, Iterable, Mapping
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+
+# Creators run these scripts on whatever interpreter their machine provides, so
+# an unsupported version must say so instead of failing inside an import.
+MINIMUM_PYTHON = (3, 10)
+if sys.version_info < MINIMUM_PYTHON:
+    raise SystemExit(
+        "short-drama needs Python {}.{} or newer; this interpreter is {}.{}".format(
+            *MINIMUM_PYTHON, sys.version_info.major, sys.version_info.minor
+        )
+    )
 
 PROJECT_FILE = "short-drama.json"
 # A machine-path token is the leading marker plus the rest of the path.
@@ -111,7 +121,7 @@ class PackageBlockedError(RuntimeError):
 
 
 def utc_now() -> str:
-    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def sha256_bytes(content: bytes) -> str:

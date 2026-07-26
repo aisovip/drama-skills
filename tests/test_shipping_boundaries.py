@@ -167,6 +167,39 @@ class ShippingBoundaryTests(unittest.TestCase):
                 findings.append(f"{path.relative_to(SUITE)}: runtime source lookup")
         self.assertEqual(findings, [], "runtime boundary violations:\n" + "\n".join(findings))
 
+    def test_every_shipped_script_declares_the_documented_python_floor(self) -> None:
+        """A creator-invoked script must state its own floor, and both READMEs
+        must quote the same one. Otherwise the floor drifts silently upward the
+        first time someone reaches for a newer standard-library API."""
+
+        declaration = re.compile(r"^MINIMUM_PYTHON = \((\d+), (\d+)\)$", re.MULTILINE)
+        declared: dict[str, tuple[int, int]] = {}
+        for path in sorted(SHIPPED_SKILLS.rglob("scripts/*.py")):
+            if "__pycache__" in path.parts:
+                continue
+            found = declaration.search(path.read_text(encoding="utf-8"))
+            self.assertIsNotNone(
+                found, f"{path.relative_to(SUITE)} declares no MINIMUM_PYTHON"
+            )
+            assert found is not None
+            declared[str(path.relative_to(SUITE))] = (
+                int(found.group(1)),
+                int(found.group(2)),
+            )
+        self.assertTrue(declared, "no shipped scripts were scanned")
+        self.assertEqual(
+            len(set(declared.values())),
+            1,
+            f"shipped scripts disagree on the Python floor: {declared}",
+        )
+        major, minor = next(iter(declared.values()))
+        for readme in ("README.md", "README_EN.md"):
+            self.assertIn(
+                f"Python {major}.{minor}",
+                (SUITE / readme).read_text(encoding="utf-8"),
+                f"{readme} does not document the Python {major}.{minor} floor",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

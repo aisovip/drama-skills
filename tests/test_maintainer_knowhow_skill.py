@@ -6,6 +6,7 @@ import sys
 import unittest
 from pathlib import Path
 
+from tests.external_validator import ValidatorUnavailable, run_official_validator
 from tests.private_release_gate import load_private_terms
 
 
@@ -33,22 +34,12 @@ def local_forbidden_terms() -> frozenset[str]:
 
 class MaintainerKnowhowSkillTests(unittest.TestCase):
     def test_quick_validate_when_skill_creator_is_available(self) -> None:
-        codex_home = Path(
-            os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))
-        )
-        validator = (
-            codex_home
-            / "skills/.system/skill-creator/scripts/quick_validate.py"
-        )
-        if not validator.is_file():
+        try:
+            result = run_official_validator(SKILL)
+        except FileNotFoundError:
             self.skipTest("skill-creator quick_validate.py is not installed")
-
-        result = subprocess.run(
-            [sys.executable, str(validator), str(SKILL)],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+        except ValidatorUnavailable as error:
+            self.skipTest(f"quick_validate.py cannot run here: {error}")
         self.assertEqual(
             result.returncode,
             0,

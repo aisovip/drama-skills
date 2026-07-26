@@ -17,10 +17,13 @@ SPEC.loader.exec_module(project_tool)
 
 class ProjectToolTests(unittest.TestCase):
     def test_windows_directory_sync_avoids_unsupported_directory_fsync(self) -> None:
+        # Built outside the patch: on Python 3.11 pathlib reads os.name while
+        # constructing, so an "nt" patch would demand an unusable WindowsPath.
+        target = Path("unused-on-windows")
         with patch.object(project_tool.os, "name", "nt"), patch.object(
             project_tool.os, "open"
         ) as open_mock:
-            project_tool._fsync_directory(Path("unused-on-windows"))
+            project_tool._fsync_directory(target)
         open_mock.assert_not_called()
 
     def test_windows_transaction_lock_acquires_and_releases_on_error(self) -> None:
