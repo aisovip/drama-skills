@@ -27,6 +27,9 @@
 - What part of the promised experience is delivered before the outgoing hook?
 - What exact state enters the next episode?
 - Before the outgoing hook, what local dramatic result has already landed?
+- Whose choice caused that result (`STY-13`)? If it arrived by outside force, cite the
+  protagonist's earlier action that made it arrive now, and what they did with it.
+  A protagonist who only endures until rescue is this episode's audience, not its lead.
 
 A capacity estimate (`STY-16`) is informational, never a blocking finding. If a
 planned episode's shot/duration magnitude is far from the project's own accepted

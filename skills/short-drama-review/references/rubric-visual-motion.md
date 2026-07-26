@@ -85,6 +85,11 @@ scene boundary, and each remains independently reviewable. A space or subject ju
 belongs on a member boundary; the same jump inside a member's timed segment is a
 hidden cut. Report an arithmetic mismatch and a hidden cut as two findings, not one.
 
+- Is the axis recorded as two named anchors plus a stated working side and per-character
+  screen position, rather than a placeholder? In a shot-reverse-shot pair, are the two
+  screen directions complementary? Bare left/right always means screen left/right; a
+  subject's own side must name the subject.
+
 ## Cross-shot continuity
 
 Trace Look, injury, dirt/wetness, emotion/knowledge, position/facing/gaze, hands,

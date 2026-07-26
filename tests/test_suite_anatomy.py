@@ -401,7 +401,7 @@ class SuiteAnatomyTests(unittest.TestCase):
             .read_text(encoding="utf-8")
         )
         authority = project["creator_authority"]
-        self.assertEqual(authority["decisions_artifact"], "creator-decisions.jsonl")
+        self.assertEqual(authority["decisions_artifact"], "creator-decisions/")
         self.assertEqual(authority["visual_direction"]["status"], "unset")
         self.assertEqual(authority["production_profile"]["status"], "unset")
         self.assertTrue(

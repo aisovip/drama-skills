@@ -9,7 +9,7 @@
     "target_seconds_per_episode": null
   },
   "creator_authority": {
-    "decisions_artifact": "creator-decisions.jsonl",
+    "decisions_artifact": "creator-decisions/",
     "constraints": [],
     "visual_direction": {
       "status": "unset",

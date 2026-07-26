@@ -20,6 +20,11 @@ accepted shot. A keyframe is not a compressed video prompt.
 4. **Geography:** Location/View, fixed anchors, foreground/background zones.
 5. **Boundary projection:** exact start position, pose, gaze, hands, held props.
 6. **Performance instant:** one visible expression/tension state, not an arc.
+   Pick a channel the current shot size can actually read — gaze, breath, body
+   set, object handling, or a held decision. A wide shot cannot carry an eyelid;
+   a close-up cannot carry a full-body retreat. Naming only the emotion ("愤怒")
+   leaves the translation to a downstream stage, and the keyframe is the first
+   frame — a mistranslation there is wrong from frame one.
 7. **Light and atmosphere:** inherit accepted direction/time/weather; add only
    frame-relevant detail.
 8. **Text policy:** readable/symbolic/blank/postproduction for visible surfaces.

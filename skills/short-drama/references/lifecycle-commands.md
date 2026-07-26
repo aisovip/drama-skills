@@ -21,8 +21,19 @@ Markdown、JSON 或 JSONL。命令把来源文件和 `--input` 依赖的准确�
 或独立审查结论。
 
 `accept` 使用创作者决定记录，把所有准确的 `candidate` 目标 `hash` 推进为
-`accepted`；记录的负责人固定为 `creator`。JSONL 记录必须用
-`--evidence-record-id` 唯一定位同名 `decision_id`；JSON 证据必须是对象；所定位记录的
+`accepted`；记录的负责人固定为 `creator`。
+
+**决定与审查证据按产物分文件存放**：默认约定是 `creator-decisions/<artifact-id>.json`
+与 `reviews/<EP>-findings.jsonl`，**一个产物一份**。原因是证据引用绑定的是**整文件
+hash**：把全项目的决定追加进同一个 `creator-decisions.jsonl` 时，接受第二集会改变该
+文件的 hash，于是第一集那条已经冻结的证据引用永久指向一个不再存在的字节状态。
+
+这不会让命令报错——`package` 与 `review` 不重新校验存量引用，所以链条**看起来**是完好的。
+失效是静默的：除最近一次接受外，此前每一次接受的证据都无法再被复核，而 hash 绑定的
+全部意义就是可复核。工具本身不限制路径，共享单文件在只有一个产物时也能跑通；但它不是
+可扩展的布局，不要用它开新项目。
+
+JSONL 记录必须用 `--evidence-record-id` 唯一定位同名 `decision_id`；JSON 证据必须是对象；所定位记录的
 `status` 或 `decision` 必须与命令的 `accepted/rejected` 一致。用于产物生命周期的记录
 还必须声明 `decision_kind:"artifact_acceptance"`、当前 `artifact_id` 和与全部 `--target`
 完全相同的 `target_hashes`；其他已接受决定不能代替本次接受。

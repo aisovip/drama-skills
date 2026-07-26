@@ -40,6 +40,7 @@ license: MIT
 | 写人物/地点/道具/局部修改的图片提示词 | `$short-drama-image-prompts` |
 | 做原文覆盖、镜头或冻结关键帧 | `$short-drama-storyboard` |
 | 写动作/表演/运镜/声音视频提示词 | `$short-drama-video-prompts` |
+| 定画风、制作形态或视觉方向 | `$short-drama` 本身：按 [production-form-profiles.md](references/production-form-profiles.md) 定位一张形态卡，产出候选并请创作者接受，再提升到 `creator_authority`。资产、图片提示词、分镜与视频提示词都要求形态已定，且都不自行选择，所以这一步必须在这里完成 |
 | 校验、审查或发修订请求 | `$short-drama-review` |
 | 只检查或诊断模板感、AI 味 | fresh `$short-drama-review`，只发带证据 finding |
 | 直接去 AI 味、润色或定点改稿 | `$short-drama-write`，保留作者声音并展示语义差异 |
@@ -65,6 +66,8 @@ reviewer 对新 hash 做 re-review；任何无法取得独立上下文的环节�
 2. 复制项目模板，不覆盖已有创作者文件。
 3. 建立空阶段目录和非公开输入边界。
 4. 在 `short-drama.json#/creator_authority` 建立空的创作者限制、视觉方向和制作配置；
+   它们初始为 `unset`，而资产及其下游都要求形态已定——所以初始化后要告知创作者：
+   **定制作形态是下一个最有用的动作**，入口在本技能（见意图路由表），不在任何子技能；
    实际选择写入 [creator-decision.example.jsonl](assets/creator-decision.example.jsonl)
    所示的决定记录。
 5. 记录套件版本、契约版本与五项彼此独立的空状态。
