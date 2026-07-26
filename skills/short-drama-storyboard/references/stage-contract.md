@@ -98,6 +98,7 @@
 | SHT-13 | reviewed_invariant | Multi-character blocking projects sourced, directed relationships into compatible positions, gaze, distance, and action lines for the current boundary. |
 | SHT-14 | reviewed_invariant | A contested moving object preserves ownership, trajectory, direction, time/round state, and end location across cuts unless an authorized ellipsis says otherwise. |
 | SHT-15 | reviewed_invariant | When the creator has declared delivery-surface overlay regions with their permanence and source, what a shot must be read for—face and gaze, readable evidence text, the decisive hand action—does not sit only inside those regions, and shots bind the declared version. An undeclared surface leaves the rule inactive: record it as unresolved and do not restage against a guessed region. |
+| SHT-16 | structural_invariant | Coverage carries an episode duration total that is the arithmetic sum of its shots' accepted `duration_seconds`; every shot the coverage lists either contributes a number or is named in `unresolved_durations`, so no shot leaves the total silently. When the project declares a target per episode, the record binds that field and states the signed delta; the delta is reported to the creator and never blocks on its own. |
 
 ### `CON`
 

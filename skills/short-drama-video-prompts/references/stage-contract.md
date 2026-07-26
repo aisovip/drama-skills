@@ -96,6 +96,7 @@
 | VID-12 | reviewed_invariant | A pickup/alternate names stable master/supplement motion IDs and maps each source requirement to a field or disposition; motion may request replacement, but only a downstream independent verdict can bind fixed hashes and approve it. |
 | VID-13 | structural_invariant | A delivery container carries one or more accepted shots that are contiguous in source order, share one accepted geography/asset binding chain, and do not cross a scene boundary—a Location/View change ends the container. Its duration equals the sum of their accepted durations, and packing changes neither shot boundaries nor per-shot reviewability. |
 | VID-14 | craft_default | Music intent may be annotated per shot as a relative entry/exit/duck against neighbours, but its realization belongs to the timeline layer; no deliverable—single-shot or multi-shot container—carries a baked-in music bed unless the project accepted otherwise or the source is diegetic. Dialogue, off-screen sources, ambience, and event effects stay with the deliverable. |
+| VID-15 | structural_invariant | Within one episode a shot belongs to at most one container, so container durations sum without double-billing. Containers need not cover every shot, but the containers plus the shots left loose must account for the episode's shot set exactly once; an unaccounted or twice-counted shot is a defect, not a packing preference. |
 
 ### `CON`
 
