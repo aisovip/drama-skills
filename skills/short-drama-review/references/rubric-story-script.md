@@ -124,6 +124,30 @@ when nothing changes.
 Silence, interruption, slang, narration, and sentence length are creator options,
 not universal scoring ratios.
 
+## Replaceable realization (`SCR-10`)
+
+Only for beats the creator marked. **An unmarked beat leaves this section
+inactive**: do not raise a finding for the absence of a mark, do not guess which
+beats need one, and never rate a depiction against a standard this suite does not
+carry — it carries none, and predicts no outcome.
+
+On a marked beat:
+
+- Is the dramatic function written as *who is proven or changed*, rather than an
+  emotion word? A function stated as "高潮" cannot be used to judge equivalence.
+- Does the fallback deliver that same function — same person affected, cost still
+  paid, `payoff_refs` and the next episode's entry state still satisfied?
+- Does the fallback need a setup the script has not established? Then it is a
+  rewrite, not a fallback.
+- Is "delete the scene" being offered as the fallback? Deletion removes the
+  function itself; the only acceptable variant is an explicit handover naming
+  which existing beat now carries it and what that beat must absorb.
+- Is the fallback concrete enough to become scene action, or is it "酌情处理"?
+
+Report pre-emptive sanding as a finding in its own right when the current
+depiction was already weakened to avoid a risk nobody stated: the loss is certain,
+the benefit is not, and the mark exists precisely so the strong version can stay.
+
 ## Common findings
 
 - genre label substituted for a dramatic promise;
