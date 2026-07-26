@@ -51,6 +51,7 @@ class NewRuleRegistrationTests(unittest.TestCase):
             "VID-13": "structural_invariant",
             "VID-14": "craft_default",
             "SHT-16": "structural_invariant",
+            "SHT-17": "structural_invariant",
             "VID-15": "structural_invariant",
         }
         for rule_id, classification in expected.items():
@@ -323,6 +324,53 @@ class EpisodeDurationArithmeticTests(unittest.TestCase):
         )
         self.assertIn("VID-15", profile)
         self.assertIn("不重不漏", profile)
+
+
+class EndKeyframeContractTests(unittest.TestCase):
+    KEYFRAME = SKILLS / "short-drama-storyboard/assets/keyframe-template.jsonl"
+    SHOT = SKILLS / "short-drama-storyboard/assets/shot-template.jsonl"
+    CRAFT = SKILLS / "short-drama-storyboard/references/keyframe-craft.md"
+
+    def keyframe(self) -> dict:
+        return json.loads(read(self.KEYFRAME).splitlines()[0])
+
+    def test_a_keyframe_states_which_boundary_it_freezes(self) -> None:
+        record = self.keyframe()
+        self.assertIn("boundary_role", record)
+        self.assertEqual(set(record["boundary_role"].split(" | ")), {"start", "end"})
+
+    def test_both_boundary_fields_exist_on_the_shot_it_points_at(self) -> None:
+        """An end frame is useless if the field it projects does not exist."""
+
+        shot = json.loads(read(self.SHOT).splitlines()[0])
+        pointers = self.keyframe()["boundary_ref"]["field"].split(" | ")
+        self.assertEqual(len(pointers), 2)
+        for pointer in pointers:
+            with self.subTest(pointer=pointer):
+                self.assertIn(pointer.lstrip("/"), shot)
+
+    def test_the_end_frame_is_a_projection_not_a_second_authority(self) -> None:
+        # Prose wraps, so compare against the unwrapped text rather than making
+        # the sentence fit one source line.
+        craft = read(self.CRAFT).replace("\n", "")
+        self.assertIn("不是新的终点事实", craft)
+        self.assertIn("尾帧与镜头终点不一致时，错的是尾帧", craft)
+
+    def test_the_interpolation_cost_is_stated_on_both_sides(self) -> None:
+        """Handing over two ends silently delegates the motion between them, so
+        the stage that owns motion must be told, not only the one that draws."""
+
+        self.assertIn("插值", read(self.CRAFT))
+        motion = read(
+            SKILLS / "short-drama-video-prompts/references/camera-audio-continuity.md"
+        )
+        self.assertIn("不对照尾帧", motion)
+
+    def test_keyframe_count_is_not_turned_into_a_quota(self) -> None:
+        rubric = read(
+            SKILLS / "short-drama-review/references/production-quality-gates.md"
+        )
+        self.assertIn("关键帧数量不是检查项", rubric)
 
 
 class SelfContainedReferenceTests(unittest.TestCase):
