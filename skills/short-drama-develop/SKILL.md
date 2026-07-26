@@ -49,6 +49,10 @@ license: MIT
 [genre-cards.md](references/genre-cards.md) 按索引取**一张**题材卡，用来校准该题材更常用的
 压力来源、场面颗粒与制作负担；它是可被创作者一句话覆盖的参考，不替代方向选择，也不进入交付物。
 
+若设定里主角带着一段已经发生过的经历，或获得了一套外部授权的能力，那是叠加在题材之上的
+**前提装置**，另读 [premise-devices.md](references/premise-devices.md)——装置取消阻力，
+必须先给它边界与代价。装置不替代题材卡，也不为它单独建题材。
+
 ### 3. 建立故事引擎
 
 复制 [story-engine.md](assets/story-engine.md)，写清：
@@ -128,6 +132,8 @@ license: MIT
   [genre-and-hook-playbook.md](references/genre-and-hook-playbook.md)
 - **已确定题材，需要该题材更常用的压力、场面颗粒、钩子取向与制作难点**：
   [genre-cards.md](references/genre-cards.md)（索引与召回规范；一次只读一张卡）
+- **主角带着已知结果开局，或获得外部授权的能力**：
+  [premise-devices.md](references/premise-devices.md)（装置层，叠加在题材卡之上）
 - **起草项目级视觉方向与生产规则（导演阐述）**：
   [director-brief-craft.md](references/director-brief-craft.md)
 - **跨技能事实所有权或修订影响不清楚时**：[contract-and-ownership.md](../short-drama/references/contract-and-ownership.md)

@@ -98,7 +98,9 @@ license: MIT
 - `craft_default`：环境和摄影只支持注意、压力、揭示、结盟或转场，不用来装饰每一镜。
 - `taste_option`：固定或移动机位、焦段语汇、口型精度和音乐密度由项目配置决定。
 
-一个已经设计好的镜头只保持一个剪辑边界。不要在一条提示词里偷藏多次切镜；批量打包也不改变源镜头可以单独审查的要求。
+一个已经设计好的镜头只保持一个剪辑边界。不要在镜头内部偷藏未声明的切镜；打包也不改变源镜头可以单独审查的要求。
+
+若创作者声明了多镜交付容器，一个容器可以按来源顺序承载若干连续镜头：此时切换只允许出现在成员镜头边界上，容器时长必须等于成员镜头已接受时长之和，镜头目的与逐镜可审查性不变。容器分层、成员资格与两级算术见 [delivery-profile.md](references/delivery-profile.md)。
 
 若当前版本是局部补拍或替代实现，在 `coverage_scope` 标明 `master | pickup |
 alternate`，用同一文件内稳定的运动记录 ID 说明母版和补充关系；每项原文要求都要对应到
@@ -110,7 +112,10 @@ alternate`，用同一文件内稳定的运动记录 ID 说明母版和补充关
 先向创作者展示起止边界摘要、动作/表演顺序、摄影/声音选择、时长警告和可复制提示词。接受后写：
 
 - `episodes/<EP>/storyboard/motion-specs.jsonl`：运动规格字段和只读来源引用；
-- `episodes/<EP>/storyboard/video-prompts.md`：由已接受规格和配方 `hash` 生成的文本版本。
+- `episodes/<EP>/storyboard/delivery-containers.jsonl`：**仅当项目声明了多镜交付容器时**，
+  记录容器成员顺序、各成员已接受时长的只读引用与容器时长，模板见
+  [delivery-container.jsonl.md](assets/delivery-container.jsonl.md)；
+- `episodes/<EP>/storyboard/video-prompts.md`：由已接受规格、容器记录和配方 `hash` 生成的文本版本。
 
 自然语言改提示词时，先展示规格字段怎样变化和重新生成的文本预览；若改动触碰分镜或
 剧本负责的内容，保持当前文件不变，并把修改请求交给对应技能。跨文件发布遵循主技能的

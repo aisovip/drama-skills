@@ -32,6 +32,13 @@ View: camera-facing orientation/zone, time/weather/light state, visible anchors.
 Fail when each camera angle becomes a new unrelated location or geography changes
 silently between scene and plate.
 
+Views of one Location sharing a time/weather state must also share key-light source,
+warm/cool priority, contrast direction, and practical on/off state (`IMG-10`). Compare
+the group side by side—each plate reading well alone is not evidence. Fail when an
+unrecorded difference would read as two times or two rooms once the plates are
+intercut; orientation-driven back/front lighting and occlusion shadows are expected
+and need only a stated source.
+
 ### Prop / State
 
 Identity: scale, shape, material, function, moving parts, marks, text policy.

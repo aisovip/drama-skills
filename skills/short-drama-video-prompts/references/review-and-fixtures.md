@@ -27,8 +27,9 @@ Finding 必须含 artifact/hash、引用片段、影响、required fix、owner�
 | Dialogue/audio | exact refs、`speaker_ref`、可选 `voice_direction_ref`、VO/OS/SFX 与本场 delivery 是否分别保持？ | source audio fields + character voice direction + prompt |
 | End fidelity | reported end 是否逐项等于 continuity out？ | end report + source end |
 | Economy | frame 已承载外观是否被无谓倾倒？ | reference contents + copy block |
-| Shot boundary | 是否偷改 duration/end/next shot 或藏多次 cut？ | source shot + motion |
-| Segment integrity | 每个计时段是否只有一个连续视角？各段相加是否正好等于 duration？ | segment 列表 + accepted duration |
+| Shot boundary | 是否偷改 duration/end/next shot，或在单个镜头内部藏未声明的 cut？ | source shot + motion |
+| Segment integrity | 每个计时段是否只有一个连续视角？各段相加是否正好等于**所属镜头**的已接受时长？ | segment 列表 + accepted shot duration |
+| Container arithmetic | 容器承载了哪些已接受镜头？容器时长是否等于成员时长之和？成员是否顺序连续、同一绑定链、不跨场次、各自可单独审查？ | container 成员列表 + 各镜 accepted duration |
 | Deliverable text | 交付文本里是否只剩要拍的画面内容，没有文件名、版本号、锁定标记、草图指代或任务备注？ | prompt 正文 |
 
 语义 finding 的修复应指出删/改哪一段 motion，或该向哪个 owner 发 revision request，而不是笼统说“动作自然一点”。
@@ -107,11 +108,16 @@ Reviewer 应引用房间距离、物件操作、对白和 landing 说明不可�
 再回到她的侧脸，眉心收紧。
 ```
 
-技能正文已经规定一条提示词只保持一个剪辑边界，但违规通常不出现在 `camera` 字段冲突里，
+技能正文已经规定单个镜头内部只保持一个剪辑边界，但违规通常不出现在 `camera` 字段冲突里，
 它藏在**一个计时段内部**的连续叙述中，读起来只是“镜头很有节奏”。量表要能抓到它，
 而不只是禁止它：逐段列出空间锚点、被摄主体和机位关系，段内出现没有过渡的空间或主体
 跳变，就是一次未申报的剪辑。修复是向 storyboard 请求拆成两个 authored shots，或删掉插入的
 外景段落；不能靠补一个转场词把它说圆。
+
+注意与多镜容器区分：容器内**成员镜头之间**的空间与主体跳变是已申报的剪辑，不是缺陷。
+判据是跳变落在哪里——落在成员镜头边界上，且该边界能追溯到一个已接受镜头，就成立；落在
+某个成员镜头的计时段内部，就是段内藏切。容器时长与成员时长之和不符时另记一条容器算术
+缺陷，不要把两者混成同一条 finding。
 
 ### 反例 F：不可执行的微计量
 

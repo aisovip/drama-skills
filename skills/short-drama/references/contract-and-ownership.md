@@ -51,6 +51,7 @@ no motion-to-shot or rendered-Markdown-to-spec authority edge.
 | coverage, shot purpose, duration, binding, start/end boundary | storyboard | keyframe/motion reference boundary |
 | keyframe focal point, composition, camera/lens, frozen staging | storyboard | rendered keyframe prompt is cached |
 | motion order, performance path, camera/audio realization | video-prompts | end report compares with shot out-state |
+| delivery container membership, order, and container duration | video-prompts `delivery-containers.jsonl` | member accepted durations are read-only storyboard projections carrying refs; container duration equals their sum; rendered container text is cached |
 | finding, verdict, revision request | review | evidence points to reviewed artifact/hash |
 | lifecycle, transactions, snapshots | shared core | metadata and hashes only |
 

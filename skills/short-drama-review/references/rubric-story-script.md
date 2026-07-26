@@ -1,5 +1,15 @@
 # Story And Script Rubric
 
+## 目录
+
+- [Promise](#story-promise-and-engine)
+- [Episode](#episode-shape)
+- [Entry and serial memory](#entry-character-and-serial-memory)
+- [Scene](#scene-test)
+- [Action](#action-and-production-meaning)
+- [Dialogue](#dialogue)
+- [Findings](#common-findings)
+
 ## Story promise and engine
 
 - Can the creator state protagonist, pursuit, costly opposition, and recurring
@@ -17,6 +27,41 @@
 - What part of the promised experience is delivered before the outgoing hook?
 - What exact state enters the next episode?
 - Before the outgoing hook, what local dramatic result has already landed?
+
+A capacity estimate (`STY-16`) is informational, never a blocking finding. If a
+planned episode's shot/duration magnitude is far from the project's own accepted
+ratios, note it as an advisory observation with the sampled basis, and leave the
+resolution to the creator. Never derive a word, line, or shot quota from it, and
+never compare against another project's numbers.
+
+When the premise grants foreknowledge or externally authorized ability (`STY-17`), keep
+two layers apart and cite each from its own place:
+
+- **Contract layer** (creator-accepted, in the story engine): is the device contract
+  accepted before the device first takes effect, recording scope, failure conditions,
+  cost, and whether the device's own declarations are reliable?
+- **Disclosure layer** (per episode, in the information-permission field): what do the
+  characters and the audience know right now?
+
+Never report partial disclosure as a defect. An audience that does not yet know every
+boundary is the normal case, and late-discovered limits are often the intended suspense.
+What is reportable:
+
+- A later device ability or exemption that traces to no contract clause—cite the episode
+  and the missing clause. This is retroactive widening whether or not it was announced
+  in-fiction.
+- A disclosed rule violated later, unless the contract marks the device as unreliable
+  and the setup is traceable.
+- Strip the device out—does the episode still contain a choice? If not, cite what
+  resistance was removed and never replaced.
+- What did the opposition learn once the device was in play?
+- For foreknowledge: does the information degrade as the timeline diverges, or does the
+  author keep inventing reasons to weaken the protagonist? Is the audience's permission
+  level held constant across episodes?
+- For authorized ability: is the cost visible and landed on something the protagonist
+  cares about? Does the device offer options, or decide for them?
+- If the device uses an on-screen readable carrier, is the `exact-readable` obligation
+  stated instead of coexisting with a global no-text policy?
 
 ## Entry, character, and serial memory
 
@@ -68,6 +113,10 @@ when nothing changes.
 - Are voices distinct by worldview, status, relationship, vocabulary, and rhythm?
 - Does exposition enter through conflict/evidence/consequence rather than a
   neutral information dump?
+- When a long speech is split, does the inserted action change the speaker's tactic
+  and give downstream a sourced cut point, rather than pad with a glance or a pause
+  (`SCR-09`)? When a long speech carries no internal turn, was it shortened instead
+  of split?
 
 Silence, interruption, slang, narration, and sentence length are creator options,
 not universal scoring ratios.

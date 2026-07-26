@@ -1,0 +1,266 @@
+import json
+import re
+import unittest
+from pathlib import Path
+
+SUITE = Path(__file__).resolve().parents[1]
+SKILLS = SUITE / "skills"
+INDEX = SKILLS / "short-drama/references/knowhow-index.md"
+
+CONTAINER_TEMPLATE = (
+    SKILLS / "short-drama-video-prompts/assets/delivery-container.jsonl.md"
+)
+MOTION_TEMPLATE = SKILLS / "short-drama-video-prompts/assets/motion-spec.jsonl.md"
+PREMISE = SKILLS / "short-drama-develop/references/premise-devices.md"
+BLOCKING = SKILLS / "short-drama-storyboard/references/blocking-playbooks.md"
+
+
+def read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def fenced_json(path: Path) -> dict:
+    match = re.search(r"```json\n(\{.*?\})\n```", read(path), re.DOTALL)
+    if match is None:
+        raise AssertionError(f"missing fenced JSON template: {path}")
+    return json.loads(match.group(1))
+
+
+def index_rules() -> dict[str, str]:
+    pattern = re.compile(
+        r"^\| ((?:STY|SCR|AST|IMG|SHT|VID|CON|REV)-\d{2}) \| ([a-z_]+) \|",
+        re.MULTILINE,
+    )
+    return dict(pattern.findall(read(INDEX)))
+
+
+class NewRuleRegistrationTests(unittest.TestCase):
+    def test_new_rules_are_registered_with_their_intended_class(self) -> None:
+        rules = index_rules()
+        expected = {
+            "STY-16": "craft_default",
+            "STY-17": "reviewed_invariant",
+            "SCR-09": "craft_default",
+            "IMG-10": "reviewed_invariant",
+            "SHT-15": "reviewed_invariant",
+            "VID-13": "structural_invariant",
+            "VID-14": "craft_default",
+        }
+        for rule_id, classification in expected.items():
+            with self.subTest(rule=rule_id):
+                self.assertEqual(rules.get(rule_id), classification)
+
+    def test_segment_sum_rule_names_the_shot_not_the_container(self) -> None:
+        """VID-04 and VID-13 apply to different objects; the text must say which."""
+
+        self.assertIn("sums exactly to its shot's accepted duration", read(INDEX))
+
+
+class DeliveryContainerRecordTests(unittest.TestCase):
+    """VID-13 is structural, so a canonical record must carry resolvable evidence."""
+
+    def shot_template(self) -> dict:
+        return json.loads(
+            (SKILLS / "short-drama-storyboard/assets/shot-template.jsonl")
+            .read_text(encoding="utf-8")
+            .strip()
+        )
+
+    def test_container_template_carries_members_durations_and_profile_ref(self) -> None:
+        document = fenced_json(CONTAINER_TEMPLATE)
+        self.assertEqual(document["status"], "candidate")
+        for key in ("container_id", "members", "container_duration", "membership_basis"):
+            with self.subTest(key=key):
+                self.assertIn(key, document)
+        member = document["members"][0]
+        for key in (
+            "order",
+            "shot_ref",
+            "motion_ref",
+            "accepted_duration_ref",
+            "location_binding_ref",
+            "asset_bindings_ref",
+        ):
+            with self.subTest(member_key=key):
+                self.assertIn(key, member)
+        self.assertEqual(member["shot_ref"]["owner"], "short-drama-storyboard")
+        self.assertEqual(member["motion_ref"]["owner"], "short-drama-video-prompts")
+
+    def test_every_shot_field_pointer_resolves_on_the_shot_template(self) -> None:
+        """A field pointer that names a non-existent key cannot be verified later."""
+
+        shot = self.shot_template()
+        member = fenced_json(CONTAINER_TEMPLATE)["members"][0]
+        for key in ("accepted_duration_ref", "location_binding_ref", "asset_bindings_ref"):
+            ref = member[key]
+            with self.subTest(ref=key):
+                self.assertEqual(ref["artifact"], "episodes/<EP>/storyboard/shots.jsonl")
+                pointer = ref["field"]
+                self.assertTrue(pointer.startswith("/"))
+                self.assertIn(pointer.lstrip("/"), shot)
+
+    def test_binding_chain_is_proved_per_member_not_from_one_record(self) -> None:
+        basis = fenced_json(CONTAINER_TEMPLATE)["membership_basis"]
+        self.assertIn("binding_chain_equal", basis)
+        self.assertNotIn("binding_chain_ref", basis)
+        self.assertIn("只引用其中一条成员记录不构成证明", read(CONTAINER_TEMPLATE))
+
+    def test_container_and_motion_do_not_form_a_hash_cycle(self) -> None:
+        """Two files that carry each other's hash can never both settle."""
+
+        container = fenced_json(CONTAINER_TEMPLATE)
+        motion = fenced_json(MOTION_TEMPLATE)
+
+        def hashed_artifacts(value: object, found: set[str]) -> set[str]:
+            if isinstance(value, dict):
+                artifact, digest = value.get("artifact"), value.get("hash")
+                if isinstance(artifact, str) and isinstance(digest, str):
+                    found.add(artifact)
+                for child in value.values():
+                    hashed_artifacts(child, found)
+            elif isinstance(value, list):
+                for child in value:
+                    hashed_artifacts(child, found)
+            return found
+
+        container_file = "episodes/<EP>/storyboard/delivery-containers.jsonl"
+        motion_file = "episodes/<EP>/storyboard/motion-specs.jsonl"
+        self.assertIn(motion_file, hashed_artifacts(container, set()))
+        self.assertNotIn(container_file, hashed_artifacts(motion, set()))
+        self.assertNotIn("container_ref", motion)
+        self.assertIn("不带指回交付容器的引用", read(MOTION_TEMPLATE))
+
+    def test_container_owner_is_registered_and_published(self) -> None:
+        ownership = read(SKILLS / "short-drama/references/contract-and-ownership.md")
+        self.assertIn("delivery-containers.jsonl", ownership)
+        skill = read(SKILLS / "short-drama-video-prompts/SKILL.md")
+        self.assertIn("delivery-containers.jsonl", skill)
+
+
+class PremiseDeviceLayerTests(unittest.TestCase):
+    """STY-17 must not collapse creator contract into in-fiction disclosure."""
+
+    def test_contract_and_disclosure_are_named_as_separate_layers(self) -> None:
+        text = read(PREMISE)
+        self.assertIn("装置契约（创作者层）", text)
+        self.assertIn("披露状态（剧中层）", text)
+
+    def test_partial_disclosure_is_explicitly_not_a_defect(self) -> None:
+        self.assertIn("本身从不构成缺陷", read(PREMISE))
+        rubric = read(SKILLS / "short-drama-review/references/rubric-story-script.md")
+        self.assertIn("Never report partial disclosure as a defect", rubric)
+
+    def test_unreliable_declarations_remain_a_legitimate_design(self) -> None:
+        self.assertIn("不可靠", read(PREMISE))
+
+    def test_blocking_condition_is_untraceable_widening(self) -> None:
+        self.assertIn("追溯不到即为", read(PREMISE))
+
+    def test_story_engine_carries_an_addressable_device_contract(self) -> None:
+        engine = read(SKILLS / "short-drama-develop/assets/story-engine.md")
+        self.assertIn("前提装置契约", engine)
+        for field in ("条款 ID", "能力范围", "失效条件", "使用代价", "可靠性"):
+            with self.subTest(field=field):
+                self.assertIn(field, engine)
+        self.assertRegex(engine, r"DEV-0\d")
+        self.assertIn("事后再回填条款", engine)
+
+    def test_episode_map_records_which_clauses_are_disclosed(self) -> None:
+        episode = json.loads(
+            (SKILLS / "short-drama-develop/assets/episode-map.jsonl")
+            .read_text(encoding="utf-8")
+            .strip()
+        )
+        disclosure = episode["premise_device_disclosure"]
+        for key in (
+            "clause_ids_disclosed_so_far",
+            "clause_ids_newly_disclosed",
+            "who_knows",
+            "misstated",
+        ):
+            with self.subTest(key=key):
+                self.assertIn(key, disclosure)
+
+
+class DeliverySurfaceTests(unittest.TestCase):
+    """SHT-15 must stay inactive rather than fall back to a guessed safe frame."""
+
+    def test_undeclared_surface_leaves_the_rule_inactive(self) -> None:
+        text = read(BLOCKING)
+        self.assertIn("没有声明就没有这条约束", text)
+        self.assertIn("不因为猜测的区域改变构图", text)
+
+    def test_no_default_occupied_region_is_assumed(self) -> None:
+        text = read(BLOCKING)
+        self.assertNotIn("上下两端与一侧边缘可能被占用", text)
+
+    def test_declaration_is_owned_by_the_creator_production_authority(self) -> None:
+        project = json.loads(
+            (SKILLS / "short-drama/assets/project-template/short-drama.json")
+            .read_text(encoding="utf-8")
+        )
+        surface = project["creator_authority"]["delivery_surface"]
+        self.assertEqual(surface["status"], "unset")
+        for key in ("aspect", "overlay_regions", "source_ref"):
+            with self.subTest(key=key):
+                self.assertIn(key, surface)
+
+    def test_shot_and_keyframe_bind_the_declared_surface_version(self) -> None:
+        for name in ("shot-template.jsonl", "keyframe-template.jsonl"):
+            document = json.loads(
+                (SKILLS / f"short-drama-storyboard/assets/{name}")
+                .read_text(encoding="utf-8")
+                .strip()
+            )
+            with self.subTest(template=name):
+                ref = document["delivery_surface_ref"]
+                self.assertEqual(ref["owner"], "short-drama")
+                self.assertEqual(ref["artifact"], "short-drama.json")
+                self.assertEqual(ref["field"], "/creator_authority/delivery_surface")
+                self.assertIn("hash", ref)
+
+
+class TextOnlyReviewBoundaryTests(unittest.TestCase):
+    """VID-14 review wording cannot require inspecting rendered media."""
+
+    def test_music_gate_stops_at_prompt_text_or_authorized_observation(self) -> None:
+        gates = read(
+            SKILLS / "short-drama-review/references/production-quality-gates.md"
+        )
+        self.assertIn("不能由本环节判断", gates)
+        self.assertIn("unverified", gates)
+        rubric = read(SKILLS / "short-drama-review/references/rubric-visual-motion.md")
+        self.assertIn("not decidable here", rubric)
+
+
+class DialogueSplitExampleTests(unittest.TestCase):
+    """SCR-09's repaired example must not smuggle the action back into a parenthetical."""
+
+    def test_repaired_example_keeps_visible_action_on_its_own_line(self) -> None:
+        text = read(SKILLS / "short-drama-write/references/dialogue-craft.md")
+        blocks = re.findall(r"```text\n(.*?)\n```", text, re.DOTALL)
+        repaired = [b for b in blocks if b.count("▲") == 1 and "【角色甲】" in b]
+        self.assertTrue(repaired, "no repaired dialogue-split example found")
+        for block in repaired:
+            for line in block.splitlines():
+                if line.startswith("▲"):
+                    continue
+                parenthetical = re.search(r"\(([^)]*)\)", line)
+                if parenthetical is None:
+                    continue
+                for verb in ("摆手", "抬手", "转头", "翻", "递", "推开", "指"):
+                    with self.subTest(verb=verb):
+                        self.assertNotIn(verb, parenthetical.group(1))
+
+
+class SelfContainedReferenceTests(unittest.TestCase):
+    """References added by this work must not reach into a sibling skill's tree."""
+
+    def test_new_references_carry_no_cross_skill_links(self) -> None:
+        for path in (PREMISE, CONTAINER_TEMPLATE):
+            with self.subTest(path=path.name):
+                self.assertNotIn("../../", read(path))
+
+
+if __name__ == "__main__":
+    unittest.main()
