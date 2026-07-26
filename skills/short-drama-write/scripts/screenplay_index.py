@@ -20,6 +20,16 @@ from pathlib import Path
 from typing import Any
 
 
+# Creators run these scripts on whatever interpreter their machine provides, so
+# an unsupported version must say so instead of failing inside an import.
+MINIMUM_PYTHON = (3, 10)
+if sys.version_info < MINIMUM_PYTHON:
+    raise SystemExit(
+        "short-drama needs Python {}.{} or newer; this interpreter is {}.{}".format(
+            *MINIMUM_PYTHON, sys.version_info.major, sys.version_info.minor
+        )
+    )
+
 SCHEMA_VERSION = "1.0.0"
 SUPPORTED_TAGS = ("VO", "OS", "SFX", "画面文字", "连续性", "转场")
 KIND_CODES = {

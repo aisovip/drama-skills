@@ -57,6 +57,20 @@ ruff check --no-cache .
 python3 tools/verify_suite.py skills/short-drama
 ```
 
+### Python 版本下限
+
+创作者会用自己机器上的解释器跑这些脚本，所以 `skills/*/scripts/*.py` 不得使用高于
+声明下限的标准库 API。下限写在每个脚本的 `MINIMUM_PYTHON` 与两份 README 中，测试
+会核对三处一致。本机解释器通常比下限新，用不上的 API 不会自己报错，改动前请在下限
+版本上实跑一次：
+
+```bash
+uv venv --python 3.10 /tmp/floor && \
+  PYTHONDONTWRITEBYTECODE=1 /tmp/floor/bin/python -B -m unittest discover -s tests
+```
+
+（`datetime.UTC` 需要 3.11、`zip(strict=)` 需要 3.10，都属于本机能跑、下限跑不了的典型。）
+
 改动 `skills/` 下任何文件后，需重建套件清单（会同步重写 7 个 `suite-ref.json`）：
 
 ```bash

@@ -71,6 +71,11 @@ diff，让创作者明确选择 authority 迁移，将 standalone 契约标记 s
 
 写对白前读取 [dialogue-craft.md](references/dialogue-craft.md)，尤其检查人物策略、潜台词、信息争夺和声音差异。
 
+创作者指出某个兑现的呈现方式**可能需要更换**时，读取
+[substitutable-realization.md](references/substitutable-realization.md)，把功能、当前实现
+与备选实现分开写下来。**不要因此提前磨平任何内容**：先按最想要的拍法写，备选只在真的
+需要时启用。创作者没有标注时不做这一步，也不替创作者预判。
+
 长单集需要跨多轮续写、上下文即将切换或中断恢复时，读取
 [scene-handoff-capsule.md](references/scene-handoff-capsule.md)，只保存从当前剧本派生的
 最小场景交接；一次完成或局部修订时不要额外建立第二份摘要。
@@ -108,6 +113,18 @@ source issue 的 refs 都保持 candidate；accepted 剧本发布后再以默认
 重建，不得只手改状态字段。
 
 修订时同时传 `--previous-index` 和 `--previous-source`。完全相同且唯一的邻近块复用 stable ID；拆分、合并或重复块歧义会写入 `mapping_review_request`，必须显式重映射。索引器绝不改写 `screenplay.md`。
+
+### 5b. 需要配音本时（可选）
+
+创作者要为录音准备台词表时，复制
+[voice-record-sheet.jsonl.md](assets/voice-record-sheet.jsonl.md)。它是**剧本的投影，
+不是第二份台词权威**：每行逐字等于对应剧本块并绑定其 `hash`，要改词就改剧本再重新投影。
+
+录音顺序几乎从不是剧情顺序（通常按人物集中录），配音者失去的正是上下文，所以每行要补
+对谁说、接谁的话、此刻他知道什么、这一句要达成什么。写策略而不是情绪词——"愤怒"不可
+执行，"质问"可执行。多音字、生僻字与专名的读法在进棚前定完并留痕；棚里中断是最贵的。
+
+不需要录音时不生成这份文件。本套件不生成音频，也不从这份文本判断成品音质。
 
 ### 6. 修订而不是抹平
 

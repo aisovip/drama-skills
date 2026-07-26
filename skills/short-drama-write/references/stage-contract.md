@@ -27,6 +27,11 @@
    提供精确 input hash。上游接受引用不继承候选状态。创作者接受、独立审查与内容修订是
    不同动作。每次修订后重新运行适用的结构校验，并让下游刷新旧 hash。打包是最终交付闸门，
    不是接受或审查命令；仍有阻断项时不打包。
+4. **读共享 JSON/JSONL 时同时声明读了哪几条记录**：`bible/*.jsonl` 与项目文件是全项目
+   共享输入，只按整文件 hash 绑定会让后续任何一次增补把此前引用过它的产物全部标为
+   `stale`。发布时对这类输入补 `--input-record <path>=<selector>`（JSONL 用记录 ID，
+   JSON 用 RFC 6901 指针，每条一次），此后只有被绑定的记录变化才会影响本产物。
+   Markdown 没有可机器校验的记录身份，仍按整文件绑定。
 
 ## 所有权边界
 
@@ -91,6 +96,7 @@
 | SCR-07 | reviewed_invariant | Story-critical text, VO/OS, SFX, transition, and continuity requirements are not left indistinguishable from ordinary prose. |
 | SCR-08 | craft_default | When abstract emotion obscures performance, translate it into character-specific behavior, object handling, distance, silence, or delivery. Dialogue turn length and tactic follow the scene agenda rather than a universal attack-defense cadence. |
 | SCR-09 | craft_default | Break a long speech with a visible action beat that changes the speaker's tactic, giving downstream a sourced cut point and the performance a breath; a speech with no internal turn is shortened rather than split. |
+| SCR-10 | reviewed_invariant | When the creator marks a beat's realization as replaceable under later pressure, the record separates the dramatic function from the current depiction and names a fallback depiction that delivers the same function: same person proven or changed, downstream payoff refs and next-episode entry state still satisfied, cost not erased, no new setup required. Deleting the beat is never a fallback. An unmarked beat leaves the rule inactive—the suite carries no platform standard, predicts no outcome, and pre-emptive sanding is the more expensive mistake. |
 
 规则分级由高到低：`structural_invariant`（结构缺陷，阻断）、
 `reviewed_invariant`（需证据判断）、`craft_default`（常用做法，可覆盖）、

@@ -98,6 +98,10 @@ reusable design decisions separate from shot-specific presentation.
 
 ## Install
 
+The deterministic scripts need **Python 3.10 or newer** (check with
+`python3 --version`). An older interpreter is told so directly rather than
+failing inside an import. The 3.9 that ships with macOS is not enough.
+
 **Option 1** — just tell Claude Code / Codex or any agent that can import a
 GitHub repository:
 

@@ -28,6 +28,11 @@
    提供精确 input hash。上游接受引用不继承候选状态。创作者接受、独立审查与内容修订是
    不同动作。每次修订后重新运行适用的结构校验，并让下游刷新旧 hash。打包是最终交付闸门，
    不是接受或审查命令；仍有阻断项时不打包。
+4. **读共享 JSON/JSONL 时同时声明读了哪几条记录**：`bible/*.jsonl` 与项目文件是全项目
+   共享输入，只按整文件 hash 绑定会让后续任何一次增补把此前引用过它的产物全部标为
+   `stale`。发布时对这类输入补 `--input-record <path>=<selector>`（JSONL 用记录 ID，
+   JSON 用 RFC 6901 指针，每条一次），此后只有被绑定的记录变化才会影响本产物。
+   Markdown 没有可机器校验的记录身份，仍按整文件绑定。
 
 ## 所有权边界
 
@@ -87,12 +92,14 @@
 | SHT-07 | taste_option | Lens vocabulary, tempo, and locked/handheld/formal style follow visual direction. |
 | SHT-08 | reviewed_invariant | Each authoritative source action is realized once; repeated coverage adds reaction/detail/recontextualization rather than replaying it. |
 | SHT-09 | reviewed_invariant | Exact Location/View orientation and visible anchors match the camera side used by the shot. |
-| SHT-10 | reviewed_invariant | Rendered keyframe prose contains only start-boundary facts, not state first created by the shot motion/end. |
+| SHT-10 | reviewed_invariant | Rendered keyframe prose contains only facts from the boundary that keyframe declares. A start frame carries no state first created by the shot's motion or end; an end frame carries no state already spent before it. Neither frame borrows the other's facts. |
 | SHT-11 | craft_default | When information changes another person's power, relationship, knowledge, or choice, preserve that reception visibly; shot count, framing, and duration follow the consequence and project profile. |
 | SHT-12 | reviewed_invariant | Each audience-visibility fact binds its exact source, carrier, permission, trigger, and protection method; framing neither reveals that fact early nor hides the carrier this shot must communicate. |
 | SHT-13 | reviewed_invariant | Multi-character blocking projects sourced, directed relationships into compatible positions, gaze, distance, and action lines for the current boundary. |
 | SHT-14 | reviewed_invariant | A contested moving object preserves ownership, trajectory, direction, time/round state, and end location across cuts unless an authorized ellipsis says otherwise. |
 | SHT-15 | reviewed_invariant | When the creator has declared delivery-surface overlay regions with their permanence and source, what a shot must be read for—face and gaze, readable evidence text, the decisive hand action—does not sit only inside those regions, and shots bind the declared version. An undeclared surface leaves the rule inactive: record it as unresolved and do not restage against a guessed region. |
+| SHT-16 | structural_invariant | Coverage carries an episode duration total that is the arithmetic sum of its shots' accepted `duration_seconds`; every shot the coverage lists either contributes a number or is named in `unresolved_durations`, so no shot leaves the total silently. When the project declares a target per episode, the record binds that field and states the signed delta; the delta is reported to the creator and never blocks on its own. |
+| SHT-17 | structural_invariant | A keyframe declares which boundary it freezes and binds that shot's matching boundary field. An end keyframe is a projection of `end_boundary`, never a second end-state authority, and per-shot keyframe count stays open: one start frame by default, an end frame only when the delivery workflow consumes it. Handing over a start/end pair delegates the motion between them to interpolation, so an action the shot exists for cannot rest on that gap alone. |
 
 ### `CON`
 

@@ -59,8 +59,8 @@
     }
   ],
   "source_ref": {
-    "owner": "short-drama",
-    "artifact": "creator-decisions.jsonl",
+    "owner": "creator",
+    "artifact": "creator-decisions/<artifact-id>.json",
     "hash": "<sha256>",
     "record_id": "<接受该声明的决定记录>"
   }

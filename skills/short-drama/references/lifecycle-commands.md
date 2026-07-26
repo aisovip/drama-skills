@@ -1,5 +1,12 @@
 # 项目命令与审核记录
 
+## 目录
+
+1. 发布与创作者确认
+2. 独立审查记录
+3. 过期影响与依赖检查（含把共享文件的失效半径收窄到记录）
+4. 恢复与打包（含交付完整性枚举）
+
 只在实际调用 `project_tool.py`、诊断命令失败或核对审核记录时读取本文。
 从 `short-drama` 技能安装目录调用脚本，不依赖当前工作目录：
 
@@ -7,10 +14,10 @@
 python3 <short-drama-skill-dir>/scripts/project_tool.py init <project> --title <title>
 python3 <short-drama-skill-dir>/scripts/project_tool.py status <project>
 python3 <short-drama-skill-dir>/scripts/project_tool.py recover <project>
-python3 <short-drama-skill-dir>/scripts/project_tool.py publish <project> --owner short-drama-write --artifact-id EP001:script --output episodes/EP001/screenplay.md=inputs/EP001-screenplay.candidate.md [--input <upstream-path>=<sha256> ...]
-python3 <short-drama-skill-dir>/scripts/project_tool.py accept <project> --artifact-id EP001:script --decision accepted --target episodes/EP001/screenplay.md=<candidate-sha256> --evidence-artifact creator-decisions.jsonl --evidence-hash <decision-file-sha256> --evidence-record-id <decision-id>
+python3 <short-drama-skill-dir>/scripts/project_tool.py publish <project> --owner short-drama-write --artifact-id EP001:script --output episodes/EP001/screenplay.md=inputs/EP001-screenplay.candidate.md [--input <upstream-path>=<sha256> ...] [--input-record <upstream-path>=<record-id> ...]
+python3 <short-drama-skill-dir>/scripts/project_tool.py accept <project> --artifact-id EP001:script --decision accepted --target episodes/EP001/screenplay.md=<candidate-sha256> --evidence-artifact creator-decisions/EP001-script.json --evidence-hash <decision-file-sha256> --evidence-record-id <decision-id>
 python3 <short-drama-skill-dir>/scripts/project_tool.py review <project> --artifact-id EP001:script --verdict approve --target episodes/EP001/screenplay.md=<accepted-sha256> --verdict-owner short-drama-review --verdict-artifact reviews/EP001-verdict.json --verdict-hash <verdict-file-sha256>
-python3 <short-drama-skill-dir>/scripts/project_tool.py package <project> --episode EP001 --include <accepted-path> [...]
+python3 <short-drama-skill-dir>/scripts/project_tool.py package <project> --episode EP001 --include <accepted-path> [...] [--omit <accepted-path> ...]
 ```
 
 ## 发布与创作者确认
@@ -56,6 +63,34 @@ JSONL 记录必须用 `--evidence-record-id` 唯一定位同名 `decision_id`；
 同一预写日志清单会找出直接和间接受影响的下游文件：保留旧的创作者确认记录，
 但把受影响的下游构建状态标为 `stale`，清空校验与审查就绪状态，并阻止交付。
 
+### 把共享文件的失效半径收窄到记录
+
+`bible/*.jsonl` 这类文件是全项目共享输入。只按整文件 `hash` 绑定时，第 48 集新增一个
+配角会把此前 47 集引用过该文件的产物全部标为 `stale`——它们其实一个字都没受影响。
+
+发布时用 `--input-record <path>=<selector>` 声明**这份候选实际读了哪几条记录**
+（可重复；仍需同时用 `--input` 绑定该文件的整文件 `hash`）：
+
+```text
+--input bible/characters.jsonl=<sha256> \
+--input-record bible/characters.jsonl=CHAR-GUHE \
+--input-record bible/characters.jsonl=CHAR-LINYE
+```
+
+此后该文件的其余部分怎么改都不影响这份产物；只有被绑定的记录本身变化、消失或变得
+不唯一时，它才会被标为 `stale`。`review` 与 `package` 的逐层复验同样改为核对这几条
+记录，所以文件 `hash` 前进之后产物依然可以交付。
+
+- **JSONL 选择器是记录 ID**：取值为某个以 `_id` 结尾的顶层字段，且在该文件中只出现
+  一次。出现零次或多次一律拒绝，不做猜测。
+- **JSON 选择器是 RFC 6901 指针**，例如 `/creator_authority/production_profile`。
+- 记录 `hash` 按键名排序后的规范形式计算，所以重排字段或改动缩进不会误判为变化。
+- **Markdown 不能做记录级绑定**：它没有可机器校验的记录身份，收窄只会变成一句无法
+  验证的承诺。剧本类依赖仍按整文件绑定，需要更小半径就先拆文件。
+
+`accepted_inputs` 中保留的整文件 `hash` 此时是**绑定当时的快照**，用于按 `hash` 取回
+那一版字节；判断是否仍然有效的依据是被绑定的那几条记录。
+
 `review` 和 `package` 会逐层复验输入的当前 `hash`、唯一且状态为 `accepted` 的提供方，
 以及提供方本身的构建、确认状态和输入。外部编辑、循环或含糊依赖不能靠手改状态字符串
 绕过。若多文件产物的新 `candidate` 不再包含旧的 `accepted/candidate` 目标，该路径也会
@@ -71,7 +106,20 @@ JSONL 记录必须用 `--evidence-record-id` 唯一定位同名 `decision_id`；
 
 `recover --transaction <txid>` 只处理指定事务。`package` 会重新验证状态文件中保存的创作者
 决定和独立审查记录，只打包当前 `hash` 与已接受快照一致、并且各项交付状态都已就绪的
-Markdown、JSON 或 JSONL。故事中确实需要交付屏显网址或屏显机器路径时，要有明确的例外
+Markdown、JSON 或 JSONL。
+
+### 完整性由工具枚举，取舍由创作者声明
+
+手写的 `--include` 清单**漏了东西时和没漏时长得一模一样**。状态文件里已经记着本集有哪些
+已接受文件，所以这份枚举由 `package` 来做：本集 `episodes/<EP>/` 下每一个已接受路径，
+要么在 `--include` 里，要么在 `--omit` 里，否则拒绝打包并逐条列出。
+
+`--omit` 不是绕过，是留痕：清单的 `omitted` 段会记下每条被排除的路径、它的负责产物，
+以及排除原因是「已就绪但主动不交付」还是「尚未就绪」。后者尤其重要——正在返工的产物
+是最容易被无声绕过的，而收件方从一份看不出缺件的交付包里读不出这件事。
+
+`--omit` 只接受本集的已接受路径：多文件产物换掉旧目标后，旧路径不再有已接受负责人，
+既不能交付也不能被声明省略。其他分集的产物不进入本集的枚举范围。故事中确实需要交付屏显网址或屏显机器路径时，要有明确的例外
 文件，绑定准确的文字、路径、字段、来源和文字呈现方法；其他网址与机器路径默认阻断。
 例外只释放它逐字声明的那一个字符串：路径必须写到完整的那一条，只写盘符或目录开头会被
 拒绝，整段文档也不能当作一条例外。文件协议网址、私钥与结构化凭据字段无条件阻断，

@@ -1,5 +1,14 @@
 # Frozen Keyframe Craft
 
+## 目录
+
+- [Boundary and instant tests](#boundary-and-instant-tests)
+- [Purpose](#purpose)
+- [Ordered recipe](#ordered-recipe)
+- [尾帧：什么时候可以有，以及它换来什么代价](#尾帧什么时候可以有以及它换来什么代价sht-17)
+- [Start-only drafting discipline](#start-only-drafting-discipline)
+- [Static test](#static-test)
+
 ## Boundary and instant tests
 
 - `SHT-05` — Project exactly one accepted shot boundary and bind the exact
@@ -38,14 +47,43 @@ field (or explicitly candidate policy in a provisional chain). A frozen frame
 may determine whether the surface is legible in this composition; it may not
 replace the source wording or policy with an untraceable prose instruction.
 
+## 尾帧：什么时候可以有，以及它换来什么代价（`SHT-17`）
+
+默认每镜一张关键帧，冻结的是 start。但首尾帧接续是 AI 视频里最常用的工作流之一：把首帧
+和尾帧一起交给执行端，中间由它补。套件此前没有尾帧的位置，于是这条路要么走不通，要么被
+私自绕过——后者更糟，因为绕过时尾帧往往是**独立画出来的**，它就成了第二个终点权威，与
+镜头 `end_boundary` 各说各话。
+
+**`structural_invariant`**：关键帧记录必须声明 `boundary_role`（`start` 或 `end`），
+`boundary_ref` 指向同一镜头对应的那个边界字段。**尾帧是 `end_boundary` 的投影，
+不是新的终点事实**——它与首帧对 `start_boundary` 的关系完全一样：可以决定这一帧怎么构图、
+用什么景别镜头、光怎么落，不能决定人在哪、手里有什么、看着谁。尾帧与镜头终点不一致时，
+错的是尾帧。
+
+每镜的关键帧数量**不是固定的**。默认一张首帧；只有当交付工作流真的要消费尾帧时才加一张，
+不为凑齐而画。补尾帧不改变 `SHT-10`：首帧仍然只能写 start 事实，尾帧只能写 end 事实，
+两张各自守自己的边界，不互相借用。
+
+**代价要说清楚：交出一对首尾帧，等于把两帧之间的运动交给了执行端插值。** 而运动路径本来
+是运动规格拥有的东西。所以选了首尾帧接续的镜头，其运动规格不是"照旧再写一遍"，而是被
+两端夹住了：它仍然要写清中间必须发生什么（动作顺序、对白落点、摄影机行为），但要意识到
+执行端会优先满足两端的画面一致性。因此——
+
+- 中间必须被看到的动作**不要只靠插值兑现**。如果一个动作是本镜存在的理由，两端之间没有
+  任何东西保证它会发生，就该拆镜，或者让该动作落在其中一端。
+- 两端差异越大，插值越自由，中间越不可控。首尾帧接续适合"状态改变清楚、路径无所谓"的
+  镜头（转身、递交完成、坐下），不适合"路径本身是戏"的镜头。
+- 终点报告仍然对照镜头 `end_boundary`，不对照尾帧。尾帧只是它的投影，不能自证到达。
+
 ## Start-only drafting discipline
 
-**`SHT-10 · reviewed_invariant`**: rendered keyframe prose may contain only
-start-boundary facts; anything first created by shot motion/end is drift.
+**`SHT-10 · reviewed_invariant`**: rendered keyframe prose may contain only facts
+from the boundary that frame declares. 首帧写进任何由运动或终点首次产生的事实是漂移；
+尾帧写进在它之前就已经消耗掉的事实同样是漂移。两帧各守各的边界，不互相借用。
 
 Keyframe 默认是 shot start，不是“本镜最有戏的时刻”。为避免把 end 提前：
 
-1. 先冻结 `start_boundary_ref`，草拟 prompt 时暂不读 end/motion prose；
+1. 先冻结 `boundary_ref`（`boundary_role: start`），草拟 prompt 时暂不读 end/motion prose；
 2. 只填 start 已成立的 position/pose/gaze/hands/held props/visible state；
 3. 再与 end 做“新出现事实”差集；差集中的事实不得出现在 keyframe prompt；
 4. 渲染 Markdown 后从自然语言反向提取手位/持物/目光/可见状态，与

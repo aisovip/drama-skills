@@ -10,6 +10,8 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from tests.external_validator import ValidatorUnavailable, run_official_validator
+
 
 SUITE = Path(__file__).resolve().parents[1]
 CORE = SUITE / "skills/short-drama"
@@ -96,20 +98,16 @@ class SuiteAnatomyTests(unittest.TestCase):
         self.assertEqual(len(manifest["public_skills"]), len(EXPECTED_SKILLS))
 
     def test_every_skill_passes_official_quick_validate(self) -> None:
-        validator = (
-            Path.home()
-            / ".codex/skills/.system/skill-creator/scripts/quick_validate.py"
-        )
-        if not validator.is_file():
-            self.skipTest("Codex skill-creator quick_validate.py is unavailable on this machine")
         for name in sorted(EXPECTED_SKILLS):
             with self.subTest(skill=name):
-                completed = subprocess.run(
-                    [sys.executable, str(validator), str(SUITE / "skills" / name)],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                )
+                try:
+                    completed = run_official_validator(SUITE / "skills" / name)
+                except FileNotFoundError:
+                    self.skipTest(
+                        "Codex skill-creator quick_validate.py is unavailable on this machine"
+                    )
+                except ValidatorUnavailable as error:
+                    self.skipTest(f"quick_validate.py cannot run here: {error}")
                 self.assertEqual(
                     completed.returncode,
                     0,

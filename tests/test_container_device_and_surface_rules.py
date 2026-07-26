@@ -50,6 +50,9 @@ class NewRuleRegistrationTests(unittest.TestCase):
             "SHT-15": "reviewed_invariant",
             "VID-13": "structural_invariant",
             "VID-14": "craft_default",
+            "SHT-16": "structural_invariant",
+            "SHT-17": "structural_invariant",
+            "VID-15": "structural_invariant",
         }
         for rule_id, classification in expected.items():
             with self.subTest(rule=rule_id):
@@ -257,6 +260,117 @@ class DialogueSplitExampleTests(unittest.TestCase):
                 for verb in ("摆手", "抬手", "转头", "翻", "递", "推开", "指"):
                     with self.subTest(verb=verb):
                         self.assertNotIn(verb, parenthetical.group(1))
+
+
+class EpisodeDurationArithmeticTests(unittest.TestCase):
+    COVERAGE = SKILLS / "short-drama-storyboard/assets/coverage-template.json"
+    PROJECT = SKILLS / "short-drama/assets/project-template/short-drama.json"
+    SHOT = SKILLS / "short-drama-storyboard/assets/shot-template.jsonl"
+
+    def coverage(self) -> dict:
+        return json.loads(read(self.COVERAGE))
+
+    def test_coverage_carries_a_total_and_an_explicit_unresolved_list(self) -> None:
+        """A shot with no duration yet must be visible as suspended, because a
+        silently dropped shot and a settled episode look identical otherwise."""
+
+        duration = self.coverage()["episode_duration"]
+        for key in (
+            "shot_seconds_total",
+            "counted_shot_ids",
+            "unresolved_durations",
+            "target_seconds",
+            "delta_seconds",
+            "disposition",
+        ):
+            with self.subTest(key=key):
+                self.assertIn(key, duration)
+
+    def test_the_summed_field_is_the_one_shots_actually_carry(self) -> None:
+        shot = json.loads(read(self.SHOT).splitlines()[0])
+        self.assertIn("duration_seconds", shot)
+
+    def test_the_target_pointer_resolves_inside_the_project_template(self) -> None:
+        """A target field that names a non-existent key can never be compared."""
+
+        ref = self.coverage()["episode_duration"]["target_ref"]
+        self.assertEqual(ref["owner"], "short-drama")
+        self.assertEqual(ref["artifact"], "short-drama.json")
+        document = json.loads(read(self.PROJECT))
+        for token in ref["field"].lstrip("/").split("/"):
+            self.assertIsInstance(document, dict)
+            self.assertIn(token, document)
+            document = document[token]
+
+    def test_the_delta_is_reported_and_never_blocks_on_its_own(self) -> None:
+        grammar = read(
+            SKILLS / "short-drama-storyboard/references/production-shot-grammar.md"
+        )
+        self.assertIn("不阻断交付", grammar)
+        rubric = read(
+            SKILLS / "short-drama-review/references/production-quality-gates.md"
+        )
+        self.assertIn("差值本身不写成阻断项", rubric)
+
+    def test_first_episode_gets_a_measurement_even_without_a_baseline(self) -> None:
+        """STY-16 skips episode one for lack of a ratio; the arithmetic must not."""
+
+        design = read(SKILLS / "short-drama-develop/references/episode-design.md")
+        self.assertIn("跳过估算不等于第一集没有时长兜底", design)
+
+    def test_container_accounting_is_stated_at_episode_scope(self) -> None:
+        profile = read(
+            SKILLS / "short-drama-video-prompts/references/delivery-profile.md"
+        )
+        self.assertIn("VID-15", profile)
+        self.assertIn("不重不漏", profile)
+
+
+class EndKeyframeContractTests(unittest.TestCase):
+    KEYFRAME = SKILLS / "short-drama-storyboard/assets/keyframe-template.jsonl"
+    SHOT = SKILLS / "short-drama-storyboard/assets/shot-template.jsonl"
+    CRAFT = SKILLS / "short-drama-storyboard/references/keyframe-craft.md"
+
+    def keyframe(self) -> dict:
+        return json.loads(read(self.KEYFRAME).splitlines()[0])
+
+    def test_a_keyframe_states_which_boundary_it_freezes(self) -> None:
+        record = self.keyframe()
+        self.assertIn("boundary_role", record)
+        self.assertEqual(set(record["boundary_role"].split(" | ")), {"start", "end"})
+
+    def test_both_boundary_fields_exist_on_the_shot_it_points_at(self) -> None:
+        """An end frame is useless if the field it projects does not exist."""
+
+        shot = json.loads(read(self.SHOT).splitlines()[0])
+        pointers = self.keyframe()["boundary_ref"]["field"].split(" | ")
+        self.assertEqual(len(pointers), 2)
+        for pointer in pointers:
+            with self.subTest(pointer=pointer):
+                self.assertIn(pointer.lstrip("/"), shot)
+
+    def test_the_end_frame_is_a_projection_not_a_second_authority(self) -> None:
+        # Prose wraps, so compare against the unwrapped text rather than making
+        # the sentence fit one source line.
+        craft = read(self.CRAFT).replace("\n", "")
+        self.assertIn("不是新的终点事实", craft)
+        self.assertIn("尾帧与镜头终点不一致时，错的是尾帧", craft)
+
+    def test_the_interpolation_cost_is_stated_on_both_sides(self) -> None:
+        """Handing over two ends silently delegates the motion between them, so
+        the stage that owns motion must be told, not only the one that draws."""
+
+        self.assertIn("插值", read(self.CRAFT))
+        motion = read(
+            SKILLS / "short-drama-video-prompts/references/camera-audio-continuity.md"
+        )
+        self.assertIn("不对照尾帧", motion)
+
+    def test_keyframe_count_is_not_turned_into_a_quota(self) -> None:
+        rubric = read(
+            SKILLS / "short-drama-review/references/production-quality-gates.md"
+        )
+        self.assertIn("关键帧数量不是检查项", rubric)
 
 
 class SelfContainedReferenceTests(unittest.TestCase):

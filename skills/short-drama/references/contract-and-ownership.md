@@ -36,11 +36,12 @@ no motion-to-shot or rendered-Markdown-to-spec authority edge.
 | Fact | Authority | Projection behavior |
 |---|---|---|
 | creator constraints, visual direction, production profile | creator fields in `short-drama.json` | all Skills reference exact accepted project hash/field; direct-entry projects do not rely on chat memory |
-| creator accept/reject decisions | creator `creator-decisions.jsonl` | lifecycle proof binds exact candidate targets and decision record/hash |
+| creator accept/reject decisions | creator `creator-decisions/<artifact-id>.json` | lifecycle proof binds exact candidate targets and decision record/hash; `decided_by` names the creator or an authorized delegate, never a skill or agent |
 | series promise, engine, arc, planned episode contract | develop | episode-card points to the accepted map record/hash |
 | script-first standalone episode contract | write | active only when no develop-owned record exists; explicit authority migration if one is later adopted |
 | scene execution plan, beats, screenplay | write | may project but not duplicate a develop-owned contract |
 | scene/action/dialogue/production directive | write `screenplay.md` | index maps spans and hashes |
+| voice record sheet | write `voice-record-sheet.jsonl` | line text projects the exact screenplay block and hash; per-shot audio realization stays with video-prompts and is referenced, not copied |
 | planned knowledge/goal/relationship/handoff state | develop episode contract | write points to accepted record while projection mode is active |
 | realized knowledge/belief/goal/relationship/emotion change | write screenplay/standalone contract | continuity ledgers carry source pointer, never a second value authority |
 | block ID, kind, span, hash | write indexer | points to screenplay snapshot |
@@ -178,7 +179,16 @@ creator choice.
 Acceptance freezes the candidate read set as exact `accepted_inputs`. Publishing a
 changed upstream target carries the full direct/transitive downstream stale closure
 inside the same WAL manifest, so forward recovery applies target bytes and stale
-lifecycle state together. Removing a path from a multi-file artifact's candidate
+lifecycle state together.
+
+A consumer of a shared `.json`/`.jsonl` input may additionally freeze
+`accepted_input_records`: the canonical hash of each record it actually read. Its
+`accepted_inputs` hash then records the binding-time snapshot, while validity is
+judged record by record, so appending an unrelated character to a series bible no
+longer invalidates every episode that referenced that file. A bound record that
+changes, disappears, or stops resolving uniquely still invalidates its consumers,
+and so does any change to a whole-file-bound input. Markdown carries no
+machine-checkable record identity and is always bound whole-file. Removing a path from a multi-file artifact's candidate
 target set invalidates that former accepted/candidate target in the same closure.
 The old bytes remain available for creator recovery, but after acceptance the path
 has no accepted owner and cannot be delivered. Review and delivery recursively

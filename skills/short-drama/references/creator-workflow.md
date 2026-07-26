@@ -13,15 +13,37 @@
 
 `short-drama.json#/creator_authority` exists even in script-first/direct-entry
 projects. It owns accepted creator constraints, visual direction, and production
-profile choices; `creator-decisions.jsonl` records accept/reject decisions against
-exact candidate hashes. Do not recover these facts from chat memory or a prompt
-cache. An unset direction/profile remains explicitly `unset`, not silently defaulted.
+profile choices; `creator-decisions/<artifact-id>.json` records accept/reject
+decisions against exact candidate hashes, one file per artifact. Do not recover
+these facts from chat memory or a prompt cache. An unset direction/profile
+remains explicitly `unset`, not silently defaulted.
 
 Use [creator-decision.example.jsonl](../assets/creator-decision.example.jsonl) as
 the decision shape. Only a creator acceptance operation may advance the
 `creator_acceptance` axis. Artifact acceptance records bind
 `decision_kind: artifact_acceptance`, the lifecycle `artifact_id`, and the complete
 candidate `target_hashes`; owner publish and independent review cannot impersonate it.
+
+### Who `decided_by` may name
+
+The whole authority model rests on this field, so it cannot mean “whoever typed
+it”. `decided_by` names **the party that carries the consequence of being wrong**:
+
+- `creator` — the person whose project this is, deciding directly.
+- `<role>:<stable-id>` — a named delegate the creator authorized for a stated
+  scope, such as a producer accepting production-profile choices. The
+  authorization itself is a creator decision and must exist first; a delegate
+  cannot widen their own scope.
+
+An assistant, an agent, an owning skill, or a reviewer is **never** a valid
+value. If no authorized party has decided, the artifact stays `pending` — a
+decision record naming a skill as its decider is a fabricated decision, not a
+faster one. When the creator is unreachable and work must continue, use the
+provisional preview chain below instead of inventing a decider.
+
+A delegate's decision is revocable by the creator without a supersession dispute:
+record the creator's replacement decision with `supersedes_decision_id` pointing
+at it. The reverse is not available — a delegate cannot supersede the creator.
 
 ## Product boundary
 
