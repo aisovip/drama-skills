@@ -18,6 +18,12 @@
     "production_profile": {
       "status": "unset",
       "choices": {}
+    },
+    "delivery_surface": {
+      "status": "unset",
+      "aspect": null,
+      "overlay_regions": [],
+      "source_ref": null
     }
   },
   "current_checkpoint": null

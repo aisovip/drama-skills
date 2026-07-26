@@ -43,29 +43,36 @@
   **不因为猜测的区域改变构图**——猜出来的避让同样是一个通用安全框，只是没写在纸上。
   需要时向创作者提一次问：这次交付的播放面会在画幅哪些位置叠加什么、是否常驻。
 
-声明落在项目已接受的制作方案里，作为交付面条目；审查者据此引用准确证据，所以它要能回答
-三件事——**占用哪里、是否常驻、依据来自哪**：
+声明由**创作者拥有**，落在 `short-drama.json` 的 `/creator_authority/delivery_surface`，
+与视觉方向、制作形态同级。它要能回答三件事——**占用哪里、是否常驻、依据来自哪**：
 
 ```json
 {
-  "delivery_surface": {
-    "status": "declared",
-    "aspect": "<已接受画幅>",
-    "overlay_regions": [
-      {
-        "id": "<稳定 ID>",
-        "where": "<用画幅比例或可命名边带描述的占用范围>",
-        "permanence": "persistent | intermittent | conditional",
-        "carries": "<字幕 | 控件 | 角标 | 其他>"
-      }
-    ],
-    "source_ref": "<该声明的来源与版本>"
+  "status": "unset | declared",
+  "aspect": "<已接受画幅>",
+  "overlay_regions": [
+    {
+      "id": "<稳定 ID>",
+      "where": "<用画幅比例或可命名边带描述的占用范围>",
+      "permanence": "persistent | intermittent | conditional",
+      "carries": "<字幕 | 控件 | 角标 | 其他>"
+    }
+  ],
+  "source_ref": {
+    "owner": "short-drama",
+    "artifact": "creator-decisions.jsonl",
+    "hash": "<sha256>",
+    "record_id": "<接受该声明的决定记录>"
   }
 }
 ```
 
-`status` 只有 `declared` 与 `unresolved` 两种；`unresolved` 时本规则不生效。镜头与关键帧
-记录引用这条声明的具体版本，改版即触发重新核对。
+镜头与关键帧记录用 `delivery_surface_ref` 绑定该声明的**精确快照与字段**（模板已有该字段，
+指向 `short-drama.json#/creator_authority/delivery_surface`）。创作者改版后引用变
+`stale`，受影响的镜头与关键帧按恢复流程重新核对，不沿用上一版的避让结论。
+
+`status` 为 `unset` 时本规则不生效：镜头照常按画面可读性构图，把它记为待创作者决定。
+声明自身不引用自己所在文件的 hash。
 - **已声明时绑定版本**：镜头与关键帧引用该声明的具体版本；交付方案改版时，受影响的镜头
   按 `stale` 处理并重新核对，而不是沿用上一版的避让结论。
 已声明遮挡区后，按下面的优先级判断哪些内容必须挪开：
