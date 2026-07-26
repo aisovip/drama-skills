@@ -2618,12 +2618,56 @@ def _approved_artifact_for_path(
     return artifact_id
 
 
+DELIVERY_READY = {
+    "build_state": {"materialized"},
+    "validation_state": {"pass", "pass_with_warnings"},
+    "creator_acceptance": {"accepted"},
+    "independent_review": {"approve", "approve_with_notes"},
+    "delivery_gate": {"ready", "delivered"},
+}
+
+
+def _episode_coverage(
+    state: Mapping[str, Any], episode: str
+) -> dict[str, dict[str, Any]]:
+    """Enumerate every accepted file this episode already has.
+
+    Completeness cannot be judged from the selection alone: a hand-written
+    include list looks equally complete whether or not it forgot the keyframe
+    prompts. The project state already knows which files exist under the
+    episode, so the enumeration belongs here rather than in someone's memory.
+    """
+
+    prefix = f"episodes/{episode}/"
+    coverage: dict[str, dict[str, Any]] = {}
+    artifacts = state.get("artifacts")
+    if not isinstance(artifacts, dict):
+        return coverage
+    for artifact_id, record in artifacts.items():
+        if not isinstance(artifact_id, str) or not isinstance(record, dict):
+            continue
+        if artifact_id.startswith("delivery:"):
+            continue
+        accepted = record.get("accepted_targets")
+        if not isinstance(accepted, dict):
+            continue
+        ready = all(
+            record.get(axis) in values for axis, values in DELIVERY_READY.items()
+        )
+        for relative in accepted:
+            if not isinstance(relative, str) or not relative.startswith(prefix):
+                continue
+            coverage[relative] = {"artifact_id": artifact_id, "ready": ready}
+    return dict(sorted(coverage.items()))
+
+
 def build_delivery_package(
     path: Path,
     *,
     episode: str,
     selected_paths: Iterable[str | Path],
     text_exceptions: Iterable[Mapping[str, Any]] | None = None,
+    omitted_paths: Iterable[str | Path] | None = None,
 ) -> dict[str, Any]:
     root = find_project(path)
     if not re.fullmatch(r"EP[0-9]{3,}", episode):
@@ -2673,10 +2717,49 @@ def build_delivery_package(
             + ", ".join(unused_exception_paths)
         )
 
+    coverage = _episode_coverage(state, episode)
+    declared_omissions = {_relative_path(value) for value in (omitted_paths or ())}
+    unknown_omissions = sorted(declared_omissions - set(coverage))
+    if unknown_omissions:
+        raise PackageBlockedError(
+            "omitted path is not an accepted artifact of this episode: "
+            + ", ".join(unknown_omissions)
+        )
+    contradictory = sorted(declared_omissions & selected)
+    if contradictory:
+        raise PackageBlockedError(
+            "path cannot be both selected and omitted: " + ", ".join(contradictory)
+        )
+    unaccounted = sorted(set(coverage) - selected - declared_omissions)
+    if unaccounted:
+        ready = [relative for relative in unaccounted if coverage[relative]["ready"]]
+        pending = [relative for relative in unaccounted if not coverage[relative]["ready"]]
+        detail = []
+        if ready:
+            detail.append("delivery-ready and unselected: " + ", ".join(ready))
+        if pending:
+            detail.append("not yet delivery-ready: " + ", ".join(pending))
+        raise PackageBlockedError(
+            "episode artifacts are neither selected nor declared omitted ("
+            + "; ".join(detail)
+            + "); add each to --include or --omit"
+        )
+    omitted = [
+        {
+            "source": relative,
+            "artifact_id": coverage[relative]["artifact_id"],
+            "reason": "delivery_ready_but_omitted"
+            if coverage[relative]["ready"]
+            else "not_delivery_ready",
+        }
+        for relative in sorted(declared_omissions)
+    ]
+
     manifest = {
         "schema_version": 1,
         "episode": episode,
         "files": files,
+        "omitted": omitted,
         "text_exceptions": exceptions,
         "exclusions": ["private_inputs", "operational_state", "binaries", "unselected_files"],
     }
@@ -2849,6 +2932,15 @@ def build_parser() -> argparse.ArgumentParser:
     package.add_argument("path", type=Path)
     package.add_argument("--episode", required=True)
     package.add_argument("--include", action="append", required=True, dest="includes")
+    package.add_argument(
+        "--omit",
+        action="append",
+        dest="omissions",
+        help=(
+            "Acknowledge one accepted episode file that is deliberately left out; "
+            "repeat per file. The manifest records it and why."
+        ),
+    )
     package.add_argument("--text-exceptions", type=Path)
     return parser
 
@@ -2916,6 +3008,7 @@ def main(argv: list[str] | None = None) -> int:
                 episode=args.episode,
                 selected_paths=args.includes,
                 text_exceptions=exceptions,
+                omitted_paths=args.omissions,
             )
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0

@@ -563,6 +563,7 @@ class PackageTests(unittest.TestCase):
                 root,
                 episode="EP001",
                 selected_paths=["episodes/EP001/fictional-password-scene.md"],
+                omitted_paths=["episodes/EP001/screenplay.md", "episodes/EP001/assets/image-prompt-specs.jsonl"],
             )
 
         with tempfile.TemporaryDirectory() as directory:
@@ -602,6 +603,7 @@ class PackageTests(unittest.TestCase):
                 root,
                 episode="EP001",
                 selected_paths=["episodes/EP001/screenplay.md"],
+                omitted_paths=["episodes/EP001/assets/image-prompt-specs.jsonl"],
                 text_exceptions=[
                     {
                         "exact_text": text,
@@ -656,6 +658,7 @@ class PackageTests(unittest.TestCase):
                 root,
                 episode="EP001",
                 selected_paths=["episodes/EP001/screenplay.md"],
+                omitted_paths=["episodes/EP001/assets/image-prompt-specs.jsonl"],
                 text_exceptions=[
                     {
                         "exact_text": text,
@@ -827,6 +830,9 @@ class PackageTests(unittest.TestCase):
                 root,
                 episode="EP001",
                 selected_paths=["episodes/EP001/beats.jsonl"],
+                # screenplay.md left this artifact's target set above, so it no
+                # longer has an accepted owner and cannot be omitted either.
+                omitted_paths=["episodes/EP001/assets/image-prompt-specs.jsonl"],
                 text_exceptions=[
                     {
                         "exact_text": shown,
@@ -917,6 +923,127 @@ class PackageTests(unittest.TestCase):
                         }
                     ],
                 )
+
+    def test_forgetting_an_approved_episode_file_blocks_the_package(self) -> None:
+        """A hand-written include list looks equally complete whether or not it
+        forgot something, so the tool enumerates the episode instead."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            with self.assertRaises(project_tool.PackageBlockedError) as raised:
+                project_tool.build_delivery_package(
+                    root,
+                    episode="EP001",
+                    selected_paths=["episodes/EP001/screenplay.md"],
+                )
+            message = str(raised.exception)
+            self.assertIn("episodes/EP001/assets/image-prompt-specs.jsonl", message)
+            self.assertIn("--omit", message)
+
+    def test_an_acknowledged_omission_is_recorded_in_the_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            project_tool.build_delivery_package(
+                root,
+                episode="EP001",
+                selected_paths=["episodes/EP001/screenplay.md"],
+                omitted_paths=["episodes/EP001/assets/image-prompt-specs.jsonl"],
+            )
+            manifest = json.loads(
+                (root / "delivery/EP001/manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                manifest["omitted"],
+                [
+                    {
+                        "source": "episodes/EP001/assets/image-prompt-specs.jsonl",
+                        "artifact_id": "EP001:image-prompts",
+                        "reason": "delivery_ready_but_omitted",
+                    }
+                ],
+            )
+
+    def test_an_unfinished_episode_file_must_also_be_acknowledged(self) -> None:
+        """An artifact still in rework is the easiest thing to ship around
+        silently; the package must say the episode is not fully covered."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            self.approve_artifact(
+                root,
+                artifact_id="EP001:storyboard",
+                owner="short-drama-storyboard",
+                outputs={
+                    "episodes/EP001/storyboard/shots.jsonl": '{"shot_id":"SHOT-001"}\n'
+                },
+            )
+            project_tool.publish_candidate(
+                root,
+                owner="short-drama-storyboard",
+                artifact_id="EP001:storyboard",
+                outputs={
+                    "episodes/EP001/storyboard/shots.jsonl": '{"shot_id":"SHOT-002"}\n'
+                },
+            )
+            with self.assertRaises(project_tool.PackageBlockedError) as raised:
+                project_tool.build_delivery_package(
+                    root,
+                    episode="EP001",
+                    selected_paths=[
+                        "episodes/EP001/screenplay.md",
+                        "episodes/EP001/assets/image-prompt-specs.jsonl",
+                    ],
+                )
+            self.assertIn("not yet delivery-ready", str(raised.exception))
+            project_tool.build_delivery_package(
+                root,
+                episode="EP001",
+                selected_paths=[
+                    "episodes/EP001/screenplay.md",
+                    "episodes/EP001/assets/image-prompt-specs.jsonl",
+                ],
+                omitted_paths=["episodes/EP001/storyboard/shots.jsonl"],
+            )
+            manifest = json.loads(
+                (root / "delivery/EP001/manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                [entry["reason"] for entry in manifest["omitted"]],
+                ["not_delivery_ready"],
+            )
+
+    def test_a_path_cannot_be_both_selected_and_omitted(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            with self.assertRaises(project_tool.PackageBlockedError) as raised:
+                project_tool.build_delivery_package(
+                    root,
+                    episode="EP001",
+                    selected_paths=[
+                        "episodes/EP001/screenplay.md",
+                        "episodes/EP001/assets/image-prompt-specs.jsonl",
+                    ],
+                    omitted_paths=["episodes/EP001/screenplay.md"],
+                )
+            self.assertIn("both selected and omitted", str(raised.exception))
+
+    def test_another_episode_never_enters_this_episode_coverage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_approved_project(directory)
+            self.approve_artifact(
+                root,
+                artifact_id="EP002:script",
+                owner="short-drama-write",
+                outputs={"episodes/EP002/screenplay.md": "# 第二集\n\n窗外下雨。\n"},
+            )
+            project_tool.build_delivery_package(
+                root,
+                episode="EP001",
+                selected_paths=[
+                    "episodes/EP001/screenplay.md",
+                    "episodes/EP001/assets/image-prompt-specs.jsonl",
+                ],
+            )
 
 
 if __name__ == "__main__":

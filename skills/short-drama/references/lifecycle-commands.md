@@ -5,7 +5,7 @@
 1. 发布与创作者确认
 2. 独立审查记录
 3. 过期影响与依赖检查（含把共享文件的失效半径收窄到记录）
-4. 恢复与打包
+4. 恢复与打包（含交付完整性枚举）
 
 只在实际调用 `project_tool.py`、诊断命令失败或核对审核记录时读取本文。
 从 `short-drama` 技能安装目录调用脚本，不依赖当前工作目录：
@@ -17,7 +17,7 @@ python3 <short-drama-skill-dir>/scripts/project_tool.py recover <project>
 python3 <short-drama-skill-dir>/scripts/project_tool.py publish <project> --owner short-drama-write --artifact-id EP001:script --output episodes/EP001/screenplay.md=inputs/EP001-screenplay.candidate.md [--input <upstream-path>=<sha256> ...] [--input-record <upstream-path>=<record-id> ...]
 python3 <short-drama-skill-dir>/scripts/project_tool.py accept <project> --artifact-id EP001:script --decision accepted --target episodes/EP001/screenplay.md=<candidate-sha256> --evidence-artifact creator-decisions.jsonl --evidence-hash <decision-file-sha256> --evidence-record-id <decision-id>
 python3 <short-drama-skill-dir>/scripts/project_tool.py review <project> --artifact-id EP001:script --verdict approve --target episodes/EP001/screenplay.md=<accepted-sha256> --verdict-owner short-drama-review --verdict-artifact reviews/EP001-verdict.json --verdict-hash <verdict-file-sha256>
-python3 <short-drama-skill-dir>/scripts/project_tool.py package <project> --episode EP001 --include <accepted-path> [...]
+python3 <short-drama-skill-dir>/scripts/project_tool.py package <project> --episode EP001 --include <accepted-path> [...] [--omit <accepted-path> ...]
 ```
 
 ## 发布与创作者确认
@@ -106,7 +106,20 @@ JSONL 记录必须用 `--evidence-record-id` 唯一定位同名 `decision_id`；
 
 `recover --transaction <txid>` 只处理指定事务。`package` 会重新验证状态文件中保存的创作者
 决定和独立审查记录，只打包当前 `hash` 与已接受快照一致、并且各项交付状态都已就绪的
-Markdown、JSON 或 JSONL。故事中确实需要交付屏显网址或屏显机器路径时，要有明确的例外
+Markdown、JSON 或 JSONL。
+
+### 完整性由工具枚举，取舍由创作者声明
+
+手写的 `--include` 清单**漏了东西时和没漏时长得一模一样**。状态文件里已经记着本集有哪些
+已接受文件，所以这份枚举由 `package` 来做：本集 `episodes/<EP>/` 下每一个已接受路径，
+要么在 `--include` 里，要么在 `--omit` 里，否则拒绝打包并逐条列出。
+
+`--omit` 不是绕过，是留痕：清单的 `omitted` 段会记下每条被排除的路径、它的负责产物，
+以及排除原因是「已就绪但主动不交付」还是「尚未就绪」。后者尤其重要——正在返工的产物
+是最容易被无声绕过的，而收件方从一份看不出缺件的交付包里读不出这件事。
+
+`--omit` 只接受本集的已接受路径：多文件产物换掉旧目标后，旧路径不再有已接受负责人，
+既不能交付也不能被声明省略。其他分集的产物不进入本集的枚举范围。故事中确实需要交付屏显网址或屏显机器路径时，要有明确的例外
 文件，绑定准确的文字、路径、字段、来源和文字呈现方法；其他网址与机器路径默认阻断。
 例外只释放它逐字声明的那一个字符串：路径必须写到完整的那一条，只写盘符或目录开头会被
 拒绝，整段文档也不能当作一条例外。文件协议网址、私钥与结构化凭据字段无条件阻断，
