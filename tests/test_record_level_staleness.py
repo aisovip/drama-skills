@@ -23,6 +23,7 @@ SPEC.loader.exec_module(project_tool)
 
 BIBLE = "bible/characters.jsonl"
 SHOTS = "episodes/EP001/storyboard/shots.jsonl"
+MOTIONS = "episodes/EP001/storyboard/motion-specs.jsonl"
 
 FIRST = {"character_id": "CHAR-A", "display_name": "甲", "look": "工装"}
 SECOND = {"character_id": "CHAR-B", "display_name": "乙", "look": "西装"}
@@ -402,6 +403,66 @@ class RecordLevelStalenessTests(unittest.TestCase):
                     input_records={BIBLE: ["CHAR-A"]},
                 )
             self.assertIn("record binding needs an exact input", str(raised.exception))
+
+    def three_level_chain(self, root: Path) -> None:
+        """bible -> shots -> motions, each binding one record of its provider."""
+
+        bible_hash = self.publish_and_accept(
+            root,
+            artifact_id="assets:bible",
+            owner="short-drama-assets",
+            outputs={BIBLE: jsonl(FIRST, SECOND)},
+        )[BIBLE]
+        shots_hash = self.publish_and_accept(
+            root,
+            artifact_id="storyboard:EP001",
+            owner="short-drama-storyboard",
+            outputs={SHOTS: jsonl({"shot_id": "SHOT-001", "subject": "CHAR-A"})},
+            input_hashes={BIBLE: bible_hash},
+            input_records={BIBLE: ["CHAR-A"]},
+        )[SHOTS]
+        self.publish_and_accept(
+            root,
+            artifact_id="video:EP001",
+            owner="short-drama-video-prompts",
+            outputs={
+                MOTIONS: jsonl({"motion_id": "MOTION-001", "covers": "SHOT-001"})
+            },
+            input_hashes={SHOTS: shots_hash},
+            input_records={SHOTS: ["SHOT-001"]},
+        )
+
+    def test_narrowing_carries_all_the_way_down_a_three_level_chain(self) -> None:
+        """The relief is not limited to the direct consumer: a survivor's own
+        targets never enter the affected set, so nothing below it is touched."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_project(directory)
+            self.three_level_chain(root)
+            project_tool.publish_candidate(
+                root,
+                owner="short-drama-assets",
+                artifact_id="assets:bible",
+                outputs={BIBLE: jsonl(FIRST, SECOND, THIRD)},
+            )
+            self.assertEqual(self.build_state(root, "storyboard:EP001"), "materialized")
+            self.assertEqual(self.build_state(root, "video:EP001"), "materialized")
+
+    def test_a_changed_record_invalidates_the_whole_chain_below_it(self) -> None:
+        """Once the direct consumer must be re-derived, its own bytes are
+        suspect even though they have not moved, so its readers go stale too."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.make_project(directory)
+            self.three_level_chain(root)
+            project_tool.publish_candidate(
+                root,
+                owner="short-drama-assets",
+                artifact_id="assets:bible",
+                outputs={BIBLE: jsonl({**FIRST, "look": "睡衣"}, SECOND)},
+            )
+            self.assertEqual(self.build_state(root, "storyboard:EP001"), "stale")
+            self.assertEqual(self.build_state(root, "video:EP001"), "stale")
 
     def test_recovery_restores_the_record_binding_not_only_the_file_hash(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

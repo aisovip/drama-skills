@@ -113,7 +113,28 @@ license: MIT
 
 ### 6. 校验并呈现
 
-先做原文落实、参考图权限和连续性的结构检查，再按制作资料自检。按顺序呈现：
+先做原文落实、参考图权限和连续性的结构检查，再按制作资料自检。
+
+时长账目与关键帧边界这两项是纯记账，交给
+[storyboard_check.py](scripts/storyboard_check.py) 核对，不要用人工目测代替：
+
+```bash
+python3 <skill-dir>/scripts/storyboard_check.py episodes/EP001/storyboard/coverage.json \
+  --shots episodes/EP001/storyboard/shots.jsonl \
+  --keyframes episodes/EP001/storyboard/keyframes.jsonl \
+  --project short-drama.json
+```
+
+它只做算术和结构比对：本集时长总和是否等于各镜头 `duration_seconds` 之和、覆盖列出的
+镜头有没有既不计入也不挂起、每张关键帧是否声明了 `boundary_role` 并绑定对应边界字段、
+同一镜头的同一端有没有两张关键帧。有 `--project` 且项目声明了每集目标时长时，还会核对
+带符号差值。**差值不是缺陷**，脚本只检查它算得对不对。
+
+脚本报错时先修产物再继续；它不评价镜头好坏，也不决定该拆多少镜。需要逐条查诊断码
+含义、或确认某项该由脚本判还是由审查者判时，读
+[review-and-fixtures.md](references/review-and-fixtures.md)。
+
+按顺序呈现：
 
 1. 尚未落实的原文与 `unresolved` 项；
 2. 按场分组的镜头表；

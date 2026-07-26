@@ -101,6 +101,22 @@ license: MIT
 
 若创作者声明了多镜交付容器，一个容器可以按来源顺序承载若干连续镜头：此时切换只允许出现在成员镜头边界上，容器时长必须等于成员镜头已接受时长之和，镜头目的与逐镜可审查性不变。容器分层、成员资格与两级算术见 [delivery-profile.md](references/delivery-profile.md)。
 
+写完容器记录后用 [container_check.py](scripts/container_check.py) 做一次**全集对账**：
+
+```bash
+python3 <skill-dir>/scripts/container_check.py \
+  episodes/EP001/storyboard/delivery-containers.jsonl \
+  --shots episodes/EP001/storyboard/shots.jsonl
+```
+
+逐个容器都正确不代表全集的账是对的：一个镜头同时进两个容器会让全集时长凭空多一段，
+一个镜头谁都没装会让它无声消失——**两种错误在单容器视角下都看不见**。脚本做的是集合
+与算术比对：成员是否重复认领、成员是否属于本集、容器时长是否等于成员之和、容器加散镜
+是否正好等于全集总时长。
+
+未装容器的散镜是合法的，脚本只报告不判错；时长尚未确定的镜头列在 `unmeasured_shots`
+并排除在总和之外，这样"还没做完"不会被当成"做错了"。
+
 若当前版本是局部补拍或替代实现，在 `coverage_scope` 标明 `master | pickup |
 alternate`，用同一文件内稳定的运动记录 ID 说明母版和补充关系；每项原文要求都要对应到
 当前运动字段或说明去向。补拍默认只补充、不替代母版；运动规格只能提出替代请求，

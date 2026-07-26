@@ -14,7 +14,8 @@
   "episode_id": "EP001",
   "scene_id": "EP001-SC001",
   "speaker": "CHAR-<id>",
-  "line_text": "<逐字等于剧本块原文>",
+  "speaker_display": "<剧本里逐字写的那个名字>",
+  "line_text": "<逐字等于剧本块原文的冒号之后部分>",
   "source_ref": {
     "owner": "short-drama-write",
     "artifact": "episodes/EP001/screenplay-index.jsonl",
@@ -44,6 +45,7 @@
 | 字段 | 不写会怎样 |
 |---|---|
 | `source_ref` | 剧本改一句而表没跟上，录出来的是旧词；有 `hash` 才能被标 `stale` |
+| `speaker` 与 `speaker_display` | 前者是资产身份用于绑定，后者是剧本里逐字写的名字；只留一个就必然有一处对不上 |
 | `channel` 与 `lip_sync_constrained` | 同期与配音、画内与 VO 的可改余地完全不同，混在一起就只能按最严的来 |
 | `addressed_to` / `preceding_line_id` | 集中录制时配音者不知道在对谁说、接谁的话，语气只能靠猜 |
 | `speaker_knows_now` | 同一句话在"已经知道"和"还不知道"下是两种读法，这是最常见的重录原因 |
