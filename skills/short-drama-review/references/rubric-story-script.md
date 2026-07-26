@@ -18,6 +18,12 @@
 - What exact state enters the next episode?
 - Before the outgoing hook, what local dramatic result has already landed?
 
+A capacity estimate (`STY-16`) is informational, never a blocking finding. If a
+planned episode's shot/duration magnitude is far from the project's own accepted
+ratios, note it as an advisory observation with the sampled basis, and leave the
+resolution to the creator. Never derive a word, line, or shot quota from it, and
+never compare against another project's numbers.
+
 ## Entry, character, and serial memory
 
 - What prior-world fact does the writer need in order to predict present choices?
@@ -68,6 +74,10 @@ when nothing changes.
 - Are voices distinct by worldview, status, relationship, vocabulary, and rhythm?
 - Does exposition enter through conflict/evidence/consequence rather than a
   neutral information dump?
+- When a long speech is split, does the inserted action change the speaker's tactic
+  and give downstream a sourced cut point, rather than pad with a glance or a pause
+  (`SCR-09`)? When a long speech carries no internal turn, was it shortened instead
+  of split?
 
 Silence, interruption, slang, narration, and sentence length are creator options,
 not universal scoring ratios.

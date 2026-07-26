@@ -65,11 +65,23 @@
   downstream verdict may bind fixed alternate/master hashes and decide it. Use
   the [supersession decision example](../assets/supersession-decision.example.json)
   when that decision is needed.
+- Does single-shot audio stay production dialogue, off-screen sources, ambience,
+  and event effects, leaving scored music to the timeline layer unless the project
+  accepted otherwise or the music is diegetic? Do adjacent shots declare music
+  entries/exits that could actually join (`VID-14`)?
 
-Explicit timing that does not sum exactly to the accepted duration—over or
+Explicit timing that does not sum exactly to its shot's accepted duration—over or
 under—is a structural error. Untimed overload is a
 reviewed feasibility question: cite which action/performance/story beat would be
 lost, not a universal verbs-per-second formula.
+
+Container arithmetic is a separate structural check (`VID-13`). Count the accepted
+shots a delivery container carries, then confirm its duration equals the sum of
+their accepted durations. For a multi-shot container, confirm the members are
+contiguous in source order, share one geography/asset binding chain, do not cross a
+scene boundary, and each remains independently reviewable. A space or subject jump
+belongs on a member boundary; the same jump inside a member's timed segment is a
+hidden cut. Report an arithmetic mismatch and a hidden cut as two findings, not one.
 
 ## Cross-shot continuity
 
