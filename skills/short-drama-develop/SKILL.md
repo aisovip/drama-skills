@@ -12,8 +12,8 @@ license: MIT
 
 从本技能目录读取 `suite-ref.json`，按其中相对 `core_manifest` 定位唯一同级主技能与
 套件清单；确认声明的 core、contract、recipe 和清单 hash 一致后再读写项目。
-随后执行主技能的 [运行时预检](../short-drama/references/runtime-preflight.md)：先恢复事务、读取状态，再进入本阶段。
-涉及制作形态时按需读取 [production-form-profiles.md](../short-drama/references/production-form-profiles.md)，只投影本阶段负责的形、层、材质、光、运动或声音。
+随后执行 [阶段契约](references/stage-contract.md) 的运行时预检：先恢复事务、读取状态，再进入本阶段。
+该文件同时给出本阶段的所有权边界、需要从制作形态取得哪些输入，以及本阶段规则表；本技能不读取其他技能的文件。
 
 ## 先判断入口
 
@@ -136,4 +136,4 @@ license: MIT
   [premise-devices.md](references/premise-devices.md)（装置层，叠加在题材卡之上）
 - **起草项目级视觉方向与生产规则（导演阐述）**：
   [director-brief-craft.md](references/director-brief-craft.md)
-- **跨技能事实所有权或修订影响不清楚时**：[contract-and-ownership.md](../short-drama/references/contract-and-ownership.md)
+- **本阶段拥有什么、继承什么、不越权什么**：[stage-contract.md](references/stage-contract.md)

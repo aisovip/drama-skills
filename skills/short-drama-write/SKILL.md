@@ -12,7 +12,8 @@ license: MIT
 
 从本技能目录读取 `suite-ref.json`，按其中相对 `core_manifest` 定位唯一同级主技能与
 套件清单；确认声明的 core、contract、recipe 和清单 hash 一致后再读写项目。
-随后执行主技能的 [运行时预检](../short-drama/references/runtime-preflight.md)：先恢复事务、读取状态，再进入本阶段。
+随后执行 [阶段契约](references/stage-contract.md) 的运行时预检：先恢复事务、读取状态，再进入本阶段。
+该文件同时给出本阶段的所有权边界与规则表；本技能不读取其他技能的文件。
 
 ## 先判断入口
 
@@ -25,7 +26,7 @@ license: MIT
 
 ### 1. 读取当前真相
 
-确认创作者约束、已接受的上游事实、本集进入状态和待兑现铺垫。若修订已有剧本，引用当前文件而不是凭对话记忆重写。跨技能所有权不清时读取 [contract-and-ownership.md](../short-drama/references/contract-and-ownership.md)。
+确认创作者约束、已接受的上游事实、本集进入状态和待兑现铺垫。若修订已有剧本，引用当前文件而不是凭对话记忆重写。本阶段拥有什么、继承什么见 [阶段契约](references/stage-contract.md)。
 
 ### 2. 确定单集契约的唯一 owner
 

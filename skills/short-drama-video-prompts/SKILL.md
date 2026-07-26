@@ -12,16 +12,15 @@ license: MIT
 
 从本技能目录读取 `suite-ref.json`，按其中相对 `core_manifest` 定位唯一同级主技能与
 套件清单；确认声明的 core、contract、recipe 和清单 hash 一致后再读写项目。
-随后执行主技能的 [运行时预检](../short-drama/references/runtime-preflight.md)：先恢复事务、读取状态，再进入本阶段。
-涉及制作形态时按需读取 [production-form-profiles.md](../short-drama/references/production-form-profiles.md)，只投影本阶段负责的形、层、材质、光、运动或声音。
+随后执行 [阶段契约](references/stage-contract.md) 的运行时预检：先恢复事务、读取状态，再进入本阶段。
+该文件同时给出本阶段的所有权边界、需要从制作形态取得哪些输入，以及本阶段规则表；本技能不读取其他技能的文件。
 
 ## 进入条件与权属
 
 - 可从已接受的镜头或关键帧直接进入，无需重新开发故事；先定位项目和版本一致的主技能。
-- 所有权、下游文件何时变为 `stale` 或项目状态不清时，才读取主技能的
-  [所有权契约](../short-drama/references/contract-and-ownership.md)；需要定位规则 ID
-  或解释审查问题时，才读取 [规则索引](../short-drama/references/knowhow-index.md)
-  中相关 `VID-*`、`SHT-*`、`CON-*` 条目。
+- 所有权、下游文件何时变为 `stale` 或项目状态不清时，读
+  [阶段契约](references/stage-contract.md) 的所有权边界；需要定位规则 ID
+  或解释审查问题时，读同一文件的本阶段规则表。
 - 输入至少包含状态为 `accepted` 的镜头、起始关键帧/边界、时长、连续性终点与对白/声音引用；未接受或 `stale` 时退回 `$short-drama-storyboard`。
 - 若创作者明确要求全链预览，可对状态为 `provisional`、但没有 `unresolved` 问题的镜头/关键帧
   写候选运动说明；保留 `authority:candidate`，禁止声称已经 `accepted`、`approved` 或
@@ -41,7 +40,7 @@ license: MIT
 | 自检、独立复核、正反案例 | [审查量表与合成案例](references/review-and-fixtures.md) |
 | 生产端提示词写法、台词绑定、负面清单 | [生产提示词语法惯例](references/production-prompt-grammar.md) |
 | 分段交付、槽位职责、时长分配 | [交付档案与槽位语义](references/delivery-profile.md) |
-| 多张参考图的用途、补拍或替代版范围 | [参考图、揭示时机与补拍](../short-drama/references/reference-media-and-pickups.md) |
+| 多张参考图的用途、补拍或替代版范围 | [阶段契约](references/stage-contract.md) 的参考媒体与补拍 |
 
 规格使用 [运动规格模板](assets/motion-spec.jsonl.md)；末镜或下一集记录尚未建立时参考
 [末镜定位示例](assets/motion-terminal.example.jsonl)；可复制交付使用

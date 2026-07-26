@@ -123,7 +123,7 @@ Location plate 的价值是让后续镜头共享同一可导航空间。输入�
 
 已接受的 `short-drama.json#/creator_authority/{visual_direction,production_profile}` 决定这张
 场景板用什么词汇表达空间，不决定空间长什么样。形态词表见
-[production-form-profiles.md](../../short-drama/references/production-form-profiles.md)。
+本阶段需要从制作形态取得哪些输入，见 [阶段契约](stage-contract.md) 的“制作形态需要什么”。
 
 ### 从形态取什么
 

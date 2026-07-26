@@ -80,7 +80,7 @@
 
 写最小稳定识别集之前，先读 `short-drama.json#/creator_authority/{visual_direction,production_profile}`
 中状态为 `accepted` 的视觉方向与制作形态；`unset` 时向创作者给出选择，不从对话记忆补造。
-形态词表见 [production-form-profiles.md](../../short-drama/references/production-form-profiles.md)。
+本阶段需要从制作形态取得哪些输入，见 [阶段契约](stage-contract.md) 的“制作形态需要什么”。
 
 原因很直接：**形态决定观众靠什么通道认人**，因而决定哪些锚点在这个项目里根本可被表达。
 
