@@ -11,7 +11,7 @@
 {
   "container_id": "CONT-<stable-id>",
   "status": "candidate",
-  "delivery_profile_ref": {
+  "production_profile_ref": {
     "owner": "short-drama",
     "artifact": "short-drama.json",
     "hash": "<sha256>",
