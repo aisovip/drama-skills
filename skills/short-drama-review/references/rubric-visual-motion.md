@@ -67,9 +67,10 @@
   when that decision is needed.
 - Is music intent written as a relative entry/exit/duck against neighbouring shots
   rather than an independent cue per shot, and do adjacent annotations actually join
-  (`VID-14`)? Does the single-shot deliverable itself stay dialogue, off-screen
-  sources, ambience, and event effects with no baked-in music bed, unless the project
-  accepted otherwise or the source is diegetic?
+  (`VID-14`)? Does the prompt or spec text ask for a per-shot music bed against an
+  accepted timeline-layer plan? Whether a rendered clip actually carries a baked-in
+  track is not decidable here—cite it only from an authorized text observation record,
+  otherwise keep it `unverified` and never infer a mix result from prose.
 
 Explicit timing that does not sum exactly to its shot's accepted duration—over or
 under—is a structural error. Untimed overload is a

@@ -20,6 +20,12 @@
     "record_id": "KEY-<id>",
     "owner": "short-drama-storyboard"
   },
+  "container_ref": {
+    "artifact": "episodes/<EP>/storyboard/delivery-containers.jsonl",
+    "hash": "<sha256>",
+    "record_id": "CONT-<stable-id>",
+    "owner": "short-drama-video-prompts"
+  },
   "purpose_ref": {
     "artifact": "episodes/<EP>/storyboard/shots.jsonl",
     "hash": "<sha256>",
@@ -289,6 +295,10 @@
 }
 ```
 
+
+`container_ref` 只在项目声明了多镜交付容器、且本镜是某个容器的成员时填写；单镜交付删除该字段。
+它是指回容器记录的只读指针，容器不因此获得改写本规格的权限；容器记录本身见
+[delivery-container.jsonl.md](delivery-container.jsonl.md)。
 
 复制后删除不适用的可选字段和占位引用。`reported_end` 只作比较；末镜没有真实下一镜时改用
 `next_start_locator`。附加参考为空时使用空数组；对白说话者与声音方向只有在已接受引用存在时才填写。

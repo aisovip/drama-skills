@@ -112,7 +112,10 @@ alternate`，用同一文件内稳定的运动记录 ID 说明母版和补充关
 先向创作者展示起止边界摘要、动作/表演顺序、摄影/声音选择、时长警告和可复制提示词。接受后写：
 
 - `episodes/<EP>/storyboard/motion-specs.jsonl`：运动规格字段和只读来源引用；
-- `episodes/<EP>/storyboard/video-prompts.md`：由已接受规格和配方 `hash` 生成的文本版本。
+- `episodes/<EP>/storyboard/delivery-containers.jsonl`：**仅当项目声明了多镜交付容器时**，
+  记录容器成员顺序、各成员已接受时长的只读引用与容器时长，模板见
+  [delivery-container.jsonl.md](assets/delivery-container.jsonl.md)；
+- `episodes/<EP>/storyboard/video-prompts.md`：由已接受规格、容器记录和配方 `hash` 生成的文本版本。
 
 自然语言改提示词时，先展示规格字段怎样变化和重新生成的文本预览；若改动触碰分镜或
 剧本负责的内容，保持当前文件不变，并把修改请求交给对应技能。跨文件发布遵循主技能的

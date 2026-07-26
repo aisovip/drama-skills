@@ -55,9 +55,9 @@ Location plate 的价值是让后续镜头共享同一可导航空间。输入�
 
 ### 跨 View 的光线一致性 (`IMG-10`)
 
-上一条管的是**一个 View 内部**光向自洽。同一 Location 通常要按观察方向拆成多个 View
-（见 [identity-vs-variant.md](../../short-drama-assets/references/identity-vs-variant.md)
-的空间按观察方向区分），这些板会被同一场戏的正反打互相剪接，所以它们之间也要能对上。
+上一条管的是**一个 View 内部**光向自洽。同一 Location 通常按观察方向拆成多个 View
+（例如同一条走廊分别做朝北与朝东两块板），这些板会被同一场戏的正反打互相剪接，
+所以它们之间也要能对上。
 
 **`reviewed_invariant`**：同一 Location 在同一时间/天气 state 下的各个 View，必须共享
 同一套主光来源、色温关系与光比方向；差异只能来自已记录的成因，并写进对应的 delta。

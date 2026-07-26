@@ -71,7 +71,7 @@ questions. The index is navigation, not a formula sheet.
 | STY-14 | craft_default | Maintain compact serial memory for character strategy/state, relationships, information permissions, setup debt, rhythm, and exact handoff. |
 | STY-15 | reviewed_invariant | Calibrate each information release to what its visible carrier directly supports, while keeping unproved identity, cause, motive, or mechanism explicit as unresolved inference. |
 | STY-16 | craft_default | Before scene work, estimate each planned episode's shot and duration magnitude from the project's own accepted ratios, and resolve order-of-magnitude outliers in the map; the estimate informs the creator and never blocks delivery. |
-| STY-17 | reviewed_invariant | A premise device that grants foreknowledge or externally authorized ability states its scope, failure conditions, and cost of use when it first takes effect; later episodes may not widen that scope or drop the cost to escape a corner. A device redistributes information and ability without replacing the genre's pressure source, payoff, or ending promise. |
+| STY-17 | reviewed_invariant | A premise device separates its creator-accepted contract (scope, failure conditions, cost, whether its own declarations are reliable) from in-fiction disclosure; the contract is accepted before the device first takes effect, while disclosure may lag, stay partial, or be misstated by a character or the device itself. Every later device ability or exemption traces to a contract clause—an untraceable one is retroactive widening—and the audience not yet knowing every boundary is never itself a defect. |
 
 ## Script (`SCR`)
 
@@ -132,7 +132,7 @@ questions. The index is navigation, not a formula sheet.
 | SHT-12 | reviewed_invariant | Each audience-visibility fact binds its exact source, carrier, permission, trigger, and protection method; framing neither reveals that fact early nor hides the carrier this shot must communicate. |
 | SHT-13 | reviewed_invariant | Multi-character blocking projects sourced, directed relationships into compatible positions, gaze, distance, and action lines for the current boundary. |
 | SHT-14 | reviewed_invariant | A contested moving object preserves ownership, trajectory, direction, time/round state, and end location across cuts unless an authorized ellipsis says otherwise. |
-| SHT-15 | reviewed_invariant | What a shot must be read for—face and gaze, readable evidence text, the decisive hand action—does not sit only where the accepted delivery surface overlays the frame; occupied regions come from the creator's declared delivery plan, and an undeclared plan stays unresolved rather than unconstrained. |
+| SHT-15 | reviewed_invariant | When the creator has declared delivery-surface overlay regions with their permanence and source, what a shot must be read for—face and gaze, readable evidence text, the decisive hand action—does not sit only inside those regions, and shots bind the declared version. An undeclared surface leaves the rule inactive: record it as unresolved and do not restage against a guessed region. |
 
 ## Video prompts (`VID`)
 
