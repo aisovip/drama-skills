@@ -63,7 +63,14 @@ class NewRuleRegistrationTests(unittest.TestCase):
 
 
 class DeliveryContainerRecordTests(unittest.TestCase):
-    """VID-13 is structural, so a canonical record must carry its evidence."""
+    """VID-13 is structural, so a canonical record must carry resolvable evidence."""
+
+    def shot_template(self) -> dict:
+        return json.loads(
+            (SKILLS / "short-drama-storyboard/assets/shot-template.jsonl")
+            .read_text(encoding="utf-8")
+            .strip()
+        )
 
     def test_container_template_carries_members_durations_and_profile_ref(self) -> None:
         document = fenced_json(CONTAINER_TEMPLATE)
@@ -71,38 +78,63 @@ class DeliveryContainerRecordTests(unittest.TestCase):
         for key in ("container_id", "members", "container_duration", "membership_basis"):
             with self.subTest(key=key):
                 self.assertIn(key, document)
-
         member = document["members"][0]
-        for key in ("order", "shot_ref", "motion_ref", "accepted_duration_ref"):
+        for key in (
+            "order",
+            "shot_ref",
+            "motion_ref",
+            "accepted_duration_ref",
+            "location_binding_ref",
+            "asset_bindings_ref",
+        ):
             with self.subTest(member_key=key):
                 self.assertIn(key, member)
-
         self.assertEqual(member["shot_ref"]["owner"], "short-drama-storyboard")
         self.assertEqual(member["motion_ref"]["owner"], "short-drama-video-prompts")
-        self.assertEqual(
-            member["accepted_duration_ref"]["owner"], "short-drama-storyboard"
-        )
-        self.assertEqual(member["accepted_duration_ref"]["field"], "/duration")
-        self.assertEqual(
-            document["delivery_profile_ref"]["field"],
-            "/creator_authority/production_profile",
-        )
 
-    def test_container_template_states_its_local_verification_points(self) -> None:
-        text = read(CONTAINER_TEMPLATE)
-        for concept in ("唯一、连续、升序", "之和", "缓存", "只读投影"):
-            with self.subTest(concept=concept):
-                self.assertIn(concept, text)
+    def test_every_shot_field_pointer_resolves_on_the_shot_template(self) -> None:
+        """A field pointer that names a non-existent key cannot be verified later."""
 
-    def test_motion_spec_points_at_the_container_without_gaining_authority(self) -> None:
-        document = fenced_json(MOTION_TEMPLATE)
-        container_ref = document["container_ref"]
-        self.assertEqual(
-            container_ref["artifact"],
-            "episodes/<EP>/storyboard/delivery-containers.jsonl",
-        )
-        self.assertEqual(container_ref["owner"], "short-drama-video-prompts")
-        self.assertIn("只读指针", read(MOTION_TEMPLATE))
+        shot = self.shot_template()
+        member = fenced_json(CONTAINER_TEMPLATE)["members"][0]
+        for key in ("accepted_duration_ref", "location_binding_ref", "asset_bindings_ref"):
+            ref = member[key]
+            with self.subTest(ref=key):
+                self.assertEqual(ref["artifact"], "episodes/<EP>/storyboard/shots.jsonl")
+                pointer = ref["field"]
+                self.assertTrue(pointer.startswith("/"))
+                self.assertIn(pointer.lstrip("/"), shot)
+
+    def test_binding_chain_is_proved_per_member_not_from_one_record(self) -> None:
+        basis = fenced_json(CONTAINER_TEMPLATE)["membership_basis"]
+        self.assertIn("binding_chain_equal", basis)
+        self.assertNotIn("binding_chain_ref", basis)
+        self.assertIn("只引用其中一条成员记录不构成证明", read(CONTAINER_TEMPLATE))
+
+    def test_container_and_motion_do_not_form_a_hash_cycle(self) -> None:
+        """Two files that carry each other's hash can never both settle."""
+
+        container = fenced_json(CONTAINER_TEMPLATE)
+        motion = fenced_json(MOTION_TEMPLATE)
+
+        def hashed_artifacts(value: object, found: set[str]) -> set[str]:
+            if isinstance(value, dict):
+                artifact, digest = value.get("artifact"), value.get("hash")
+                if isinstance(artifact, str) and isinstance(digest, str):
+                    found.add(artifact)
+                for child in value.values():
+                    hashed_artifacts(child, found)
+            elif isinstance(value, list):
+                for child in value:
+                    hashed_artifacts(child, found)
+            return found
+
+        container_file = "episodes/<EP>/storyboard/delivery-containers.jsonl"
+        motion_file = "episodes/<EP>/storyboard/motion-specs.jsonl"
+        self.assertIn(motion_file, hashed_artifacts(container, set()))
+        self.assertNotIn(container_file, hashed_artifacts(motion, set()))
+        self.assertNotIn("container_ref", motion)
+        self.assertIn("不带指回交付容器的引用", read(MOTION_TEMPLATE))
 
     def test_container_owner_is_registered_and_published(self) -> None:
         ownership = read(SKILLS / "short-drama/references/contract-and-ownership.md")
@@ -130,6 +162,31 @@ class PremiseDeviceLayerTests(unittest.TestCase):
     def test_blocking_condition_is_untraceable_widening(self) -> None:
         self.assertIn("追溯不到即为", read(PREMISE))
 
+    def test_story_engine_carries_an_addressable_device_contract(self) -> None:
+        engine = read(SKILLS / "short-drama-develop/assets/story-engine.md")
+        self.assertIn("前提装置契约", engine)
+        for field in ("条款 ID", "能力范围", "失效条件", "使用代价", "可靠性"):
+            with self.subTest(field=field):
+                self.assertIn(field, engine)
+        self.assertRegex(engine, r"DEV-0\d")
+        self.assertIn("事后再回填条款", engine)
+
+    def test_episode_map_records_which_clauses_are_disclosed(self) -> None:
+        episode = json.loads(
+            (SKILLS / "short-drama-develop/assets/episode-map.jsonl")
+            .read_text(encoding="utf-8")
+            .strip()
+        )
+        disclosure = episode["premise_device_disclosure"]
+        for key in (
+            "clause_ids_disclosed_so_far",
+            "clause_ids_newly_disclosed",
+            "who_knows",
+            "misstated",
+        ):
+            with self.subTest(key=key):
+                self.assertIn(key, disclosure)
+
 
 class DeliverySurfaceTests(unittest.TestCase):
     """SHT-15 must stay inactive rather than fall back to a guessed safe frame."""
@@ -143,11 +200,30 @@ class DeliverySurfaceTests(unittest.TestCase):
         text = read(BLOCKING)
         self.assertNotIn("上下两端与一侧边缘可能被占用", text)
 
-    def test_declaration_shape_supports_exact_citation(self) -> None:
-        text = read(BLOCKING)
-        for concept in ("overlay_regions", "permanence", "source_ref", "unresolved"):
-            with self.subTest(concept=concept):
-                self.assertIn(concept, text)
+    def test_declaration_is_owned_by_the_creator_production_authority(self) -> None:
+        project = json.loads(
+            (SKILLS / "short-drama/assets/project-template/short-drama.json")
+            .read_text(encoding="utf-8")
+        )
+        surface = project["creator_authority"]["delivery_surface"]
+        self.assertEqual(surface["status"], "unset")
+        for key in ("aspect", "overlay_regions", "source_ref"):
+            with self.subTest(key=key):
+                self.assertIn(key, surface)
+
+    def test_shot_and_keyframe_bind_the_declared_surface_version(self) -> None:
+        for name in ("shot-template.jsonl", "keyframe-template.jsonl"):
+            document = json.loads(
+                (SKILLS / f"short-drama-storyboard/assets/{name}")
+                .read_text(encoding="utf-8")
+                .strip()
+            )
+            with self.subTest(template=name):
+                ref = document["delivery_surface_ref"]
+                self.assertEqual(ref["owner"], "short-drama")
+                self.assertEqual(ref["artifact"], "short-drama.json")
+                self.assertEqual(ref["field"], "/creator_authority/delivery_surface")
+                self.assertIn("hash", ref)
 
 
 class TextOnlyReviewBoundaryTests(unittest.TestCase):
