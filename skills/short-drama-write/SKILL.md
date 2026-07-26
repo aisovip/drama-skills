@@ -126,6 +126,20 @@ source issue 的 refs 都保持 candidate；accepted 剧本发布后再以默认
 
 不需要录音时不生成这份文件。本套件不生成音频，也不从这份文本判断成品音质。
 
+写完后用 [voice_sheet_check.py](scripts/voice_sheet_check.py) 核对它仍然是投影：
+
+```bash
+python3 <skill-dir>/scripts/voice_sheet_check.py episodes/EP001/voice-record-sheet.jsonl \
+  --index episodes/EP001/screenplay-index.jsonl \
+  --screenplay episodes/EP001/screenplay.md
+```
+
+脚本按块 ID 定位、切出剧本原字节、核对内容 hash，再逐字比对台词与说话人。剧本改过而
+索引没重建、或有人在表里顺手改了词，都会被单独报出来——**这两种情况下的配音本看起来
+和正常的一模一样**，而它被带进录音棚的那一刻正是没人能核对的时刻。
+
+只覆盖部分对白（按人物或按场次分表）是正常做法，未覆盖的块只报告不判错。
+
 ### 6. 修订而不是抹平
 
 按顺序做所有者修订：

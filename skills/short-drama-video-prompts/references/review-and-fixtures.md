@@ -48,6 +48,15 @@ Finding 必须含 artifact/hash、引用片段、影响、required fix、owner�
 | VID_CAMERA_UNMOTIVATED | craft_default | reviewer | warning | video-prompts | movement 无助于目的/注意变化 |
 | VID_REFERENCE_DUMP | craft_default | reviewer | warning | video-prompts | bound frame 已带外观却重复整本 bible |
 | VID_HIDDEN_CUT_IN_SEGMENT | reviewed_invariant | reviewer | error | video-prompts | 单个计时段内藏入视角或空间跳变，等于一次未申报的剪辑 |
+| VID15_SHOT_PACKED_TWICE | structural_invariant | validator | error | video-prompts | 同一镜头被两个容器认领，全集时长凭空多一段 |
+| VID15_MEMBER_IS_NOT_AN_EPISODE_SHOT | structural_invariant | validator | error | video-prompts | 容器成员不属于本集镜头集合 |
+| VID15_MEMBER_SHOT_HAS_NO_DURATION | structural_invariant | validator | error | video-prompts | 被装箱的镜头没有数值时长，容器时长无从成立 |
+| VID15_CONTAINER_DURATION_IS_NOT_THE_SUM | structural_invariant | validator | error | video-prompts | 容器时长不等于成员已接受时长之和 |
+| VID15_EPISODE_TOTAL_DOES_NOT_RECONCILE | structural_invariant | validator | error | video-prompts | 容器加散镜不等于全集镜头时长总和 |
+
+`VID15_*` 由 [container_check.py](../scripts/container_check.py) 执行。未装容器的散镜与
+时长尚未确定的镜头**只报告不判错**：前者是合法的打包选择，后者是上游还没做完，把它们
+写成缺陷会让"进行中"和"做错了"无法区分。
 | VID_UNEXECUTABLE_MICRO_METRIC | craft_default | reviewer | warning | video-prompts | 亚秒偏移、厘米位移、角度数等读起来精确却无法执行也无法验证的计量 |
 | VID_INNER_MONOLOGUE_ONLY | craft_default | reviewer | warning | video-prompts | 绝大多数段落只有内心活动，没有可拍的可见事件或有来源的声音 |
 | VID_STYLE_ALTERNATIVE | taste_option | reviewer | note | video-prompts | 表演/摄影/声音风格的非阻断选择 |
