@@ -9,6 +9,8 @@
 
 ## [未发布]
 
+## [0.2.0] - 2026-07-27
+
 本次把 0.1.0 「已知缺口」中列出的全部条目处理完，给三条此前只靠人工核对的
 `structural_invariant` 补上执行脚本，并修掉三处沿途发现的问题。
 
@@ -53,7 +55,9 @@
   终点权威。`SHT-10` 相应改为按声明的边界判定。**既有关键帧记录需要补 `boundary_role`。**
 - **`decided_by` 有了语义**：承担判断错误后果的一方——创作者本人，或有前置授权、不能
   自行扩权的受托人。助手、智能体、负责技能与审查者永远不是合法取值。
-- **声明 Python 3.10 为版本下限**，三个创作者会调用的脚本在版本过低时直接说明原因。
+- **声明 Python 3.10 为版本下限**，创作者会调用的脚本在版本过低时直接说明原因。
+- **套件版本升到 0.2.0**，七份 `suite-ref.json` 随之更新；混装旧版子技能会被安装验证
+  拒绝。
 
 ### 修复
 
@@ -63,6 +67,9 @@
   判定为静默失效的布局；照它做会重新引入该缺陷。
 - `quick_validate` 测试把「校验器自己起不来」当成「技能不合规」。校验器在仓库外并带
   自己的第三方依赖，缺依赖时 9 个测试变红而技能其实合规。
+- 清单工具只把 `core_manifest_sha256` 同步给七份 `suite-ref.json`，版本号不同步。
+  它是文档里保持一致的唯一命令，于是升版本会留下半套旧引用——安装验证虽能拒绝，
+  但已经是发布之后的事了。现在版本相关字段一并下发。
 
 - **三条 `structural_invariant` 有了脚本执行者**。`SHT-16` 与 `SHT-17` 由分镜技能的
   `storyboard_check.py` 执行，`VID-15` 由视频提示词技能的 `container_check.py` 执行，
@@ -158,5 +165,6 @@ image-prompts / storyboard / video-prompts / review。
 fresh-agent 双臂盲测、独立 reviewer verdict 与 protected-release gate 三项未完成，
 由维护者知情后放行；相应记录以 `hold` 而非 `promotion` 留在仓库外的受控工作区。
 
-[未发布]: https://github.com/worldwonderer/drama-skills/compare/v0.1.0...HEAD
+[未发布]: https://github.com/worldwonderer/drama-skills/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/worldwonderer/drama-skills/releases/tag/v0.2.0
 [0.1.0]: https://github.com/worldwonderer/drama-skills/releases/tag/v0.1.0

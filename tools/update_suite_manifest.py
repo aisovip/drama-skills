@@ -102,11 +102,20 @@ def main(argv: list[str] | None = None) -> int:
         encoding="utf-8",
     )
     manifest_hash = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    # Every field a child pins from the manifest is copied, not just the hash.
+    # Propagating one of them leaves a version bump half-applied, which the
+    # verifier then rejects as a mixed install — correct, but only after the
+    # maintainer has already published the inconsistency.
+    inherited = {
+        key: manifest[key]
+        for key in ("suite", "suite_version", "contract_version", "recipe_version", "core_skill")
+    }
     for child in skills.iterdir():
         reference_path = child / "suite-ref.json"
         if not reference_path.is_file():
             continue
         reference = json.loads(reference_path.read_text(encoding="utf-8"))
+        reference.update(inherited)
         reference["core_manifest_sha256"] = manifest_hash
         reference_path.write_text(
             json.dumps(reference, ensure_ascii=False, separators=(",", ":")) + "\n",

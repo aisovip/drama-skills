@@ -1,26 +1,6 @@
 {
-  "suite": "short-drama-suite",
-  "suite_version": "0.1.0",
   "contract_version": "1.0.0-draft",
-  "recipe_version": "1.0.0-draft",
   "core_skill": "short-drama",
-  "public_skills": [
-    "short-drama",
-    "short-drama-develop",
-    "short-drama-write",
-    "short-drama-assets",
-    "short-drama-image-prompts",
-    "short-drama-storyboard",
-    "short-drama-video-prompts",
-    "short-drama-review"
-  ],
-  "trust_boundary": {
-    "host_text_inference": true,
-    "suite_scripts_outbound_network": false,
-    "media_generation": false,
-    "provider_api_calls": false,
-    "private_source_runtime_access": false
-  },
   "files": {
     "short-drama-assets/SKILL.md": "9e646ceb926920382be8f5ec817af6eb160fd3238b1f5364e9953b9514a31263",
     "short-drama-assets/agents/openai.yaml": "b8c088c52752d4a09ec5a8d724b8e18f6a789d05c6319b2615b3106c872010dc",
@@ -156,5 +136,25 @@
     "short-drama/references/runtime-preflight.md": "fa58f28e0348422f6be781eaad5d1fd0e4908dac02c99d2928452f1146f10c61",
     "short-drama/scripts/project_tool.py": "a34fda6e1fea4b6f04f2afb50f38bab09679e69ba6975f4eb41a27a30073c627",
     "short-drama/scripts/suite_verify.py": "2c1d871e10b218da3d433fbc201950a63b4be9bb456672fab15d5b289d7eb69b"
+  },
+  "public_skills": [
+    "short-drama",
+    "short-drama-develop",
+    "short-drama-write",
+    "short-drama-assets",
+    "short-drama-image-prompts",
+    "short-drama-storyboard",
+    "short-drama-video-prompts",
+    "short-drama-review"
+  ],
+  "recipe_version": "1.0.0-draft",
+  "suite": "short-drama-suite",
+  "suite_version": "0.2.0",
+  "trust_boundary": {
+    "host_text_inference": true,
+    "media_generation": false,
+    "private_source_runtime_access": false,
+    "provider_api_calls": false,
+    "suite_scripts_outbound_network": false
   }
 }
