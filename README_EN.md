@@ -37,6 +37,18 @@ payoff, and production load. A production-form card then translates live action,
 2D motion comics, stylized 3D, ink work, and other directions into shape, layers,
 material, light, action, and sound across writing, assets, storyboards, and prompts.
 
+## Each skill is self-contained
+
+The eight skills install as siblings but **never read each other's files**. Shared
+material is inlined as per-stage slices: every child skill's
+`references/stage-contract.md` carries its own runtime preflight, ownership boundary,
+what it needs from the production form, and the full rule table for that stage. The
+router dispatches by skill name only; it does not pick references on a child's behalf.
+
+The cost is that one `CON-*` continuity rule is restated in assets, storyboard, and
+video-prompts. Tests enforce that all three copies keep identical classification and
+wording, so changing one means changing three.
+
 ## Production chain
 
 ```mermaid

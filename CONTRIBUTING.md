@@ -63,6 +63,16 @@ python3 tools/verify_suite.py skills/short-drama
 python3 tools/update_suite_manifest.py skills/short-drama
 ```
 
+## 更新日志
+
+面向创作者可见的改动要写进 `CHANGELOG.md` 的 `[未发布]` 段。按约束力归类：
+`structural_invariant` 与 `reviewed_invariant` 的新增或收紧记为**变更**（可能阻断既有
+产物），`craft_default` 与 `taste_option` 记为**新增**（可被创作者覆盖）。修掉会产生
+错误产出的问题记为**修复**，并写清原表述错在哪。
+
+只改措辞、补例子或调整排版不必记录。已定位但本次不处理的问题写进**已知缺口**，
+不要留在提交信息里。
+
 ## 提交约定
 
 - 一个合并请求只聚焦一件事；`SKILL.md` 与配套参考资料放在同一个合并请求中。
