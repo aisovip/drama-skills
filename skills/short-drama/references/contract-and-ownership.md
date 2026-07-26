@@ -178,7 +178,16 @@ creator choice.
 Acceptance freezes the candidate read set as exact `accepted_inputs`. Publishing a
 changed upstream target carries the full direct/transitive downstream stale closure
 inside the same WAL manifest, so forward recovery applies target bytes and stale
-lifecycle state together. Removing a path from a multi-file artifact's candidate
+lifecycle state together.
+
+A consumer of a shared `.json`/`.jsonl` input may additionally freeze
+`accepted_input_records`: the canonical hash of each record it actually read. Its
+`accepted_inputs` hash then records the binding-time snapshot, while validity is
+judged record by record, so appending an unrelated character to a series bible no
+longer invalidates every episode that referenced that file. A bound record that
+changes, disappears, or stops resolving uniquely still invalidates its consumers,
+and so does any change to a whole-file-bound input. Markdown carries no
+machine-checkable record identity and is always bound whole-file. Removing a path from a multi-file artifact's candidate
 target set invalidates that former accepted/candidate target in the same closure.
 The old bytes remain available for creator recovery, but after acceptance the path
 has no accepted owner and cannot be delivered. Review and delivery recursively

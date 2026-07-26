@@ -1,5 +1,12 @@
 # 项目命令与审核记录
 
+## 目录
+
+1. 发布与创作者确认
+2. 独立审查记录
+3. 过期影响与依赖检查（含把共享文件的失效半径收窄到记录）
+4. 恢复与打包
+
 只在实际调用 `project_tool.py`、诊断命令失败或核对审核记录时读取本文。
 从 `short-drama` 技能安装目录调用脚本，不依赖当前工作目录：
 
@@ -7,7 +14,7 @@
 python3 <short-drama-skill-dir>/scripts/project_tool.py init <project> --title <title>
 python3 <short-drama-skill-dir>/scripts/project_tool.py status <project>
 python3 <short-drama-skill-dir>/scripts/project_tool.py recover <project>
-python3 <short-drama-skill-dir>/scripts/project_tool.py publish <project> --owner short-drama-write --artifact-id EP001:script --output episodes/EP001/screenplay.md=inputs/EP001-screenplay.candidate.md [--input <upstream-path>=<sha256> ...]
+python3 <short-drama-skill-dir>/scripts/project_tool.py publish <project> --owner short-drama-write --artifact-id EP001:script --output episodes/EP001/screenplay.md=inputs/EP001-screenplay.candidate.md [--input <upstream-path>=<sha256> ...] [--input-record <upstream-path>=<record-id> ...]
 python3 <short-drama-skill-dir>/scripts/project_tool.py accept <project> --artifact-id EP001:script --decision accepted --target episodes/EP001/screenplay.md=<candidate-sha256> --evidence-artifact creator-decisions.jsonl --evidence-hash <decision-file-sha256> --evidence-record-id <decision-id>
 python3 <short-drama-skill-dir>/scripts/project_tool.py review <project> --artifact-id EP001:script --verdict approve --target episodes/EP001/screenplay.md=<accepted-sha256> --verdict-owner short-drama-review --verdict-artifact reviews/EP001-verdict.json --verdict-hash <verdict-file-sha256>
 python3 <short-drama-skill-dir>/scripts/project_tool.py package <project> --episode EP001 --include <accepted-path> [...]
@@ -55,6 +62,34 @@ JSONL 记录必须用 `--evidence-record-id` 唯一定位同名 `decision_id`；
 接受时把 `candidate` 的准确输入清单保存为 `accepted_inputs`。发布新 `candidate` 时，
 同一预写日志清单会找出直接和间接受影响的下游文件：保留旧的创作者确认记录，
 但把受影响的下游构建状态标为 `stale`，清空校验与审查就绪状态，并阻止交付。
+
+### 把共享文件的失效半径收窄到记录
+
+`bible/*.jsonl` 这类文件是全项目共享输入。只按整文件 `hash` 绑定时，第 48 集新增一个
+配角会把此前 47 集引用过该文件的产物全部标为 `stale`——它们其实一个字都没受影响。
+
+发布时用 `--input-record <path>=<selector>` 声明**这份候选实际读了哪几条记录**
+（可重复；仍需同时用 `--input` 绑定该文件的整文件 `hash`）：
+
+```text
+--input bible/characters.jsonl=<sha256> \
+--input-record bible/characters.jsonl=CHAR-GUHE \
+--input-record bible/characters.jsonl=CHAR-LINYE
+```
+
+此后该文件的其余部分怎么改都不影响这份产物；只有被绑定的记录本身变化、消失或变得
+不唯一时，它才会被标为 `stale`。`review` 与 `package` 的逐层复验同样改为核对这几条
+记录，所以文件 `hash` 前进之后产物依然可以交付。
+
+- **JSONL 选择器是记录 ID**：取值为某个以 `_id` 结尾的顶层字段，且在该文件中只出现
+  一次。出现零次或多次一律拒绝，不做猜测。
+- **JSON 选择器是 RFC 6901 指针**，例如 `/creator_authority/production_profile`。
+- 记录 `hash` 按键名排序后的规范形式计算，所以重排字段或改动缩进不会误判为变化。
+- **Markdown 不能做记录级绑定**：它没有可机器校验的记录身份，收窄只会变成一句无法
+  验证的承诺。剧本类依赖仍按整文件绑定，需要更小半径就先拆文件。
+
+`accepted_inputs` 中保留的整文件 `hash` 此时是**绑定当时的快照**，用于按 `hash` 取回
+那一版字节；判断是否仍然有效的依据是被绑定的那几条记录。
 
 `review` 和 `package` 会逐层复验输入的当前 `hash`、唯一且状态为 `accepted` 的提供方，
 以及提供方本身的构建、确认状态和输入。外部编辑、循环或含糊依赖不能靠手改状态字符串

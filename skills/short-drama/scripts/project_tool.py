@@ -450,6 +450,7 @@ def _fault(injector: FaultInjector | None, point: str, txid: str) -> None:
 def _normalize_read_set(
     root: Path,
     read_set: Mapping[str, str | None] | Iterable[str] | None,
+    read_records: Mapping[str, Mapping[str, str]] | None = None,
 ) -> list[dict[str, Any]]:
     if read_set is None:
         return []
@@ -459,6 +460,7 @@ def _normalize_read_set(
         items = ((str(path), expected) for path, expected in read_set.items())
     else:
         items = ((str(path), _live_hash(_project_path(root, _relative_path(path, allow_operations=True)))) for path in read_set)
+    records = dict(read_records or {})
     for raw, expected in items:
         relative = _relative_path(raw, allow_operations=True)
         if expected is not None and not re.fullmatch(r"[0-9a-f]{64}", expected):
@@ -466,7 +468,15 @@ def _normalize_read_set(
         actual = _live_hash(_project_path(root, relative))
         if actual != expected:
             raise StaleReadSetError(f"read set was stale before prepare: {relative}")
-        entries.append({"path": relative, "expected_hash": expected})
+        entry: dict[str, Any] = {"path": relative, "expected_hash": expected}
+        bound = records.pop(relative, None)
+        if bound:
+            entry["records"] = dict(sorted(bound.items()))
+        entries.append(entry)
+    if records:
+        raise ValueError(
+            "record binding has no matching read set path: " + ", ".join(sorted(records))
+        )
     return sorted(entries, key=lambda entry: entry["path"])
 
 
@@ -535,6 +545,15 @@ def _apply_snapshot_pointers(root: Path, manifest: dict[str, Any]) -> bool:
                 entry["path"]: entry["expected_hash"]
                 for entry in manifest.get("read_set", [])
             }
+            candidate_input_records = {
+                entry["path"]: entry["records"]
+                for entry in manifest.get("read_set", [])
+                if entry.get("records")
+            }
+            if candidate_input_records:
+                record["candidate_input_records"] = candidate_input_records
+            else:
+                record.pop("candidate_input_records", None)
             record["candidate_source_transaction"] = manifest["transaction_id"]
             record.pop("creator_decision", None)
             record.pop("review_evidence", None)
@@ -692,6 +711,7 @@ def publish_transaction(
     lifecycle_changes: Mapping[str, Mapping[str, Any]],
     target_artifacts: Mapping[str, str] | None = None,
     read_set: Mapping[str, str | None] | Iterable[str] | None = None,
+    read_records: Mapping[str, Mapping[str, str]] | None = None,
     fault_injector: FaultInjector | None = None,
     authority: str = "accepted",
     owner: str | None = None,
@@ -748,7 +768,7 @@ def publish_transaction(
         if transaction.stat().st_dev != root.stat().st_dev:
             raise TransactionError("transaction directory is not on the project filesystem")
 
-        read_entries = _normalize_read_set(root, read_set)
+        read_entries = _normalize_read_set(root, read_set, read_records)
         targets: list[dict[str, Any]] = []
         for index, relative in enumerate(sorted(relative_outputs)):
             content_value = relative_outputs[relative]
@@ -915,8 +935,22 @@ def _validate_manifest(manifest: dict[str, Any], txid: str) -> None:
         raise TransactionError("transaction read set is invalid")
     read_paths: set[str] = set()
     for entry in read_set:
-        if not isinstance(entry, dict) or set(entry) != {"path", "expected_hash"}:
+        if not isinstance(entry, dict) or not {"path", "expected_hash"} <= set(entry):
             raise TransactionError("transaction read set entry is invalid")
+        if set(entry) - {"path", "expected_hash", "records"}:
+            raise TransactionError("transaction read set entry is invalid")
+        bound = entry.get("records")
+        if "records" in entry:
+            if not isinstance(bound, dict) or not bound:
+                raise TransactionError("transaction read set records are invalid")
+            for selector, digest in bound.items():
+                if (
+                    not isinstance(selector, str)
+                    or not selector
+                    or not isinstance(digest, str)
+                    or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                ):
+                    raise TransactionError("transaction read set records are invalid")
         relative = _relative_path(
             entry["path"], allow_operations=authority == "accepted"
         )
@@ -1019,9 +1053,15 @@ def _state_satisfies_manifest(root: Path, manifest: dict[str, Any]) -> bool:
                 entry["path"]: entry["expected_hash"]
                 for entry in manifest.get("read_set", [])
             }
+            expected_input_records = {
+                entry["path"]: entry["records"]
+                for entry in manifest.get("read_set", [])
+                if entry.get("records")
+            }
             if (
                 record.get("owner") != manifest.get("owner")
                 or record.get("candidate_inputs") != expected_inputs
+                or record.get("candidate_input_records", {}) != expected_input_records
                 or pointers != expected_candidates[target["artifact_id"]]
             ):
                 return False
@@ -1294,6 +1334,187 @@ def _verify_live_hashes(root: Path, values: Mapping[str, str], *, label: str) ->
             raise ValueError(f"{label} hash does not match live file: {relative}")
 
 
+def _canonical_record_bytes(value: Any) -> bytes:
+    """Serialize one record so key order and whitespace cannot change its hash."""
+
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+
+
+def _jsonl_records(content: bytes, relative: str) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for number, line in enumerate(content.decode("utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except (json.JSONDecodeError, UnicodeError) as error:
+            raise ValueError(
+                f"record binding needs parseable JSONL: {relative} line {number}"
+            ) from error
+        if not isinstance(record, dict):
+            raise ValueError(
+                f"record binding needs one object per line: {relative} line {number}"
+            )
+        records.append(record)
+    return records
+
+
+def _resolve_json_pointer(document: Any, pointer: str, relative: str) -> Any:
+    if pointer == "":
+        return document
+    if not pointer.startswith("/"):
+        raise ValueError(
+            f"JSON record selector must be an RFC 6901 pointer: {relative} {pointer}"
+        )
+    current = document
+    for raw in pointer.split("/")[1:]:
+        token = raw.replace("~1", "/").replace("~0", "~")
+        if isinstance(current, dict):
+            if token not in current:
+                raise ValueError(f"record selector does not resolve: {relative} {pointer}")
+            current = current[token]
+        elif isinstance(current, list):
+            if re.fullmatch(r"(?:0|[1-9][0-9]*)", token) is None or int(token) >= len(
+                current
+            ):
+                raise ValueError(
+                    f"record selector does not resolve: {relative} {pointer}"
+                )
+            current = current[int(token)]
+        else:
+            raise ValueError(f"record selector does not resolve: {relative} {pointer}")
+    return current
+
+
+def _record_digests(
+    content: bytes,
+    relative: str,
+    selectors: Iterable[str],
+    *,
+    missing_ok: bool = False,
+) -> dict[str, str | None]:
+    """Hash the selected records inside one structured artifact.
+
+    A JSONL selector is a record ID: the value of some top-level ``*_id`` field
+    that occurs exactly once in the file, so no per-artifact schema is needed
+    and an ambiguous ID is reported instead of guessed. A JSON selector is an
+    RFC 6901 pointer. With ``missing_ok`` an unresolvable selector yields None
+    rather than raising, which is what staleness narrowing needs: a record that
+    vanished or turned ambiguous must invalidate its consumers, not crash.
+    """
+
+    wanted = list(selectors)
+    suffix = PurePosixPath(relative).suffix.lower()
+    if suffix not in {".json", ".jsonl"}:
+        raise ValueError(
+            f"record-level input binding needs a .json or .jsonl input: {relative}"
+        )
+    digests: dict[str, str | None] = {}
+    try:
+        if suffix == ".jsonl":
+            records = _jsonl_records(content, relative)
+            for selector in wanted:
+                matches = [
+                    record
+                    for record in records
+                    if any(
+                        key.endswith("_id") and value == selector
+                        for key, value in record.items()
+                        if isinstance(value, str)
+                    )
+                ]
+                if len(matches) != 1:
+                    raise ValueError(
+                        f"record selector must resolve exactly once: {relative} {selector}"
+                    )
+                digests[selector] = sha256_bytes(_canonical_record_bytes(matches[0]))
+        else:
+            try:
+                document = json.loads(content.decode("utf-8"))
+            except (json.JSONDecodeError, UnicodeError) as error:
+                raise ValueError(
+                    f"record binding needs parseable JSON: {relative}"
+                ) from error
+            for selector in wanted:
+                digests[selector] = sha256_bytes(
+                    _canonical_record_bytes(
+                        _resolve_json_pointer(document, selector, relative)
+                    )
+                )
+    except ValueError:
+        if not missing_ok:
+            raise
+        return {selector: digests.get(selector) for selector in wanted}
+    return digests
+
+
+def _normalize_record_selectors(
+    values: Mapping[str, Iterable[str]] | None,
+) -> dict[str, list[str]]:
+    normalized: dict[str, list[str]] = {}
+    for raw, selectors in (values or {}).items():
+        relative = _relative_path(raw)
+        if relative in normalized:
+            raise ValueError(f"duplicate record binding path: {relative}")
+        unique: list[str] = []
+        for selector in selectors:
+            if not isinstance(selector, str) or not selector:
+                raise ValueError(f"record selector is invalid: {relative}")
+            if selector in unique:
+                raise ValueError(f"duplicate record selector: {relative} {selector}")
+            unique.append(selector)
+        if not unique:
+            raise ValueError(f"record binding needs at least one selector: {relative}")
+        normalized[relative] = sorted(unique)
+    return dict(sorted(normalized.items()))
+
+
+def _input_record_bindings(record: Mapping[str, Any], key: str) -> dict[str, dict[str, str]]:
+    raw = record.get(key)
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError(f"artifact {key} are invalid")
+    normalized: dict[str, dict[str, str]] = {}
+    for path, bindings in raw.items():
+        relative = _relative_path(path)
+        if not isinstance(bindings, dict) or not bindings:
+            raise ValueError(f"artifact {key} entry is invalid: {relative}")
+        if relative in normalized:
+            raise ValueError(f"artifact {key} paths are duplicated: {relative}")
+        selectors: dict[str, str] = {}
+        for selector, digest in bindings.items():
+            if not isinstance(selector, str) or not selector:
+                raise ValueError(f"artifact {key} selector is invalid: {relative}")
+            if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+                raise ValueError(
+                    f"artifact {key} record hash is invalid: {relative} {selector}"
+                )
+            selectors[selector] = digest
+        normalized[relative] = dict(sorted(selectors.items()))
+    return dict(sorted(normalized.items()))
+
+
+def _verify_live_records(
+    root: Path,
+    bindings: Mapping[str, Mapping[str, str]],
+    *,
+    label: str,
+) -> None:
+    for relative, selectors in bindings.items():
+        path = _project_path(root, relative)
+        if not path.is_file():
+            raise ValueError(f"{label} record source is unavailable: {relative}")
+        digests = _record_digests(path.read_bytes(), relative, selectors)
+        for selector, expected in selectors.items():
+            if digests.get(selector) != expected:
+                raise ValueError(
+                    f"{label} record hash does not match live file: {relative} {selector}"
+                )
+
+
 def _input_bindings(record: Mapping[str, Any], key: str) -> dict[str, str]:
     raw = record.get(key)
     if not isinstance(raw, dict):
@@ -1315,6 +1536,7 @@ def _validate_input_closure(
     artifact_id: str,
     *,
     bindings: Mapping[str, str] | None = None,
+    record_bindings: Mapping[str, Mapping[str, str]] | None = None,
     active: tuple[str, ...] = (),
 ) -> None:
     if artifact_id in active:
@@ -1326,8 +1548,27 @@ def _validate_input_closure(
     if not isinstance(record, dict):
         raise ValueError(f"accepted input artifact is unavailable: {artifact_id}")
     inputs = dict(bindings) if bindings is not None else _input_bindings(record, "accepted_inputs")
-    _verify_live_hashes(root, inputs, label="accepted input")
+    records = (
+        {path: dict(selectors) for path, selectors in record_bindings.items()}
+        if record_bindings is not None
+        else _input_record_bindings(record, "accepted_input_records")
+    )
+    unknown_records = sorted(set(records) - set(inputs))
+    if unknown_records:
+        raise ValueError(
+            "record binding has no matching input: " + ", ".join(unknown_records)
+        )
+    # A record-bound input is judged by its bound records, so an unrelated
+    # append to the same shared file leaves this consumer current. The file
+    # hash stays in accepted_inputs as the binding-time snapshot.
+    _verify_live_hashes(
+        root,
+        {path: digest for path, digest in inputs.items() if path not in records},
+        label="accepted input",
+    )
+    _verify_live_records(root, records, label="accepted input")
     for relative, expected in inputs.items():
+        record_bound = relative in records
         path_owners: list[str] = []
         providers: list[str] = []
         for provider_id, provider in artifacts.items():
@@ -1339,9 +1580,10 @@ def _validate_input_closure(
                 isinstance(candidate_targets, dict) and relative in candidate_targets
             ) or (isinstance(accepted_targets, dict) and relative in accepted_targets):
                 path_owners.append(provider_id)
-            if (
-                isinstance(accepted_targets, dict)
-                and accepted_targets.get(relative) == expected
+            if isinstance(accepted_targets, dict) and (
+                relative in accepted_targets
+                if record_bound
+                else accepted_targets.get(relative) == expected
             ):
                 providers.append(provider_id)
         if len(set(path_owners)) > 1 or len(providers) > 1:
@@ -1372,10 +1614,28 @@ def _downstream_stale_changes(
     *,
     publishing_artifact: str,
     candidate_targets: Mapping[str, str],
+    candidate_contents: Mapping[str, bytes] | None = None,
 ) -> dict[str, dict[str, str]]:
     artifacts = state.get("artifacts")
     if not isinstance(artifacts, dict):
         return {}
+    contents = dict(candidate_contents or {})
+    resolved: dict[str, dict[str, str | None]] = {}
+
+    def records_survive(path: str, bound: Mapping[str, str]) -> bool:
+        """True when every record this consumer bound is byte-identical in the
+        new bytes. Without the new bytes — a removed path, or a target reached
+        transitively — survival cannot be proven and the consumer goes stale."""
+
+        content = contents.get(path)
+        if content is None:
+            return False
+        cached = resolved.setdefault(path, {})
+        missing = [selector for selector in bound if selector not in cached]
+        if missing:
+            cached.update(_record_digests(content, path, missing, missing_ok=True))
+        return all(cached.get(selector) == digest for selector, digest in bound.items())
+
     affected: dict[str, str | None] = dict(candidate_targets)
     publishing_record = artifacts.get(publishing_artifact)
     if isinstance(publishing_record, dict):
@@ -1399,11 +1659,21 @@ def _downstream_stale_changes(
             accepted_inputs = record.get("accepted_inputs")
             if not isinstance(accepted_inputs, dict):
                 continue
-            invalidated = any(
-                path in affected
-                and (affected[path] is None or affected[path] != expected)
-                for path, expected in accepted_inputs.items()
-            )
+            try:
+                bound_records = _input_record_bindings(record, "accepted_input_records")
+            except ValueError:
+                bound_records = {}
+            invalidated = False
+            for path, expected in accepted_inputs.items():
+                if path not in affected:
+                    continue
+                if affected[path] is not None and affected[path] == expected:
+                    continue
+                bound = bound_records.get(path)
+                if bound and records_survive(path, bound):
+                    continue
+                invalidated = True
+                break
             if not invalidated:
                 continue
             stale.add(artifact_id)
@@ -1537,9 +1807,15 @@ def publish_candidate(
     artifact_id: str,
     outputs: Mapping[str, str | bytes],
     input_hashes: Mapping[str, str] | None = None,
+    input_records: Mapping[str, Iterable[str]] | None = None,
     fault_injector: FaultInjector | None = None,
 ) -> dict[str, Any]:
-    """Publish a validated candidate without claiming creator or review authority."""
+    """Publish a validated candidate without claiming creator or review authority.
+
+    ``input_records`` narrows an input binding from the whole file to the
+    records this candidate actually consumed, so an unrelated append to a
+    shared bible or project file no longer invalidates it.
+    """
 
     root = find_project(path)
     if not isinstance(owner, str) or re.fullmatch(r"[A-Za-z0-9._:-]+", owner) is None:
@@ -1568,6 +1844,26 @@ def publish_candidate(
             raise ValueError(f"duplicate input path: {relative}")
         exact_inputs[relative] = expected
     exact_inputs = dict(sorted(exact_inputs.items()))
+    selectors = _normalize_record_selectors(input_records)
+    unbound = sorted(set(selectors) - set(exact_inputs))
+    if unbound:
+        raise ValueError(
+            "record binding needs an exact input: " + ", ".join(unbound)
+        )
+    read_records: dict[str, dict[str, str]] = {}
+    for relative, wanted in selectors.items():
+        source = _project_path(root, relative)
+        if not source.is_file():
+            raise ValueError(f"record binding source is unavailable: {relative}")
+        content = source.read_bytes()
+        if sha256_bytes(content) != exact_inputs[relative]:
+            raise ValueError(f"record binding source does not match input: {relative}")
+        digests = _record_digests(content, relative, wanted)
+        read_records[relative] = {
+            selector: digest
+            for selector, digest in digests.items()
+            if digest is not None
+        }
     candidate_hashes = {
         relative: sha256_bytes(content)
         for relative, content in normalized_outputs.items()
@@ -1633,6 +1929,7 @@ def publish_candidate(
             state,
             publishing_artifact=artifact_id,
             candidate_targets=candidate_hashes,
+            candidate_contents=normalized_outputs,
         ),
     }
     transaction = publish_transaction(
@@ -1642,6 +1939,7 @@ def publish_candidate(
         lifecycle_changes=lifecycle_changes,
         target_artifacts={relative: artifact_id for relative in normalized_outputs},
         read_set=exact_inputs,
+        read_records=read_records,
         authority="candidate",
         owner=owner,
         fault_injector=fault_injector,
@@ -1680,11 +1978,13 @@ def record_creator_acceptance(
             raise ValueError("creator decision does not match exact candidate targets")
         _verify_live_hashes(root, targets, label="candidate target")
         candidate_inputs = _input_bindings(record, "candidate_inputs")
+        candidate_input_records = _input_record_bindings(record, "candidate_input_records")
         _validate_input_closure(
             root,
             state,
             artifact_id,
             bindings=candidate_inputs,
+            record_bindings=candidate_input_records,
         )
         evidence, _decision_record = _validate_creator_decision_evidence(
             root,
@@ -1722,6 +2022,10 @@ def record_creator_acceptance(
             updated["accepted_targets"] = targets
             updated["accepted_snapshots"] = dict(sorted(snapshots.items()))
             updated["accepted_inputs"] = candidate_inputs
+            if candidate_input_records:
+                updated["accepted_input_records"] = candidate_input_records
+            else:
+                updated.pop("accepted_input_records", None)
             material = json.dumps(
                 targets, sort_keys=True, separators=(",", ":")
             ).encode("utf-8")
@@ -2449,12 +2753,19 @@ def _publish_from_cli(args: argparse.Namespace) -> dict[str, Any]:
             raise ValueError(f"input hash does not match candidate source: {source}")
         inputs[source] = source_hash
         outputs[target] = source_path.read_bytes()
+    records: dict[str, list[str]] = {}
+    for value in args.input_records or []:
+        key, separator, selector = value.partition("=")
+        if not separator or not key or not selector:
+            raise ValueError("input record must use PATH=SELECTOR")
+        records.setdefault(_relative_path(key), []).append(selector)
     return publish_candidate(
         root,
         owner=args.owner,
         artifact_id=args.artifact_id,
         outputs=outputs,
         input_hashes=inputs,
+        input_records=records or None,
     )
 
 
@@ -2493,6 +2804,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         dest="inputs",
         help="Bind an additional exact project input as PATH=SHA256.",
+    )
+    publish.add_argument(
+        "--input-record",
+        action="append",
+        dest="input_records",
+        help=(
+            "Narrow one input to the records actually used, as PATH=SELECTOR; "
+            "repeat per record. A selector is a JSONL record ID or a JSON "
+            "RFC 6901 pointer. Unrelated edits to the rest of that file then "
+            "leave this artifact current."
+        ),
     )
 
     accept = subparsers.add_parser(
