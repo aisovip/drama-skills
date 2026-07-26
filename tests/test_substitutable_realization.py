@@ -104,5 +104,41 @@ class FallbackEquivalenceTests(unittest.TestCase):
         self.assertIn("代价没有消失", text)
 
 
+
+class DecisionAuthorityTests(unittest.TestCase):
+    """`decided_by` carries the whole authority model; an undefined field lets a
+    skill quietly record itself as the decider."""
+
+    WORKFLOW = SKILLS / "short-drama/references/creator-workflow.md"
+    OWNERSHIP = SKILLS / "short-drama/references/contract-and-ownership.md"
+
+    def test_a_skill_or_agent_can_never_be_the_decider(self) -> None:
+        text = read(self.WORKFLOW)
+        self.assertIn("An assistant, an agent, an owning skill, or a reviewer is", text)
+        self.assertIn("never", text)
+        self.assertIn("decided_by", read(self.OWNERSHIP))
+
+    def test_a_delegate_needs_a_prior_creator_authorization(self) -> None:
+        text = read(self.WORKFLOW)
+        self.assertIn("cannot widen their own scope", text)
+        self.assertIn("a delegate cannot supersede the creator", text)
+
+    def test_no_shipped_path_still_prescribes_the_single_decisions_file(self) -> None:
+        """The append-only layout silently invalidates every earlier acceptance,
+        so it must not survive as an example anyone would copy."""
+
+        offenders: list[str] = []
+        for path in sorted(SKILLS.rglob("*")):
+            if not path.is_file() or path.suffix not in {".md", ".json", ".jsonl"}:
+                continue
+            for line in read(path).splitlines():
+                if "creator-decisions.jsonl" not in line:
+                    continue
+                # The lifecycle reference explains why the old layout is wrong.
+                if "接受第二集会改变" in line:
+                    continue
+                offenders.append(f"{path.relative_to(SUITE)}: {line.strip()[:70]}")
+        self.assertEqual(offenders, [], "\n".join(offenders))
+
 if __name__ == "__main__":
     unittest.main()

@@ -36,7 +36,7 @@ no motion-to-shot or rendered-Markdown-to-spec authority edge.
 | Fact | Authority | Projection behavior |
 |---|---|---|
 | creator constraints, visual direction, production profile | creator fields in `short-drama.json` | all Skills reference exact accepted project hash/field; direct-entry projects do not rely on chat memory |
-| creator accept/reject decisions | creator `creator-decisions.jsonl` | lifecycle proof binds exact candidate targets and decision record/hash |
+| creator accept/reject decisions | creator `creator-decisions/<artifact-id>.json` | lifecycle proof binds exact candidate targets and decision record/hash; `decided_by` names the creator or an authorized delegate, never a skill or agent |
 | series promise, engine, arc, planned episode contract | develop | episode-card points to the accepted map record/hash |
 | script-first standalone episode contract | write | active only when no develop-owned record exists; explicit authority migration if one is later adopted |
 | scene execution plan, beats, screenplay | write | may project but not duplicate a develop-owned contract |
