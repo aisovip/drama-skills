@@ -41,6 +41,7 @@ no motion-to-shot or rendered-Markdown-to-spec authority edge.
 | script-first standalone episode contract | write | active only when no develop-owned record exists; explicit authority migration if one is later adopted |
 | scene execution plan, beats, screenplay | write | may project but not duplicate a develop-owned contract |
 | scene/action/dialogue/production directive | write `screenplay.md` | index maps spans and hashes |
+| voice record sheet | write `voice-record-sheet.jsonl` | line text projects the exact screenplay block and hash; per-shot audio realization stays with video-prompts and is referenced, not copied |
 | planned knowledge/goal/relationship/handoff state | develop episode contract | write points to accepted record while projection mode is active |
 | realized knowledge/belief/goal/relationship/emotion change | write screenplay/standalone contract | continuity ledgers carry source pointer, never a second value authority |
 | block ID, kind, span, hash | write indexer | points to screenplay snapshot |

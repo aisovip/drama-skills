@@ -140,5 +140,60 @@ class DecisionAuthorityTests(unittest.TestCase):
                 offenders.append(f"{path.relative_to(SUITE)}: {line.strip()[:70]}")
         self.assertEqual(offenders, [], "\n".join(offenders))
 
+
+class RemainingCraftGapTests(unittest.TestCase):
+    """The 0.1.0 changelog listed these as located but unhandled."""
+
+    def test_the_angle_vocabulary_separates_three_independent_choices(self) -> None:
+        shot = json.loads(
+            read(SKILLS / "short-drama-storyboard/assets/shot-template.jsonl").strip()
+        )
+        framing = shot["framing"]
+        self.assertIn("camera_height", framing)
+        self.assertIn("正面", framing["angle"])
+        self.assertIn("俯", framing["camera_height"])
+        # Lens intent already belongs to the keyframe; two owners for one fact
+        # means only one of them gets updated.
+        self.assertNotIn("lens_intent", framing)
+        keyframe = json.loads(
+            read(SKILLS / "short-drama-storyboard/assets/keyframe-template.jsonl").strip()
+        )
+        self.assertIn("lens_intent", keyframe["camera"])
+        self.assertIn("shot-owned projection", keyframe["camera"]["camera_height"])
+
+    def test_coincidence_is_allowed_on_one_side_only(self) -> None:
+        craft = unwrapped(SKILLS / "short-drama-write/references/script-craft.md")
+        self.assertIn("把人推进麻烦可以，把人从麻烦里捞出来不可以", craft)
+        self.assertIn("解除时必须有残余", craft)
+
+    def test_every_dialogue_method_carries_its_failure_condition(self) -> None:
+        craft = read(SKILLS / "short-drama-write/references/dialogue-craft.md")
+        rows = [line for line in craft.splitlines() if line.startswith("| 写潜台词")]
+        self.assertTrue(rows)
+        self.assertIn("是方法用得到处都是", craft.replace("\n", ""))
+
+    def test_the_voice_sheet_is_a_projection_of_the_screenplay(self) -> None:
+        sheet = unwrapped(SKILLS / "short-drama-write/assets/voice-record-sheet.jsonl.md")
+        self.assertIn("不是第二份台词权威", sheet)
+        self.assertIn("剧本为准", sheet)
+        self.assertIn("voice-record-sheet.jsonl", read(SKILLS / "short-drama/references/contract-and-ownership.md"))
+
+    def test_cutting_a_storyline_comes_before_merging_characters(self) -> None:
+        """Merging first assigns functions to people a later cut removes."""
+
+        craft = unwrapped(SKILLS / "short-drama-develop/references/adaptation-craft.md")
+        self.assertIn("先删线，再合并", craft)
+        self.assertIn("孤儿铺垫", craft)
+
+    def test_the_new_genre_card_is_indexed_and_declares_its_confidence(self) -> None:
+        card = SKILLS / "short-drama-develop/references/genre-cards/亲子隐秘.md"
+        self.assertTrue(card.is_file())
+        self.assertIn("confidence: 中", read(card))
+        index = read(SKILLS / "short-drama-develop/references/genre-cards.md")
+        self.assertIn("genre-cards/亲子隐秘.md", index)
+        # A child written as a prop is this genre's signature failure.
+        self.assertIn("只负责卖萌", read(card))
+
+
 if __name__ == "__main__":
     unittest.main()
