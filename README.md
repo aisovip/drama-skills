@@ -144,3 +144,7 @@ done
 ```
 
 创作者可读的摘录示例见 [demo/](demo/)：一集剧本 → 资产设定 → 分镜 → 视频提示词。
+
+## 致谢
+
+[LINUX DO - The New Ideal Community](https://linux.do) — 社区支持
