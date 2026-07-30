@@ -9,6 +9,105 @@
 
 ## [未发布]
 
+### 变更
+
+- **发布时拒绝未填的结构化引用 `hash`**。此前 `hash` 不是 64 位十六进制的引用会被静默
+  跳过，不计入依赖边，于是「精确输入」交叉校验根本不会对它运行——照抄模板、原样发布的
+  候选反而最容易通过，**填得越少、检查越宽松**，正好与 hash 绑定的目的相反。现在这类
+  引用报 `structured ref hash is unfilled or invalid`。同一文件里给生命周期证据引用做
+  校验的 `_normalize_artifact_ref` 早已是这个行为，本次只是把发布路径对齐。
+  `*_locator` 对象不带 `hash` 键，不受影响。
+- **分集目录每个集号只有一种拼写**：`EP` 加三位数字，超过 `EP999` 之后不再补零
+  （`EP001`、`EP1000`）。`episodes/ep1/`、`episodes/EP1/`、`episodes/EP0001/` 都会被
+  拒绝。此前它们可以发布成功，随后被交付完整性闸门的 `episodes/<EP>/` 前缀枚举静默
+  跳过，于是闸门会在一个它从未清点过的分集上通过——正是该闸门自己声明要防止的失效。
+  结构化引用与 `package --include` 里的分集路径同样适用。
+- **`short-drama.json` 与 `delivery/**` 不再是合法发布目标**。前者承载
+  `creator_authority`，此前任何技能都能整份覆盖掉已确认的视觉方向与制作配置；后者只应
+  由 `package` 闸门写入，此前已交付的 `manifest.json` 可以被事后替换，而校验和文件不会
+  被重新读取。`package` 自身通过内部参数opt-in，不依赖创作者可控的 `stage` 名。
+
+- **发布只接受标准阶段目录，已声明产物的负责技能固定**。此前任意项目内相对路径与任意
+  `owner` 都能发布：写错一个字母的 `epsiodes/EP001/` 会建出一棵平行目录树，而 `status`
+  从不报告它；任何技能都能发布任何别的技能的产物。现在根目录限于 `development`、
+  `bible`、`episodes`、`creator-decisions`、`reviews`，确需别处的临时文件加
+  `--allow-unregistered-path`——仍然可行，但不再是静默的。负责人约束只覆盖各
+  `SKILL.md` 已声明的产物名（含 `bible/` 的六份身份账本，负责人均为 `short-drama-assets`）：
+  一个分集目录里住着四个技能的产物，按目录前缀反推负责人等于替契约回答它从未回答的
+  问题，会在没有授权的情况下拒掉创作者合法放在旁边的临时文件。
+- **所有路径判断改为忽略大小写**。本套件在 macOS/Windows 的大小写不敏感文件系统上开发
+  和运行，`Delivery/EP001/manifest.json` 与 `delivery/EP001/manifest.json` 是同一个
+  文件；区分大小写的判断在那里等于没有判断。同一次修正也补上了此前就存在的 `Inputs/`
+  与 `.Short-Drama/` 绕过。
+- **`short-drama.json` 按文件名拦截，不只是根目录那一份**。`find_project` 向上查找，
+  被放进子目录的同名文件会让该子目录冒充项目根，创作者在其中运行 `status` 会读到
+  伪造的项目。
+- **`VID-04` 新增六个 `structural_invariant` 诊断码**（`VID_EXPLICIT_TIMING_SHORTFALL`、
+  `VID_EXPLICIT_TIMING_UNDECLARED_OVERLAP`、`VID_EXPLICIT_TIMING_UNPARSEABLE`、
+  `VID_DECLARED_TOTAL_MISMATCH`、`VID_DURATION_PROJECTION_STALE`）与
+  `VID_TIMING_MODE_INCONSISTENT`。此前只有超出方向有编码，不足方向的后果其实更重：
+  未分配的余量不会渲染成静止画面，执行端会用没有上游来源的动作把它填满。**记为变更**：
+  既有运动规格若把重叠关系写在 `phases` 散文里而没有置 `timing_plan.declares_overlap`，
+  现在会被判为未声明重叠而阻断，需要补上该字段。
+
+### 新增
+
+- **`verify` 子命令**：用交付包自带的 `checksums.sha256` 复核它。此前该文件写出后
+  没有任何命令再读，交付目录被事后改动仍然"看起来已交付"。除逐个复核 hash 外，还报告
+  **未登记的新增文件**——校验和清单对新增是盲的。
+- **`motion_timing_check.py`**（video-prompts）：`VID-04` 此前是被声明为
+  `structural_invariant`、诊断码 `VID_EXPLICIT_TIMING_OVERFLOW` 也已分配、却没有任何
+  脚本读取 `motion-specs.jsonl` 的一条规则。新脚本做显式分段的算术核对。超出按**终点**
+  判断、不足按**裁剪到镜头长度内的并集**判断，因为中间留空加尾部超出会互相抵消：
+  `0.0-2.0` 加 `3.0-5.0` 在 4 秒镜头上"合计正好 4 秒"，实际却同时发生了截断与留白。
+  `relative` 计时不做算术断言，列在 `relative_plans` 中报告而不是判过。
+
+### 修复
+
+- **剧本集标题与分集目录此前用两套不兼容的形式**：`project_tool.py` 接受
+  `EP[0-9]{3,}`，`screenplay_index.py` 只接受 `EP\d{3}`，于是 `EP1000` 是合法目录却是
+  非法集标题。两处统一为「三位数字直到 EP999，其后不再补零」，`EP0001` 被拒是因为它会
+  成为 `EP001` 的第二种拼写，而完整性闸门按前缀枚举，另一种拼写下的产物会被静默跳过。
+- 文档中 `episodes/EPxxx/`、`episodes/EPX/` 两种写法会被读成字面 ID，现统一为
+  `episodes/<EP>/`。
+- **集号与场次号收紧为 ASCII 数字**。此前用的 `\d` 是 Unicode 数字类，`# EP００１`
+  能解析通过，于是全角与半角写法在 `BLK-` 身份命名空间里成为同一场景的两种拼写。
+  既有全角稿件现在会报 `invalid_episode_heading`，改成半角数字即可。
+
+### 升级既有项目
+
+新规则只在**新路径产生时**生效，已经写进预写日志的路径不受影响，所以升级不会让
+未完成的事务卡住：`recover` 照常回滚或前滚。
+
+若项目里已有 `episodes/ep1/` 这类旧目录，其中的产物仍可 `accept`，但不能再发布新版本，
+也不能打包交付。迁移方式是把内容按 `episodes/EP001/` 重新发布一次并重新接受。交付枚举
+按 `episodes/<EP>/` 前缀匹配，与负责人无关，所以旧路径本来就不在 `EP001` 的清点范围内，
+不需要额外处理；磁盘上的旧文件不会被自动删除，确认新版本无误后自行清理。
+
+### 已知缺口
+
+- 声明为 `structural_invariant` 的规则共 24 条，其中能在脚本里追溯到规则编号的是
+  `SHT-16`、`SHT-17`、`VID-15` 与本次新增的 `VID-04`，共 4 条。其余多数需要语义判断
+  （例如 `VID-08` 的"本镜确切演员/动作/接触"），把它们改判为 `reviewed_invariant`
+  是契约层的取舍，应由维护者按逐条证据决定，不在本次一并改。
+- `bible/*.jsonl` 仍没有记录级 schema：发布闸门只检查后缀、UTF-8 与可解析性，
+  `{"a":1}` 与空文件都能发布进去。五个校验脚本也都没有接进 `publish` 闸门，
+  只在智能体按提示词执行时才运行。
+- 结构化引用的守卫只收紧了 `hash`：`owner` 或 `artifact` 缺失时该引用仍被静默丢弃，
+  依赖边照样为零。这一条与 0.2.0 行为相同，不是本次引入的回归；收紧它同样属于
+  `structural_invariant` 收紧，需要单独记为变更。
+- `_relative_path` 不限制路径字符集：分量里含换行会让 `checksums.sha256` 一条产物写出
+  两行；Windows 语义下结尾的点或空格（`storyboard /shots.jsonl`）与规范拼写指向同一个
+  文件，却绕开负责人表。两者都需要给路径分量定一个字符集，属于跨命令的收紧。
+- `verify` 的 `checksum_list_authentic` 用的是同一棵树内的第二个锚点
+  （`.short-drama/state.json` 里记录的 hash）。把产物、校验和清单与状态文件一起改仍能
+  得到 `intact`；要防这一类需要把 hash 留在项目之外，属于交付流程而非本工具的范围。
+- `verify` 的 `os.walk` 没有 `onerror`：不可读的子目录会被静默跳过，其中的文件不进
+  `unlisted`。该行为在本次新增的枚举与此前的 `rglob` 写法下相同。
+- `_project_path` 只校验解析后的父目录仍在项目内，不校验中途是否经过符号链接目录，
+  因此可发布根目录下的符号链接仍能把写入重定向进 `inputs/` 或 `.short-drama/`。
+  该行为在 0.2.0 已存在。
+
 ## [0.2.0] - 2026-07-27
 
 本次把 0.1.0 「已知缺口」中列出的全部条目处理完，给三条此前只靠人工核对的
